@@ -2,6 +2,7 @@ package fr.ziedelth.ziedbot.platforms
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.Request
 import fr.ziedelth.ziedbot.utils.animes.Episode
 import fr.ziedelth.ziedbot.utils.animes.News
@@ -19,13 +20,22 @@ class AnimeDigitalNetwork : Platform {
     override fun getLastNews(): MutableList<News> = mutableListOf()
 
     override fun getLastEpisodes(): MutableList<Episode> {
+        val calendar = Const.CHECK_DATE.getDate()
         val l: MutableList<Episode> = mutableListOf()
+        val response: String
+
+        try {
+            response = Request.get("https://gw.api.animedigitalnetwork.fr/video/calendar?date=${this.date(calendar)}")
+        } catch (exception: Exception) {
+            return l
+        }
+
         val jsonObject = Gson().fromJson(
-            Request.get("https://gw.api.animedigitalnetwork.fr/video/calendar?date=${this.nowDate()}"),
+            response,
             JsonObject::class.java
         )
+
         val jsonArray = jsonObject.getAsJsonArray("videos")
-        val calendar = Calendar.getInstance()
 
         jsonArray.filter { it.isJsonObject }.forEach {
             val jObject = it.asJsonObject
@@ -49,8 +59,8 @@ class AnimeDigitalNetwork : Platform {
         return l
     }
 
-    private fun nowDate(): String {
-        return SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().time)
+    private fun date(calendar: Calendar): String {
+        return SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
     }
 
     private fun toCalendar(iso8601string: String): Calendar {

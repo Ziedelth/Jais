@@ -3,6 +3,7 @@ package fr.ziedelth.ziedbot
 import fr.ziedelth.ziedbot.listeners.GuildMessageReactionAdd
 import fr.ziedelth.ziedbot.listeners.SlashCommand
 import fr.ziedelth.ziedbot.threads.AnimeThread
+import fr.ziedelth.ziedbot.threads.CommandsThread
 import fr.ziedelth.ziedbot.threads.NewsThread
 import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.ZiedLogger
@@ -26,6 +27,7 @@ object ZiedBot {
         jda.retrieveUserById(132903783792377856L).queue { user -> master = user }
         jda.presence.activity = Activity.playing("bugged with master")
 
+        CommandsThread()
         AnimeThread(this)
         NewsThread(this)
     }

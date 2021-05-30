@@ -46,13 +46,8 @@ class AnimeThread(val ziedBot: ZiedBot) : Runnable {
                             ziedBot.jda.guilds.forEach { guild ->
                                 guild.getTextChannelsByName("bot\uD83E\uDD16", true).firstOrNull()
                                     ?.sendMessage(getEpisodeEmbed(it).build())
-                                    ?.queue { message -> anime.get(it)?.message = message }
+                                    ?.queue()
                             }
-                        } else if (it.getId() != anime.get(it)?.getId()) {
-                            anime.get(it)?.title = it.title
-                            anime.get(it)?.link = it.link
-                            anime.get(it)?.image = it.image
-                            anime.get(it)?.message?.editMessage(getEpisodeEmbed(it).build())?.queue()
                         }
                     }
                 } else {
@@ -63,7 +58,7 @@ class AnimeThread(val ziedBot: ZiedBot) : Runnable {
                         ziedBot.jda.guilds.forEach { guild ->
                             guild.getTextChannelsByName("bot\uD83E\uDD16", true).firstOrNull()
                                 ?.sendMessage(getEpisodeEmbed(it).build())
-                                ?.queue { message -> anime.get(it)?.message = message }
+                                ?.queue()
                         }
                     }
 

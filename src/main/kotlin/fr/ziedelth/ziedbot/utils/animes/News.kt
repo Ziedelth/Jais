@@ -1,20 +1,17 @@
 package fr.ziedelth.ziedbot.utils.animes
 
-import fr.ziedelth.ziedbot.utils.Const
-import java.nio.charset.Charset
-import java.util.*
-
 class News(
-    val platform: Platform,
-    val calendar: Calendar,
+    var platform: String,
+    var calendar: String,
     val title: String,
     val description: String,
     val content: String,
     val link: String
 ) {
-    val id: String = Const.encode(
-        (this.platform.getName() + this.calendar.toString() + this.title + this.description + this.link + this.content).toByteArray(
-            Charset.defaultCharset()
-        )
-    )
+    @Transient
+    lateinit var p: Platform
+
+    override fun toString(): String {
+        return "News(platform=$platform, calendar=$calendar, title='$title', description='$description', content='$content', link='$link')"
+    }
 }

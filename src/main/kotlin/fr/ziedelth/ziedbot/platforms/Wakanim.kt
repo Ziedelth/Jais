@@ -1,11 +1,13 @@
 package fr.ziedelth.ziedbot.platforms
 
+import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.Request
 import fr.ziedelth.ziedbot.utils.animes.Episode
 import fr.ziedelth.ziedbot.utils.animes.News
 import fr.ziedelth.ziedbot.utils.animes.Platform
 import org.jsoup.Jsoup
 import java.awt.Color
+import java.text.SimpleDateFormat
 import java.util.*
 
 class Wakanim : Platform {
@@ -19,10 +21,21 @@ class Wakanim : Platform {
     override fun getLastNews(): MutableList<News> = mutableListOf()
 
     override fun getLastEpisodes(): MutableList<Episode> {
+        val calendar = Const.CHECK_DATE.getDate()
         val l: MutableList<Episode> = mutableListOf()
-        val calendar = Calendar.getInstance()
-        val doc =
-            Jsoup.parseBodyFragment(Request.get("https://www.wakanim.tv/fr/v2/agenda/getevents?s=26-05-2021&e=26-05-2021&free=false"))
+        val response: String
+
+        try {
+            response = Request.get(
+                "https://www.wakanim.tv/fr/v2/agenda/getevents?s=${this.date(calendar)}&e=${
+                    this.date(calendar)
+                }&free=false"
+            )
+        } catch (exception: Exception) {
+            return l
+        }
+
+        val doc = Jsoup.parseBodyFragment(response)
         val episodes = doc.getElementsByClass("Calendar-ep")
 
         episodes.forEach {
@@ -41,6 +54,10 @@ class Wakanim : Platform {
         }
 
         return l
+    }
+
+    private fun date(calendar: Calendar): String {
+        return SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
     }
 
     private fun toCalendar(s: String): Calendar {

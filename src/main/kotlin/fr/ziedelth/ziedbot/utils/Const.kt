@@ -17,6 +17,7 @@ import kotlin.experimental.and
 
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
+    val CHECK_DATE: Check = Check()
     val platforms: Array<Platform> = arrayOf(Crunchyroll(), Wakanim(), AnimeDigitalNetwork())
     val commands: Array<Command> = arrayOf(ClearCommand())
     val discordToken: DiscordToken = GSON.fromJson(
