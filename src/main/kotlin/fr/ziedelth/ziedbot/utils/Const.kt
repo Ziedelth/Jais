@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder
 import fr.ziedelth.ziedbot.commands.ClearCommand
 import fr.ziedelth.ziedbot.platforms.AnimeDigitalNetwork
 import fr.ziedelth.ziedbot.platforms.Crunchyroll
-import fr.ziedelth.ziedbot.platforms.Wakanim
 import fr.ziedelth.ziedbot.utils.animes.Platform
 import fr.ziedelth.ziedbot.utils.commands.Command
 import fr.ziedelth.ziedbot.utils.tokens.DiscordToken
@@ -18,7 +17,7 @@ import kotlin.experimental.and
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
     val CHECK_DATE: Check = Check()
-    val platforms: Array<Platform> = arrayOf(Crunchyroll(), Wakanim(), AnimeDigitalNetwork())
+    val platforms: Array<Platform> = arrayOf(Crunchyroll(), AnimeDigitalNetwork())
     val commands: Array<Command> = arrayOf(ClearCommand())
     val discordToken: DiscordToken = GSON.fromJson(
         Files.readString(File("tokens", "discord.json").toPath(), StandardCharsets.UTF_8),
