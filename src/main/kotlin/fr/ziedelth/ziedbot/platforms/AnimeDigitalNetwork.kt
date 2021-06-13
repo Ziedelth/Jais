@@ -12,14 +12,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class AnimeDigitalNetwork : Platform {
+    override fun getPrefix(): String = "ADN-E"
     override fun getName(): String = "Anime Digital Network"
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
     override fun getImage(): String = "https://img.apksum.com/e6/fr.anidn/v4.1.65/icon.png"
     override fun getColor(): Color = Color(0, 150, 255)
 
-    override fun getLastNews(): MutableList<News> = mutableListOf()
+    override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
 
-    override fun getLastEpisodes(): MutableList<Episode> {
+    override fun getLastEpisodes(): Array<Episode> {
         val calendar = Const.CHECK_DATE.getDate()
         val l: MutableList<Episode> = mutableListOf()
         val response: String
@@ -27,36 +28,34 @@ class AnimeDigitalNetwork : Platform {
         try {
             response = Request.get("https://gw.api.animedigitalnetwork.fr/video/calendar?date=${this.date(calendar)}")
         } catch (exception: Exception) {
-            return l
+            return l.toTypedArray()
         }
 
-        val jsonObject = Gson().fromJson(
-            response,
-            JsonObject::class.java
-        )
-
+        val jsonObject = Gson().fromJson(response, JsonObject::class.java)
         val jsonArray = jsonObject.getAsJsonArray("videos")
 
         jsonArray.filter { it.isJsonObject }.forEach {
             val jObject = it.asJsonObject
             val showObject = jObject.getAsJsonObject("show")
-            val link = jObject.get("url").asString.replace(" ", "%20")
+
+            val id = this.getPrefix() + jObject.get("id").asInt
+            val releaseDate = this.toCalendar(jObject.get("releaseDate").asString)
             val anime = showObject.get("title").asString
             val title: String? =
                 if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
             val image = jObject.get("image2x").asString.replace(" ", "%20")
+            val link = jObject.get("url").asString.replace(" ", "%20")
             val number = jObject.get("shortNumber").asString.toInt()
-            val releaseDate = this.toCalendar(jObject.get("releaseDate").asString)
 
             if (calendar.after(releaseDate)) {
-                val episode = Episode(this.getName(), toStringCalendar(releaseDate), title, image, link, "$number")
+                val episode =
+                    Episode(id, this.getName(), toStringCalendar(releaseDate), anime, title, image, link, "$number")
                 episode.p = this
-                episode.anime = anime
                 l.add(episode)
             }
         }
 
-        return l
+        return l.toTypedArray()
     }
 
     private fun date(calendar: Calendar): String {
@@ -69,4 +68,6 @@ class AnimeDigitalNetwork : Platform {
         calendar.time = date
         return calendar
     }
+
+    override fun toString(): String = this.getName()
 }

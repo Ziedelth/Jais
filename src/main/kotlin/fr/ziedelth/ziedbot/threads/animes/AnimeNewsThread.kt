@@ -1,10 +1,10 @@
-package fr.ziedelth.ziedbot.threads
+package fr.ziedelth.ziedbot.threads.animes
 
 import com.google.gson.JsonArray
-import fr.ziedelth.ziedbot.ZiedBot
 import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.ZiedLogger
 import fr.ziedelth.ziedbot.utils.animes.News
+import fr.ziedelth.ziedbot.utils.guilds
 import net.dv8tion.jda.api.EmbedBuilder
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -13,10 +13,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.min
 
-class NewsThread(val ziedBot: ZiedBot) : Runnable {
-    val thread = Thread(this, "NewsThread")
-    val file = File("news.json")
-    var list: MutableList<News> = mutableListOf()
+class AnimeNewsThread : Runnable {
+    private val thread = Thread(this, "NewsThread")
+    private val file = File("news.json")
+    private var list: MutableList<News> = mutableListOf()
 
     init {
         this.thread.isDaemon = true
@@ -33,18 +33,15 @@ class NewsThread(val ziedBot: ZiedBot) : Runnable {
     override fun run() {
         while (!this.thread.isInterrupted) {
             val news: MutableList<News> = mutableListOf()
-            Const.platforms.forEach { news.addAll(it.getLastNews()) }
+            Const.PLATFORMS.forEach { news.addAll(it.getLastNews()) }
             var c = 0
 
             news.forEach {
                 if (!this.contains(it)) {
                     c++
-                    ziedBot.jda.guilds.forEach { guild ->
-                        guild.getTextChannelsByName("bot\uD83E\uDD16", true).firstOrNull()
-                            ?.sendMessage(getNewsEmbed(it).build())
-                            ?.queue()
+                    guilds.forEach { (_, ziedGuild) ->
+                        ziedGuild.animeChannel?.sendMessage(getNewsEmbed(it).build())?.queue()
                     }
-
                     this.list.add(it)
                 }
             }
@@ -65,11 +62,11 @@ class NewsThread(val ziedBot: ZiedBot) : Runnable {
         return string.substring(0, min(string.length, int))
     }
 
-    fun getNewsEmbed(news: News): EmbedBuilder {
-        return this.ziedBot.setEmbed(
-            news.p.getName(),
-            news.p.getURL(),
-            news.p.getImage(),
+    private fun getNewsEmbed(news: News): EmbedBuilder {
+        return Const.setEmbed(
+            news.p?.getName(),
+            news.p?.getURL(),
+            news.p?.getImage(),
             news.title,
             news.link,
             null,
@@ -78,7 +75,7 @@ class NewsThread(val ziedBot: ZiedBot) : Runnable {
             
             ${substring(news.content, 1500)}...
             """.trimIndent(),
-            news.p.getColor(),
+            news.p?.getColor(),
             null,
             toCalendar(news.calendar).toInstant()
         )

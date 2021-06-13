@@ -5,12 +5,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 interface Platform {
+    fun getPrefix(): String
     fun getName(): String
     fun getURL(): String
     fun getImage(): String
     fun getColor(): Color
-    fun getLastNews(): MutableList<News>
-    fun getLastEpisodes(): MutableList<Episode>
+    fun getLastNews(): Array<News>
+    fun getLastEpisodes(): Array<Episode>
 
     fun toStringCalendar(calendar: Calendar): String =
         SimpleDateFormat("HH:mm:ss yyyy/MM/dd", Locale.FRANCE).format(Date.from(calendar.toInstant()))

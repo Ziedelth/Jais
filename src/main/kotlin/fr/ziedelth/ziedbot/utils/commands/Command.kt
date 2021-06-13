@@ -10,7 +10,4 @@ abstract class Command(
     val permission: Permission = Permission.ADMINISTRATOR
 ) {
     abstract fun execute(event: SlashCommandEvent)
-
-    fun sendInPrivate(event: SlashCommandEvent, message: String) =
-        event.acknowledge(true).queue { commandHook -> commandHook.sendMessage(message).queue() }
 }

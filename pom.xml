@@ -146,16 +146,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.DV8FromTheWorld</groupId>
+            <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>410def28d1f7928162e5cd750f1187a8db784889</version>
-
-            <exclusions>
-                <exclusion>
-                    <groupId>club.minnced</groupId>
-                    <artifactId>opus-java</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>4.2.1_273</version>
         </dependency>
 
         <dependency>

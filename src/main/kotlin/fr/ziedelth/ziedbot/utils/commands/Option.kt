@@ -1,10 +1,10 @@
 package fr.ziedelth.ziedbot.utils.commands
 
-import net.dv8tion.jda.api.entities.Command
+import net.dv8tion.jda.api.interactions.commands.OptionType
 
 class Option(
     val name: String,
     val description: String = "No description...",
-    val type: Command.OptionType = Command.OptionType.STRING,
+    val type: OptionType = OptionType.STRING,
     val required: Boolean = false
 )

@@ -4,6 +4,7 @@ import fr.ziedelth.ziedbot.utils.commands.Command
 import fr.ziedelth.ziedbot.utils.commands.Option
 import net.dv8tion.jda.api.entities.MessageChannel
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
+import net.dv8tion.jda.api.interactions.commands.OptionType
 import java.util.concurrent.CompletableFuture
 
 class ClearCommand : Command(
@@ -13,11 +14,11 @@ class ClearCommand : Command(
         Option(
             "x",
             "Number of messages need to be delete",
-            net.dv8tion.jda.api.entities.Command.OptionType.INTEGER
+            OptionType.INTEGER
         )
     ).toTypedArray()
 ) {
-    var busy = false
+    private var busy = false
 
     override fun execute(event: SlashCommandEvent) {
         if (this.busy) {

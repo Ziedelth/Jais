@@ -4,9 +4,9 @@ import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.ZiedLogger
 import java.util.*
 
-class CommandsThread : Runnable {
-    val thread = Thread(this, "CommandsThread")
-    val scanner: Scanner = Scanner(System.`in`)
+class ConsoleCommandsThread : Runnable {
+    private val thread = Thread(this, "CommandsThread")
+    private val scanner: Scanner = Scanner(System.`in`)
 
     init {
         this.thread.isDaemon = true
@@ -44,7 +44,7 @@ class CommandsThread : Runnable {
                     Const.CHECK_DATE.now = false
                     Const.CHECK_DATE.calendar = calendar
                     ZiedLogger.info(
-                        "Date set to ${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.MONTH)}/${
+                        "Date set to ${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.MONTH) + 1}/${
                             calendar.get(
                                 Calendar.YEAR
                             )
