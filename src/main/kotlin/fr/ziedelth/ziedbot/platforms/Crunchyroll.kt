@@ -1,7 +1,7 @@
 package fr.ziedelth.ziedbot.platforms
 
-import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.animes.Episode
+import fr.ziedelth.ziedbot.utils.animes.EpisodeType
 import fr.ziedelth.ziedbot.utils.animes.News
 import fr.ziedelth.ziedbot.utils.animes.Platform
 import org.jsoup.Jsoup
@@ -17,7 +17,6 @@ import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 
 class Crunchyroll : Platform {
-    override fun getPrefix(): String = "CHR-E"
     override fun getName(): String = "Crunchyroll"
     override fun getURL(): String = "https://www.crunchyroll.com/"
     override fun getImage(): String =
@@ -26,7 +25,7 @@ class Crunchyroll : Platform {
     override fun getColor(): Color = Color(255, 108, 0)
 
     override fun getLastNews(): Array<News> {
-        val calendar = Const.CHECK_DATE.getDate()
+        val calendar = Calendar.getInstance()
         val l: MutableList<News> = mutableListOf()
         val url: URLConnection
         val list: NodeList
@@ -68,7 +67,7 @@ class Crunchyroll : Platform {
     }
 
     override fun getLastEpisodes(): Array<Episode> {
-        val calendar = Const.CHECK_DATE.getDate()
+        val calendar = Calendar.getInstance()
         val l: MutableList<Episode> = mutableListOf()
         val url: URLConnection
         val list: NodeList
@@ -91,7 +90,6 @@ class Crunchyroll : Platform {
             if (node.nodeType == Node.ELEMENT_NODE) {
                 val element = node as Element
 
-                val id = this.getPrefix() + element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
                 val date = element.getElementsByTagName("pubDate").item(0).textContent
                 val releaseDate = toCalendar(date)
                 val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
@@ -100,17 +98,27 @@ class Crunchyroll : Platform {
                     ?.replace(" ", "%20") ?: ""
                 val link = element.getElementsByTagName("guid").item(0).textContent.replace(" ", "%20")
                 val number = element.getElementsByTagName("crunchyroll:episodeNumber").item(0)?.textContent
-
                 val subtitles = element.getElementsByTagName("crunchyroll:subtitleLanguages").item(0)?.textContent ?: ""
                 val spay = element.getElementsByTagName("media:restriction").item(0).textContent
+                val language = if (subtitles.equals("fr - fr", true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
 
                 if (spay.split(" ").contains("fr") && subtitles.split(",").contains("fr - fr") && this.isSameDay(
                         calendar,
                         releaseDate
                     )
                 ) {
-                    val episode =
-                        Episode(id, this.getName(), toStringCalendar(releaseDate), anime, title, image, link, "$number")
+                    val episode = Episode(
+                        this.getName(),
+                        toStringCalendar(releaseDate),
+                        anime,
+                        id,
+                        title,
+                        image,
+                        link,
+                        "$number",
+                        language
+                    )
                     episode.p = this
                     l.add(episode)
                 }
@@ -131,6 +139,4 @@ class Crunchyroll : Platform {
         val fmt = SimpleDateFormat("yyyyMMdd")
         return fmt.format(var0.time) == fmt.format(var1.time)
     }
-
-    override fun toString(): String = this.getName()
 }

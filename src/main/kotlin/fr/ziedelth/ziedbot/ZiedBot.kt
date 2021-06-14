@@ -2,7 +2,6 @@ package fr.ziedelth.ziedbot
 
 import fr.ziedelth.ziedbot.listeners.GuildMessageReactionAdd
 import fr.ziedelth.ziedbot.listeners.SlashCommand
-import fr.ziedelth.ziedbot.threads.ConsoleCommandsThread
 import fr.ziedelth.ziedbot.threads.animes.AnimeEpisodesThread
 import fr.ziedelth.ziedbot.threads.animes.AnimeNewsThread
 import fr.ziedelth.ziedbot.utils.Const
@@ -19,6 +18,9 @@ object ZiedBot {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        ZiedLogger.info("Init...")
+        ZiedLogger.info("Request per day: ${(60L / Const.DELAY_BETWEEN_REQUEST) * 24L}")
+
         jda.addEventListener(SlashCommand(this), GuildMessageReactionAdd())
         jda.awaitReady()
         ZiedLogger.info("Connected to ${jda.guilds.size} guild(s)!")
@@ -26,7 +28,6 @@ object ZiedBot {
         jda.retrieveUserById(132903783792377856L).queue { user -> master = user }
         jda.presence.activity = Activity.playing("bugged with master")
 
-        ConsoleCommandsThread()
         AnimeEpisodesThread()
         AnimeNewsThread()
     }

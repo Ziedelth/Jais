@@ -2,9 +2,9 @@ package fr.ziedelth.ziedbot.platforms
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.Request
 import fr.ziedelth.ziedbot.utils.animes.Episode
+import fr.ziedelth.ziedbot.utils.animes.EpisodeType
 import fr.ziedelth.ziedbot.utils.animes.News
 import fr.ziedelth.ziedbot.utils.animes.Platform
 import java.awt.Color
@@ -12,7 +12,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class AnimeDigitalNetwork : Platform {
-    override fun getPrefix(): String = "ADN-E"
     override fun getName(): String = "Anime Digital Network"
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
     override fun getImage(): String = "https://img.apksum.com/e6/fr.anidn/v4.1.65/icon.png"
@@ -21,7 +20,7 @@ class AnimeDigitalNetwork : Platform {
     override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
 
     override fun getLastEpisodes(): Array<Episode> {
-        val calendar = Const.CHECK_DATE.getDate()
+        val calendar = Calendar.getInstance()
         val l: MutableList<Episode> = mutableListOf()
         val response: String
 
@@ -38,7 +37,6 @@ class AnimeDigitalNetwork : Platform {
             val jObject = it.asJsonObject
             val showObject = jObject.getAsJsonObject("show")
 
-            val id = this.getPrefix() + jObject.get("id").asInt
             val releaseDate = this.toCalendar(jObject.get("releaseDate").asString)
             val anime = showObject.get("title").asString
             val title: String? =
@@ -46,10 +44,27 @@ class AnimeDigitalNetwork : Platform {
             val image = jObject.get("image2x").asString.replace(" ", "%20")
             val link = jObject.get("url").asString.replace(" ", "%20")
             val number = jObject.get("shortNumber").asString.toInt()
+            val languages = jObject.get("languages").asJsonArray
+            val language = if (languages.any { jsonElement ->
+                    jsonElement.asString.equals(
+                        "vf",
+                        true
+                    )
+                }) EpisodeType.VOICE else EpisodeType.SUBTITLES
+            val id = "${jObject.get("id").asInt}"
 
             if (calendar.after(releaseDate)) {
-                val episode =
-                    Episode(id, this.getName(), toStringCalendar(releaseDate), anime, title, image, link, "$number")
+                val episode = Episode(
+                    this.getName(),
+                    toStringCalendar(releaseDate),
+                    anime,
+                    id,
+                    title,
+                    image,
+                    link,
+                    "$number",
+                    language
+                )
                 episode.p = this
                 l.add(episode)
             }
@@ -68,6 +83,4 @@ class AnimeDigitalNetwork : Platform {
         calendar.time = date
         return calendar
     }
-
-    override fun toString(): String = this.getName()
 }

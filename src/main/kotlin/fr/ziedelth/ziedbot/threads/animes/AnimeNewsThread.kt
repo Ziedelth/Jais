@@ -51,7 +51,7 @@ class AnimeNewsThread : Runnable {
                 Files.writeString(this.file.toPath(), Const.GSON.toJson(this.list), StandardCharsets.UTF_8)
             }
 
-            this.thread.join(60000)
+            this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
         }
     }
 
@@ -69,15 +69,13 @@ class AnimeNewsThread : Runnable {
             news.p?.getImage(),
             news.title,
             news.link,
-            null,
-            """
+            description = """
             ** ${substring(news.description, 100)}... **
             
             ${substring(news.content, 1500)}...
             """.trimIndent(),
-            news.p?.getColor(),
-            null,
-            toCalendar(news.calendar).toInstant()
+            color = news.p?.getColor(),
+            timestamp = toCalendar(news.calendar).toInstant()
         )
     }
 

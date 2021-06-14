@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.ZiedLogger
 import fr.ziedelth.ziedbot.utils.animes.Episode
+import fr.ziedelth.ziedbot.utils.animes.EpisodeType
 import fr.ziedelth.ziedbot.utils.guilds
 import net.dv8tion.jda.api.EmbedBuilder
 import java.io.File
@@ -37,22 +38,21 @@ class AnimeEpisodesThread : Runnable {
 
             episodes.forEach {
                 if (this.contains(it)) {
-                    val episode = this.list.find { episode -> episode.id == it.id }
+                    val episode = this.list.find { episode -> episode.globalId == it.globalId }
 
                     if (episode != null) {
                         if (!episode.equals(it)) {
                             c++
                             val eIndex = this.list.indexOf(episode)
 
-                            episode.anime = it.anime
+                            episode.id = it.id
                             episode.title = it.title
                             episode.image = it.image
                             episode.link = it.link
-                            episode.number = it.number
 
                             episode.messages.forEach { message ->
                                 run {
-                                    message.editMessage(getEpisodeEmbed(it).build()).queue()
+                                    message?.editMessage(getEpisodeEmbed(it).build())?.queue()
                                 }
                             }
 
@@ -65,7 +65,7 @@ class AnimeEpisodesThread : Runnable {
                     guilds.forEach { (_, ziedGuild) ->
                         ziedGuild.animeChannel?.sendMessage(getEpisodeEmbed(it).build())?.queue { message ->
                             run {
-                                val episode = this.list.find { it1 -> it1.id == it.id }
+                                val episode = this.list.find { it1 -> it1.globalId == it.globalId }
 
                                 if (episode != null) {
                                     val eIndex = this.list.indexOf(episode)
@@ -85,12 +85,12 @@ class AnimeEpisodesThread : Runnable {
                 Files.writeString(this.file.toPath(), Const.GSON.toJson(this.list), StandardCharsets.UTF_8)
             }
 
-            this.thread.join(60000)
+            this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
         }
     }
 
-    fun contains(id: String?): Boolean = this.list.any { it.id == id }
-    fun contains(episode: Episode?): Boolean = this.contains(episode?.id)
+    fun contains(globalId: String?): Boolean = this.list.any { it.globalId == globalId }
+    fun contains(episode: Episode?): Boolean = this.contains(episode?.globalId)
 
     private fun getEpisodeEmbed(episode: Episode): EmbedBuilder {
         return Const.setEmbed(
@@ -99,14 +99,14 @@ class AnimeEpisodesThread : Runnable {
             episode.p?.getImage(),
             episode.anime,
             episode.link,
-            null,
-            """
+            description = """
                 ${if (episode.title != null) "** ${episode.title} **" else ""}
                 Episode ${episode.number}
             """.trimIndent(),
-            episode.p?.getColor(),
-            episode.image,
-            toCalendar(episode.calendar).toInstant()
+            color = episode.p?.getColor(),
+            image = episode.image,
+            footer = if (episode.type == EpisodeType.SUBTITLES) "VOSTFR" else "VF",
+            timestamp = toCalendar(episode.calendar).toInstant()
         )
     }
 

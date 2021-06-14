@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 interface Platform {
-    fun getPrefix(): String
     fun getName(): String
     fun getURL(): String
     fun getImage(): String
