@@ -114,15 +114,6 @@ class Wakanim : Platform {
         return wait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(parent, By.className(sClass)))
     }
 
-    private fun aPS(wait: WebDriverWait, parent: String, sClass: String): WebElement? {
-        return wait.until(
-            ExpectedConditions.presenceOfNestedElementLocatedBy(
-                By.className(parent),
-                By.className(sClass)
-            )
-        )
-    }
-
     private fun aM(wait: WebDriverWait, parent: String, sClass: String): List<WebElement>? {
         return wait.until(
             ExpectedConditions.presenceOfNestedElementsLocatedBy(

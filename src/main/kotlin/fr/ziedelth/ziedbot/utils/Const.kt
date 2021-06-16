@@ -22,7 +22,7 @@ import kotlin.experimental.and
 
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
-    val PLATFORMS: Array<Platform> = arrayOf(Crunchyroll(), AnimeDigitalNetwork(), Wakanim())
+    val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), Wakanim())
     val COMMANDS: Array<Command> = arrayOf(ClearCommand(), AnimeCommand())
     val DISCORD_TOKEN: DiscordToken = GSON.fromJson(
         Files.readString(File("tokens", "discord.json").toPath(), StandardCharsets.UTF_8),
@@ -33,7 +33,8 @@ object Const {
             if (!field.exists()) field.mkdirs()
             return field
         }
-    val DELAY_BETWEEN_REQUEST = 3L
+    const val DELAY_BETWEEN_REQUEST = 3L
+    const val SEND_MESSAGES = true
 
     fun encode(bytes: ByteArray): String {
         val md = MessageDigest.getInstance("SHA-512")

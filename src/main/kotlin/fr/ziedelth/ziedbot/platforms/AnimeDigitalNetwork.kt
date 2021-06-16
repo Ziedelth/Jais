@@ -38,7 +38,9 @@ class AnimeDigitalNetwork : Platform {
             val showObject = jObject.getAsJsonObject("show")
 
             val releaseDate = this.toCalendar(jObject.get("releaseDate").asString)
-            val anime = showObject.get("title").asString
+            val season =
+                if (jObject.has("season") && !jObject.get("season").isJsonNull) jObject.get("season").asString.toInt() else 1
+            val anime = "${showObject.get("title").asString}${if (season > 1) " - Saison $season" else ""}"
             val title: String? =
                 if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
             val image = jObject.get("image2x").asString.replace(" ", "%20")

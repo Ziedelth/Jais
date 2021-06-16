@@ -40,7 +40,7 @@ class AnimeNewsThread : Runnable {
                 if (!this.contains(it)) {
                     c++
                     guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.animeChannel?.sendMessage(getNewsEmbed(it).build())?.queue()
+                        ziedGuild.animeChannel?.sendMessageEmbeds(getNewsEmbed(it).build())?.queue()
                     }
                     this.list.add(it)
                 }

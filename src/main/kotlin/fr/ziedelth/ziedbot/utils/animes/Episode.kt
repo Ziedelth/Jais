@@ -17,7 +17,7 @@ class Episode(
     val globalId: String = Const.encode("$platform$calendar$anime$number${type.name}".toByteArray())
 
     @Transient
-    val messages: MutableList<Message?> = mutableListOf()
+    val messages: MutableList<Message> = mutableListOf()
 
     @Transient
     var p: Platform? = null

@@ -18,14 +18,8 @@ class ClearCommand : Command(
         )
     ).toTypedArray()
 ) {
-    private var busy = false
 
     override fun execute(event: SlashCommandEvent) {
-        if (this.busy) {
-            event.reply("I'm working, so please wait...").setEphemeral(true).queue()
-            return
-        }
-
         val count = (event.getOption("x")?.asLong ?: 50).toInt()
 
         if (count !in 1..100) {
@@ -37,11 +31,8 @@ class ClearCommand : Command(
 
         event.reply("Clearing $count messages...").setEphemeral(true).queue { commandHook ->
             channel.history.retrievePast(count).queue {
-                this.busy = true
-
                 CompletableFuture.allOf(*channel.purgeMessages(it).toTypedArray()).whenComplete { _, _ ->
                     run {
-                        this.busy = false
                         commandHook.editOriginal("Finished!").queue()
                     }
                 }

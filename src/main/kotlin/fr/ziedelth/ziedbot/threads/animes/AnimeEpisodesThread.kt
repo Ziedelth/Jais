@@ -16,7 +16,7 @@ import java.util.*
 class AnimeEpisodesThread : Runnable {
     private val thread = Thread(this, "AnimeThread")
     private val file = File("animes.json")
-    private var list: MutableList<Episode> = mutableListOf()
+    private var dataset: MutableMap<String, Episode> = mutableMapOf()
 
     init {
         this.thread.isDaemon = true
@@ -25,8 +25,11 @@ class AnimeEpisodesThread : Runnable {
         if (this.file.exists()) {
             val array: JsonArray =
                 Const.GSON.fromJson(Files.readString(this.file.toPath(), StandardCharsets.UTF_8), JsonArray::class.java)
-            array.filter { !it.isJsonNull && it.isJsonObject }
-                .forEach { this.list.add(Const.GSON.fromJson(it, Episode::class.java)) }
+
+            array.filter { !it.isJsonNull && it.isJsonObject }.forEach {
+                val episode = Const.GSON.fromJson(it, Episode::class.java)
+                dataset[episode.globalId] = episode
+            }
         }
     }
 
@@ -37,60 +40,54 @@ class AnimeEpisodesThread : Runnable {
             var c = 0
 
             episodes.forEach {
-                if (this.contains(it)) {
-                    val episode = this.list.find { episode -> episode.globalId == it.globalId }
+                if (this.dataset.containsKey(it.globalId)) {
+                    val episode = this.dataset[it.globalId]!!
 
-                    if (episode != null) {
-                        if (!episode.equals(it)) {
-                            c++
-                            val eIndex = this.list.indexOf(episode)
+                    if (episode != it) {
+                        c++
 
-                            episode.id = it.id
-                            episode.title = it.title
-                            episode.image = it.image
-                            episode.link = it.link
+                        episode.id = it.id
+                        episode.title = it.title
+                        episode.image = it.image
+                        episode.link = it.link
 
+                        this.dataset[it.globalId] = episode
+
+                        if (Const.SEND_MESSAGES) {
                             episode.messages.forEach { message ->
                                 run {
-                                    message?.editMessage(getEpisodeEmbed(it).build())?.queue()
+                                    message.editMessageEmbeds(getEpisodeEmbed(it).build()).queue()
                                 }
                             }
-
-                            this.list[eIndex] = episode
                         }
                     }
                 } else {
                     c++
 
-                    guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.animeChannel?.sendMessage(getEpisodeEmbed(it).build())?.queue { message ->
-                            run {
-                                val episode = this.list.find { it1 -> it1.globalId == it.globalId }
-
-                                if (episode != null) {
-                                    val eIndex = this.list.indexOf(episode)
+                    if (Const.SEND_MESSAGES) {
+                        guilds.forEach { (_, ziedGuild) ->
+                            ziedGuild.animeChannel?.sendMessageEmbeds(getEpisodeEmbed(it).build())?.queue { message ->
+                                run {
+                                    val episode = this.dataset[it.globalId]!!
                                     episode.messages.add(message)
-                                    this.list[eIndex] = episode
+                                    this.dataset[it.globalId] = episode
                                 }
                             }
                         }
                     }
 
-                    this.list.add(it)
+                    this.dataset[it.globalId] = it
                 }
             }
 
             if (c > 0) {
                 ZiedLogger.info("New $c episode(s)!")
-                Files.writeString(this.file.toPath(), Const.GSON.toJson(this.list), StandardCharsets.UTF_8)
+                Files.writeString(this.file.toPath(), Const.GSON.toJson(this.dataset.values), StandardCharsets.UTF_8)
             }
 
             this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
         }
     }
-
-    fun contains(globalId: String?): Boolean = this.list.any { it.globalId == globalId }
-    fun contains(episode: Episode?): Boolean = this.contains(episode?.globalId)
 
     private fun getEpisodeEmbed(episode: Episode): EmbedBuilder {
         return Const.setEmbed(
