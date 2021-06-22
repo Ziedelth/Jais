@@ -1,22 +1,20 @@
 package fr.ziedelth.ziedbot.listeners
 
-import fr.ziedelth.ziedbot.ZiedBot
 import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.commands.Command
+import fr.ziedelth.ziedbot.utils.commands.buttons
+import fr.ziedelth.ziedbot.utils.guilds
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
-import net.dv8tion.jda.api.interactions.components.Button
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 
-class SlashCommand(ziedBot: ZiedBot) : ListenerAdapter() {
+class SlashCommand : ListenerAdapter() {
     init {
-        ziedBot.jda.awaitReady()
-
-        ziedBot.jda.guilds.forEach { guild ->
-            val commandUpdateAction: CommandListUpdateAction = guild.updateCommands()
+        guilds.forEach { (_, ziedGuild) ->
+            val commandUpdateAction: CommandListUpdateAction = ziedGuild.guild.updateCommands()
 
             Const.COMMANDS.forEach { command ->
                 run {
@@ -58,11 +56,13 @@ class SlashCommand(ziedBot: ZiedBot) : ListenerAdapter() {
     override fun onButtonClick(event: ButtonClickEvent) {
         super.onButtonClick(event)
 
-        if (event.componentId == "test") {
-            event.reply("Hello :)").addActionRow(Button.success("test", "TEST"), Button.danger("error", "ERROR"))
-                .queue()
-        } else {
-            event.editMessage("Error...").queue()
+        if (buttons.containsKey(event.componentId)) {
+            buttons[event.componentId]?.consumer?.accept(event)
+            buttons.remove(event.componentId)
+            return
         }
+
+        event.deferReply().queue()
+        event.hook.sendMessage("No actions to this button").queue()
     }
 }

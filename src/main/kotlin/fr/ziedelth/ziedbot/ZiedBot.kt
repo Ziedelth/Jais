@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.User
 
 object ZiedBot {
     lateinit var master: User
+    var image: String? = null
     val jda: JDA = JDABuilder.createDefault(Const.DISCORD_TOKEN.token).build()
 
     @JvmStatic
@@ -21,8 +22,9 @@ object ZiedBot {
         ZiedLogger.info("Init...")
         ZiedLogger.info("Request per day: ${(60L / Const.DELAY_BETWEEN_REQUEST) * 24L}")
 
-        jda.addEventListener(SlashCommand(this), GuildMessageReactionAdd())
         jda.awaitReady()
+        image = jda.selfUser.avatarUrl
+        jda.addEventListener(SlashCommand(), GuildMessageReactionAdd())
         ZiedLogger.info("Connected to ${jda.guilds.size} guild(s)!")
         jda.guilds.forEach { it.getZiedGuild() }
         jda.retrieveUserById(132903783792377856L).queue { user -> master = user }

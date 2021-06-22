@@ -1,8 +1,8 @@
 package fr.ziedelth.ziedbot.utils
 
 import com.google.gson.JsonObject
+import fr.ziedelth.ziedbot.utils.animes.Language
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.TextChannel
 import java.io.File
 import java.nio.file.Files
 
@@ -19,13 +19,11 @@ private fun get(guild: Guild): ZiedGuild {
     }
 }
 
-class ZiedGuild(private val guild: Guild) {
+class ZiedGuild(val guild: Guild) {
+    private val KEY_ANIME_CHANNELS = "anime-channels"
+
     private val file = File(Const.GUILDS_FOLDER, "${guild.idLong}.json")
-    var animeChannel: TextChannel? = null
-        set(value) {
-            field = value
-            save()
-        }
+    var animeChannels: MutableMap<Language, String> = mutableMapOf()
 
     init {
         load()
@@ -34,13 +32,21 @@ class ZiedGuild(private val guild: Guild) {
     private fun load() {
         if (file.exists()) {
             val jsonObject = Const.GSON.fromJson(Files.readString(file.toPath()), JsonObject::class.java)
-            animeChannel = guild.getTextChannelById(jsonObject["anime-channel"]?.asLong ?: 0)
+
+            if (jsonObject.has(KEY_ANIME_CHANNELS) && !jsonObject[KEY_ANIME_CHANNELS].isJsonNull) {
+                val acObject = jsonObject[KEY_ANIME_CHANNELS].asJsonObject
+
+                acObject.entrySet().forEach { entry ->
+                    if (Language.values().any { it.name == entry.key }) this.animeChannels[Language.values()
+                        .find { it.name == entry.key }!!] = entry.value.asString
+                }
+            }
         }
     }
 
-    private fun save() {
+    fun save() {
         val jsonObject = JsonObject()
-        jsonObject.addProperty("anime-channel", animeChannel?.idLong ?: 0)
+        jsonObject.add(KEY_ANIME_CHANNELS, Const.GSON.toJsonTree(this.animeChannels))
         Files.writeString(file.toPath(), Const.GSON.toJson(jsonObject))
     }
 }

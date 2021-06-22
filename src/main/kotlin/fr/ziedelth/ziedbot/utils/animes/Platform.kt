@@ -9,9 +9,10 @@ interface Platform {
     fun getURL(): String
     fun getImage(): String
     fun getColor(): Color
+    fun getAllowedLanguages(): Array<Language> = arrayOf()
     fun getLastNews(): Array<News>
     fun getLastEpisodes(): Array<Episode>
 
     fun toStringCalendar(calendar: Calendar): String =
-        SimpleDateFormat("HH:mm:ss yyyy/MM/dd", Locale.FRANCE).format(Date.from(calendar.toInstant()))
+        SimpleDateFormat("HH:mm:ss yyyy/MM/dd").format(Date.from(calendar.toInstant()))
 }

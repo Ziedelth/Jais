@@ -11,6 +11,9 @@ class GuildMessageReactionAdd : ListenerAdapter() {
         if (event.author.isBot) return
 
         val message = event.message
-        ZiedLogger.info("${event.author.asTag} send message: ${message.contentRaw}")
+        val content = message.contentRaw
+
+        if (content.isNotEmpty()) ZiedLogger.info("${event.author.asTag} send message: $content")
+        else ZiedLogger.info("${event.author.asTag} send file(s)")
     }
 }

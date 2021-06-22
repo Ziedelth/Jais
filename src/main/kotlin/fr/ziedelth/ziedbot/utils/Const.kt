@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import fr.ziedelth.ziedbot.ZiedBot
 import fr.ziedelth.ziedbot.commands.AnimeCommand
-import fr.ziedelth.ziedbot.commands.ClearCommand
 import fr.ziedelth.ziedbot.platforms.AnimeDigitalNetwork
 import fr.ziedelth.ziedbot.platforms.Crunchyroll
 import fr.ziedelth.ziedbot.platforms.Wakanim
@@ -23,7 +22,7 @@ import kotlin.experimental.and
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
     val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), Wakanim())
-    val COMMANDS: Array<Command> = arrayOf(ClearCommand(), AnimeCommand())
+    val COMMANDS: Array<Command> = arrayOf(AnimeCommand())
     val DISCORD_TOKEN: DiscordToken = GSON.fromJson(
         Files.readString(File("tokens", "discord.json").toPath(), StandardCharsets.UTF_8),
         DiscordToken::class.java
@@ -66,7 +65,7 @@ object Const {
         embedBuilder.setImage(image)
         embedBuilder.setFooter(
             "${if (!footer.isNullOrEmpty()) "$footer  •  " else ""}Powered by Ziedelth.fr \uD83D\uDDA4",
-            "https://ziedelth.fr/images/brand.jpg"
+            ZiedBot.image
         )
         embedBuilder.setTimestamp(timestamp)
         return embedBuilder

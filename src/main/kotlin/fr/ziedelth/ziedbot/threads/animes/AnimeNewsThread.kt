@@ -39,9 +39,14 @@ class AnimeNewsThread : Runnable {
             news.forEach {
                 if (!this.contains(it)) {
                     c++
+
                     guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.animeChannel?.sendMessageEmbeds(getNewsEmbed(it).build())?.queue()
+                        if (ziedGuild.animeChannels.containsKey(it.language)) {
+                            val textChannel = ziedGuild.guild.getTextChannelById(ziedGuild.animeChannels[it.language]!!)
+                            textChannel?.sendMessageEmbeds(getNewsEmbed(it).build())?.queue()
+                        }
                     }
+
                     this.list.add(it)
                 }
             }
@@ -81,7 +86,7 @@ class AnimeNewsThread : Runnable {
 
     private fun toCalendar(s: String): Calendar {
         val calendar = GregorianCalendar.getInstance()
-        val date = SimpleDateFormat("HH:mm:ss yyyy/MM/dd", Locale.FRANCE).parse(s)
+        val date = SimpleDateFormat("HH:mm:ss yyyy/MM/dd").parse(s)
         calendar.time = date
         return calendar
     }
