@@ -64,7 +64,7 @@ class AnimeDigitalNetwork : Platform {
                     if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
                 val image = jObject.get("image2x").asString.replace(" ", "%20")
                 val link = jObject.get("url").asString.replace(" ", "%20")
-                val number = jObject.get("shortNumber").asString.toInt()
+                val number = jObject.get("shortNumber").asString
                 val languages = jObject.get("languages").asJsonArray
                 val type = if (languages.any { jsonElement ->
                         jsonElement.asString.equals(
@@ -83,7 +83,7 @@ class AnimeDigitalNetwork : Platform {
                         title,
                         image,
                         link,
-                        "$number",
+                        number,
                         language,
                         type
                     )

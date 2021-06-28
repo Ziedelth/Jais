@@ -40,4 +40,21 @@ class Episode(
 
         return true
     }
+
+    override fun hashCode(): Int {
+        var result = platform.hashCode()
+        result = 31 * result + calendar.hashCode()
+        result = 31 * result + anime.hashCode()
+        result = 31 * result + id.hashCode()
+        result = 31 * result + (title?.hashCode() ?: 0)
+        result = 31 * result + image.hashCode()
+        result = 31 * result + link.hashCode()
+        result = 31 * result + number.hashCode()
+        result = 31 * result + language.hashCode()
+        result = 31 * result + type.hashCode()
+        result = 31 * result + globalId.hashCode()
+        result = 31 * result + messages.hashCode()
+        result = 31 * result + (p?.hashCode() ?: 0)
+        return result
+    }
 }

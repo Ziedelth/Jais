@@ -5,10 +5,13 @@ import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.remote.ProtocolHandshake
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.awt.Color
 import java.util.*
+import java.util.logging.Level
+import java.util.logging.Logger
 
 class Wakanim : Platform {
     init {
@@ -29,6 +32,7 @@ class Wakanim : Platform {
     override fun getLastEpisodes(): Array<Episode> {
         val l: MutableList<Episode> = mutableListOf()
         val calendar = Calendar.getInstance()
+        Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
         Language.values().filter { this.getAllowedLanguages().contains(it) }.forEach { language ->
             val options = FirefoxOptions()

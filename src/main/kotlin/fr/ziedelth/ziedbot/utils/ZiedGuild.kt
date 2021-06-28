@@ -23,7 +23,7 @@ class ZiedGuild(val guild: Guild) {
     private val KEY_ANIME_CHANNELS = "anime-channels"
 
     private val file = File(Const.GUILDS_FOLDER, "${guild.idLong}.json")
-    var animeChannels: MutableMap<Language, String> = mutableMapOf()
+    var animeChannels: MutableMap<String, Language> = mutableMapOf()
 
     init {
         load()
@@ -37,8 +37,8 @@ class ZiedGuild(val guild: Guild) {
                 val acObject = jsonObject[KEY_ANIME_CHANNELS].asJsonObject
 
                 acObject.entrySet().forEach { entry ->
-                    if (Language.values().any { it.name == entry.key }) this.animeChannels[Language.values()
-                        .find { it.name == entry.key }!!] = entry.value.asString
+                    val language = Language.values().find { it.name == entry.value.asString }
+                    if (language != null) this.animeChannels[entry.key] = language
                 }
             }
         }
