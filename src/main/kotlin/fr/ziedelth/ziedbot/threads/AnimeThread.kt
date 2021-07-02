@@ -6,8 +6,6 @@ import fr.ziedelth.ziedbot.utils.ZiedLogger
 import fr.ziedelth.ziedbot.utils.animes.Episode
 import fr.ziedelth.ziedbot.utils.animes.News
 import java.io.File
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.stream.Collectors
 
@@ -25,7 +23,7 @@ class AnimeThread : Runnable {
         if (this.episodesFile.exists()) {
             val array: JsonArray =
                 Const.GSON.fromJson(
-                    Files.readString(this.episodesFile.toPath(), Charset.defaultCharset()),
+                    Files.readString(this.episodesFile.toPath(), Const.DEFAULT_CHARSET),
                     JsonArray::class.java
                 )
 
@@ -38,7 +36,7 @@ class AnimeThread : Runnable {
         if (this.newsFile.exists()) {
             val array: JsonArray =
                 Const.GSON.fromJson(
-                    Files.readString(this.newsFile.toPath(), Charset.defaultCharset()),
+                    Files.readString(this.newsFile.toPath(), Const.DEFAULT_CHARSET),
                     JsonArray::class.java
                 )
             array.filter { !it.isJsonNull && it.isJsonObject }
@@ -56,7 +54,7 @@ class AnimeThread : Runnable {
                 newNews.forEach { this.newsList.add(it) }
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendNews(newNews.toTypedArray()) }
                 ZiedLogger.info("New ${newNews.size} news(s)!")
-                Files.writeString(this.newsFile.toPath(), Const.GSON.toJson(this.newsList), Charset.defaultCharset())
+                Files.writeString(this.newsFile.toPath(), Const.GSON.toJson(this.newsList), Const.DEFAULT_CHARSET)
             }
 
             val episodes: MutableList<Episode> = mutableListOf()
@@ -80,7 +78,7 @@ class AnimeThread : Runnable {
                 Files.writeString(
                     this.episodesFile.toPath(),
                     Const.GSON.toJson(this.episodesList.values),
-                    StandardCharsets.UTF_8
+                    Const.DEFAULT_CHARSET
                 )
             }
 
@@ -105,7 +103,7 @@ class AnimeThread : Runnable {
                 Files.writeString(
                     this.episodesFile.toPath(),
                     Const.GSON.toJson(this.episodesList.values),
-                    Charset.defaultCharset()
+                    Const.DEFAULT_CHARSET
                 )
             }
 

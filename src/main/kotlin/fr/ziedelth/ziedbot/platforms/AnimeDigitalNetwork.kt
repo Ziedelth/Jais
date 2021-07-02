@@ -2,6 +2,7 @@ package fr.ziedelth.ziedbot.platforms
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import fr.ziedelth.ziedbot.utils.ISO8601
 import fr.ziedelth.ziedbot.utils.Request
 import fr.ziedelth.ziedbot.utils.animes.*
 import java.awt.Color
@@ -13,7 +14,7 @@ class AnimeDigitalNetwork : Platform {
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
     override fun getImage(): String = "https://img.apksum.com/e6/fr.anidn/v4.1.65/icon.png"
     override fun getColor(): Color = Color(0, 150, 255)
-    override fun getAllowedLanguages(): Array<Language> = arrayOf(Language.FRENCH)
+    override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
     override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
 
@@ -21,12 +22,12 @@ class AnimeDigitalNetwork : Platform {
         val calendar = Calendar.getInstance()
         val l: MutableList<Episode> = mutableListOf()
 
-        Language.values().filter { getAllowedLanguages().contains(it) }.forEach { language ->
+        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
             val response: String
 
             try {
                 response = Request.get(
-                    "https://gw.api.animedigitalnetwork.${language.country}/video/calendar?date=${
+                    "https://gw.api.animedigitalnetwork.${country.country}/video/calendar?date=${
                         this.date(calendar)
                     }"
                 )
@@ -41,7 +42,7 @@ class AnimeDigitalNetwork : Platform {
                 val jObject = it.asJsonObject
                 val showObject = jObject.getAsJsonObject("show")
 
-                val releaseDate = this.toCalendar(jObject.get("releaseDate").asString)
+                val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
 
                 val a: Boolean = try {
                     if (jObject.has("season") && !jObject.get("season").isJsonNull) jObject.get("season").asString.toInt()
@@ -68,7 +69,7 @@ class AnimeDigitalNetwork : Platform {
                 val languages = jObject.get("languages").asJsonArray
                 val type = if (languages.any { jsonElement ->
                         jsonElement.asString.equals(
-                            language.voice,
+                            country.voice,
                             true
                         )
                     }) EpisodeType.VOICE else EpisodeType.SUBTITLES
@@ -76,16 +77,16 @@ class AnimeDigitalNetwork : Platform {
 
                 if (calendar.after(releaseDate)) {
                     val episode = Episode(
-                        this.getName(),
-                        toStringCalendar(releaseDate),
-                        anime,
-                        id,
-                        title,
-                        image,
-                        link,
-                        number,
-                        language,
-                        type
+                        platform = this.getName(),
+                        calendar = toStringCalendar(releaseDate),
+                        anime = anime,
+                        id = id,
+                        title = title,
+                        image = image,
+                        link = link,
+                        number = number,
+                        country = country,
+                        type = type
                     )
                     episode.p = this
                     l.add(episode)
@@ -98,12 +99,5 @@ class AnimeDigitalNetwork : Platform {
 
     private fun date(calendar: Calendar): String {
         return SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
-    }
-
-    private fun toCalendar(iso8601string: String): Calendar {
-        val calendar = GregorianCalendar.getInstance()
-        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(iso8601string)
-        calendar.time = date
-        return calendar
     }
 }

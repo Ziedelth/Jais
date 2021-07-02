@@ -3,6 +3,7 @@ package fr.ziedelth.ziedbot.utils.animes
 import fr.ziedelth.ziedbot.utils.Const
 
 class Episode(
+    val token: String = Const.generate(10),
     val platform: String,
     val calendar: String,
     val anime: String,
@@ -11,11 +12,10 @@ class Episode(
     var image: String,
     var link: String,
     val number: String,
-    val language: Language,
+    val country: Country,
     val type: EpisodeType = EpisodeType.SUBTITLES
 ) {
-    val globalId: String = Const.encode("$platform$calendar$anime$number${language.name}${type.name}".toByteArray())
-    val messages: MutableList<Long> = mutableListOf()
+    val globalId: String = Const.encode("$platform$calendar$anime$number${country.name}${type.name}".toByteArray())
 
     @Transient
     var p: Platform? = null
@@ -35,14 +35,15 @@ class Episode(
         if (image != other.image) return false
         if (link != other.link) return false
         if (number != other.number) return false
-        if (language != other.language) return false
+        if (country != other.country) return false
         if (type != other.type) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = platform.hashCode()
+        var result = token.hashCode()
+        result = 31 * result + platform.hashCode()
         result = 31 * result + calendar.hashCode()
         result = 31 * result + anime.hashCode()
         result = 31 * result + id.hashCode()
@@ -50,10 +51,9 @@ class Episode(
         result = 31 * result + image.hashCode()
         result = 31 * result + link.hashCode()
         result = 31 * result + number.hashCode()
-        result = 31 * result + language.hashCode()
+        result = 31 * result + country.hashCode()
         result = 31 * result + type.hashCode()
         result = 31 * result + globalId.hashCode()
-        result = 31 * result + messages.hashCode()
         result = 31 * result + (p?.hashCode() ?: 0)
         return result
     }

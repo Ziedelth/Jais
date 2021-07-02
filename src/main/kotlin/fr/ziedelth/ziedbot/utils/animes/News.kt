@@ -7,7 +7,7 @@ class News(
     val description: String,
     val content: String,
     val link: String,
-    val language: Language
+    val country: Country
 ) {
     @Transient
     var p: Platform? = null
@@ -24,13 +24,23 @@ class News(
         if (description != other.description) return false
         if (content != other.content) return false
         if (link != other.link) return false
-        if (language != other.language) return false
-        if (p != other.p) return false
+        if (country != other.country) return false
 
         return true
     }
 
     override fun toString(): String {
-        return "News(platform='$platform', calendar='$calendar', title='$title', description='$description', content='$content', link='$link', language=$language)"
+        return "News(platform='$platform', calendar='$calendar', title='$title', description='$description', content='$content', link='$link', language=$country)"
+    }
+
+    override fun hashCode(): Int {
+        var result = platform.hashCode()
+        result = 31 * result + calendar.hashCode()
+        result = 31 * result + title.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + content.hashCode()
+        result = 31 * result + link.hashCode()
+        result = 31 * result + country.hashCode()
+        return result
     }
 }

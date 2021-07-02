@@ -20,18 +20,18 @@ class Crunchyroll : Platform {
         "https://archive.org/download/crunchyroll.-1.1.0/Crunchyroll.1.1.0/ico_android_settings.png"
 
     override fun getColor(): Color = Color(255, 108, 0)
-    override fun getAllowedLanguages(): Array<Language> = arrayOf(Language.FRENCH)
+    override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE, Country.UNITED_STATES)
 
     override fun getLastNews(): Array<News> {
         val calendar = Calendar.getInstance()
         val l: MutableList<News> = mutableListOf()
 
-        Language.values().filter { this.getAllowedLanguages().contains(it) }.forEach {
+        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
             val url: URLConnection
             val list: NodeList
 
             try {
-                url = URL("https://www.crunchyroll.com/newsrss?lang=${it.lang}").openConnection()
+                url = URL("https://www.crunchyroll.com/newsrss?lang=${country.lang}").openConnection()
                 val dbf = DocumentBuilderFactory.newInstance()
                 dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
                 val db = dbf.newDocumentBuilder()
@@ -59,7 +59,15 @@ class Crunchyroll : Platform {
 
                     if (this.isSameDay(calendar, releaseDate)) {
                         val news =
-                            News(this.getName(), toStringCalendar(releaseDate), title, description, content, link, it)
+                            News(
+                                this.getName(),
+                                toStringCalendar(releaseDate),
+                                title,
+                                description,
+                                content,
+                                link,
+                                country
+                            )
                         news.p = this
                         l.add(news)
                     }
@@ -74,12 +82,12 @@ class Crunchyroll : Platform {
         val calendar = Calendar.getInstance()
         val l: MutableList<Episode> = mutableListOf()
 
-        Language.values().filter { this.getAllowedLanguages().contains(it) }.forEach {
+        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
             val url: URLConnection
             val list: NodeList
 
             try {
-                url = URL("https://www.crunchyroll.com/rss/anime?lang=${it.lang}").openConnection()
+                url = URL("https://www.crunchyroll.com/rss/anime?lang=${country.lang}").openConnection()
                 val dbf = DocumentBuilderFactory.newInstance()
                 dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
                 val db = dbf.newDocumentBuilder()
@@ -96,7 +104,8 @@ class Crunchyroll : Platform {
                 if (node.nodeType == Node.ELEMENT_NODE) {
                     val element = node as Element
 
-                    val date = element.getElementsByTagName("pubDate").item(0).textContent
+                    val date = element.getElementsByTagName("pubDate").item(0)?.textContent
+                    if (date.isNullOrEmpty()) continue
                     val releaseDate = toCalendar(date)
                     val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
                     val title: String? = element.getElementsByTagName("crunchyroll:episodeTitle").item(0)?.textContent
@@ -105,26 +114,28 @@ class Crunchyroll : Platform {
                             ?.replace(" ", "%20") ?: ""
                     val link = element.getElementsByTagName("guid").item(0).textContent.replace(" ", "%20")
                     val number = element.getElementsByTagName("crunchyroll:episodeNumber").item(0)?.textContent
+                    if (number.isNullOrEmpty()) continue
                     val subtitles =
                         element.getElementsByTagName("crunchyroll:subtitleLanguages").item(0)?.textContent ?: ""
                     val spay = element.getElementsByTagName("media:restriction").item(0).textContent
-                    val type = if (subtitles.equals(it.language, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                    val type =
+                        if (subtitles.equals(country.language, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
                     val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
 
-                    if (spay.split(" ").contains(it.country) && subtitles.split(",")
-                            .contains(it.language) && this.isSameDay(calendar, releaseDate)
+                    if (spay.split(" ").contains(country.country) && subtitles.split(",")
+                            .contains(country.language) && this.isSameDay(calendar, releaseDate)
                     ) {
                         val episode = Episode(
-                            this.getName(),
-                            toStringCalendar(releaseDate),
-                            anime,
-                            id,
-                            title,
-                            image,
-                            link,
-                            "$number",
-                            it,
-                            type
+                            platform = this.getName(),
+                            calendar = toStringCalendar(releaseDate),
+                            anime = anime,
+                            id = id,
+                            title = title,
+                            image = image,
+                            link = link,
+                            number = number,
+                            country = country,
+                            type = type
                         )
                         episode.p = this
                         l.add(episode)
@@ -137,7 +148,7 @@ class Crunchyroll : Platform {
     }
 
     private fun toCalendar(s: String): Calendar {
-        val calendar = GregorianCalendar.getInstance()
+        val calendar = Calendar.getInstance()
         val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
         calendar.time = date
         return calendar

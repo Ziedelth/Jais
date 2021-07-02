@@ -25,7 +25,7 @@ class Wakanim : Platform {
         "https://play-lh.googleusercontent.com/J5_U63e4nJPrSUHeqqGIoZIaqQ1EYKEeXpcNaVbf95adUu9O9VnEgXC_ejUZPaCjpw"
 
     override fun getColor(): Color = Color(227, 71, 75)
-    override fun getAllowedLanguages(): Array<Language> = arrayOf(Language.FRENCH)
+    override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
     override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
 
@@ -34,14 +34,14 @@ class Wakanim : Platform {
         val calendar = Calendar.getInstance()
         Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
-        Language.values().filter { this.getAllowedLanguages().contains(it) }.forEach { language ->
+        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
             val options = FirefoxOptions()
             options.setHeadless(true)
             val driver = FirefoxDriver(options)
             val wait = WebDriverWait(driver, 60)
 
             try {
-                driver.get("https://www.wakanim.tv/${language.country}/v2/agenda")
+                driver.get("https://www.wakanim.tv/${country.country}/v2/agenda")
 
                 val cookiesButton = aS(wait, "css-1fxzzmg")
                 cookiesButton?.click()
@@ -70,20 +70,20 @@ class Wakanim : Platform {
                                 val ltype = aPS(wait, it, "Calendar-tagTranslation")!!.text
 
                                 val episodeType =
-                                    if (ltype.equals(language.voice, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                                    if (ltype.equals(country.voice, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
                                 val id = link.replace("//", "/").split("/")[6]
 
                                 val episode = Episode(
-                                    this.getName(),
-                                    toStringCalendar(releaseDate),
-                                    anime,
-                                    id,
-                                    null,
-                                    image,
-                                    link,
-                                    number,
-                                    language,
-                                    episodeType
+                                    platform = this.getName(),
+                                    calendar = toStringCalendar(releaseDate),
+                                    anime = anime,
+                                    id = id,
+                                    title = null,
+                                    image = image,
+                                    link = link,
+                                    number = number,
+                                    country = country,
+                                    type = episodeType
                                 )
                                 episode.p = this
                                 l.add(episode)
@@ -92,7 +92,7 @@ class Wakanim : Platform {
                     }
                 }
             } catch (e: Exception) {
-                return getLastEpisodes()
+                return l.toTypedArray()
             } finally {
                 driver.quit()
             }

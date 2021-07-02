@@ -9,7 +9,7 @@ interface Platform {
     fun getURL(): String
     fun getImage(): String
     fun getColor(): Color
-    fun getAllowedLanguages(): Array<Language> = arrayOf()
+    fun getAllowedCountries(): Array<Country> = arrayOf()
     fun getLastNews(): Array<News>
     fun getLastEpisodes(): Array<Episode>
 
