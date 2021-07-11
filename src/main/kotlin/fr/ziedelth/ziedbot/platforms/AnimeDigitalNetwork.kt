@@ -2,6 +2,7 @@ package fr.ziedelth.ziedbot.platforms
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import fr.ziedelth.ziedbot.utils.Const
 import fr.ziedelth.ziedbot.utils.ISO8601
 import fr.ziedelth.ziedbot.utils.Request
 import fr.ziedelth.ziedbot.utils.animes.*
@@ -41,44 +42,41 @@ class AnimeDigitalNetwork : Platform {
             jsonArray.filter { it.isJsonObject }.forEach {
                 val jObject = it.asJsonObject
                 val showObject = jObject.getAsJsonObject("show")
-
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
 
-                val a: Boolean = try {
-                    if (jObject.has("season") && !jObject.get("season").isJsonNull) jObject.get("season").asString.toInt()
-                    true
-                } catch (exception: Exception) {
-                    false
+                val season: String? = if (!jsonObject.has("season") || jObject["season"]?.isJsonNull == true) {
+                    null
+                } else {
+                    try {
+                        val i: Int = jObject["season"].asString.toInt()
+                        if (i > 1) "Saison $i"
+                        else null
+                    } catch (exception: Exception) {
+                        jObject["season"].asString
+                    }
                 }
-                val season: String? = if (jObject.has("season") && !jObject.get("season").isJsonNull) {
-                    if (a) "${jObject.get("season").asString.toInt()}" else jObject.get("season").asString
-                } else null
 
-                val anime = "${showObject.get("title").asString}${
-                    if (season != null) {
-                        if (a) {
-                            if (season.toInt() <= 1) "" else " - Saison $season"
-                        } else " - $season"
-                    } else ""
-                }"
+                var anime = showObject.get("title").asString
+                if (!anime.contains("Saison", true) && season != null) anime += " - $season"
+
                 val title: String? =
                     if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
                 val image = jObject.get("image2x").asString.replace(" ", "%20")
                 val link = jObject.get("url").asString.replace(" ", "%20")
-                val number = jObject.get("shortNumber").asString
+                val number = Const.toInt(jObject.get("shortNumber").asString)
                 val languages = jObject.get("languages").asJsonArray
                 val type = if (languages.any { jsonElement ->
                         jsonElement.asString.equals(
-                            country.voice,
+                            country.dubbed,
                             true
                         )
-                    }) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                    }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                 val id = "${jObject.get("id").asInt}"
 
                 if (calendar.after(releaseDate)) {
                     val episode = Episode(
                         platform = this.getName(),
-                        calendar = toStringCalendar(releaseDate),
+                        calendar = ISO8601.fromCalendar(releaseDate),
                         anime = anime,
                         id = id,
                         title = title,

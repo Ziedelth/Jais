@@ -1,5 +1,7 @@
 package fr.ziedelth.ziedbot.platforms
 
+import fr.ziedelth.ziedbot.utils.Const
+import fr.ziedelth.ziedbot.utils.ISO8601
 import fr.ziedelth.ziedbot.utils.animes.*
 import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
@@ -9,6 +11,7 @@ import org.openqa.selenium.remote.ProtocolHandshake
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.awt.Color
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -33,6 +36,7 @@ class Wakanim : Platform {
         val l: MutableList<Episode> = mutableListOf()
         val calendar = Calendar.getInstance()
         Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+        val date = this.date(calendar)
 
         Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
             val options = FirefoxOptions()
@@ -41,16 +45,7 @@ class Wakanim : Platform {
             val wait = WebDriverWait(driver, 60)
 
             try {
-                driver.get("https://www.wakanim.tv/${country.country}/v2/agenda")
-
-                val cookiesButton = aS(wait, "css-1fxzzmg")
-                cookiesButton?.click()
-
-                val privacyClose = aS(wait, "privacy-close")
-                privacyClose?.click()
-
-                val premiumEpisodes = aS(wait, "Calendar-newEp")
-                premiumEpisodes?.click()
+                driver.get("https://www.wakanim.tv/${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
 
                 val list = aM(wait, "Calendar-today", "Calendar-ep")
                 list?.forEach {
@@ -66,16 +61,18 @@ class Wakanim : Platform {
                             if (calendar.after(releaseDate)) {
                                 val anime = aPS(wait, it, "Calendar-epTitle")!!.text
                                 val image = aPS(wait, linkElement, "Calendar-image")!!.getAttribute("src")
-                                val number = aPS(wait, linkElement, "Calendar-epNumber")!!.text
+                                val number = Const.toInt(aPS(wait, linkElement, "Calendar-epNumber")!!.text)
                                 val ltype = aPS(wait, it, "Calendar-tagTranslation")!!.text
-
-                                val episodeType =
-                                    if (ltype.equals(country.voice, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                                val episodeType = if (ltype.equals(
+                                        country.dubbed,
+                                        true
+                                    )
+                                ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                                 val id = link.replace("//", "/").split("/")[6]
 
                                 val episode = Episode(
                                     platform = this.getName(),
-                                    calendar = toStringCalendar(releaseDate),
+                                    calendar = ISO8601.fromCalendar(releaseDate),
                                     anime = anime,
                                     id = id,
                                     title = null,
@@ -92,7 +89,7 @@ class Wakanim : Platform {
                     }
                 }
             } catch (e: Exception) {
-                return l.toTypedArray()
+                return getLastEpisodes()
             } finally {
                 driver.quit()
             }
@@ -101,9 +98,13 @@ class Wakanim : Platform {
         return l.toTypedArray()
     }
 
+    private fun date(calendar: Calendar): String {
+        return SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
+    }
+
     private fun setDate(hour: Int, minutes: Int): Calendar {
         val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, hour)
+        calendar.set(Calendar.HOUR_OF_DAY, hour + 2)
         calendar.set(Calendar.MINUTE, minutes)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)

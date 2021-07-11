@@ -1,8 +1,6 @@
 package fr.ziedelth.ziedbot.utils.animes
 
 import java.awt.Color
-import java.text.SimpleDateFormat
-import java.util.*
 
 interface Platform {
     fun getName(): String
@@ -12,7 +10,4 @@ interface Platform {
     fun getAllowedCountries(): Array<Country> = arrayOf()
     fun getLastNews(): Array<News>
     fun getLastEpisodes(): Array<Episode>
-
-    fun toStringCalendar(calendar: Calendar): String =
-        SimpleDateFormat("HH:mm:ss yyyy/MM/dd").format(Date.from(calendar.toInstant()))
 }

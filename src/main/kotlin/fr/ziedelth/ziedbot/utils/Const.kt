@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.*
 import kotlin.experimental.and
+import kotlin.math.min
 
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
@@ -31,13 +32,16 @@ object Const {
             return field
         }
 
-    fun encode(bytes: ByteArray): String {
-        val md = MessageDigest.getInstance("SHA-512")
+    private fun encode(algorithm: String, bytes: ByteArray): String {
+        val md = MessageDigest.getInstance(algorithm)
         val digest = md.digest(bytes)
         val sb = StringBuilder()
         for (b in digest) sb.append(((b and 0xff.toByte()) + 0x100).toString(16).substring(1))
         return sb.toString()
     }
+
+    fun encodeSHA512(bytes: ByteArray) = encode("SHA-512", bytes)
+    fun encodeMD5(bytes: ByteArray) = encode("MD5", bytes)
 
     fun generate(length: Int): String {
         val leftLimit = 48 // numeral '0'
@@ -48,4 +52,12 @@ object Const {
             .collect({ StringBuilder() }, java.lang.StringBuilder::appendCodePoint, java.lang.StringBuilder::append)
             .toString()
     }
+
+    fun toInt(string: String): String = try {
+        "${string.toInt()}"
+    } catch (exception: Exception) {
+        string
+    }
+
+    fun substring(string: String, int: Int) = string.substring(0, min(string.length, int))
 }

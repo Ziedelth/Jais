@@ -1,5 +1,7 @@
 package fr.ziedelth.ziedbot.platforms
 
+import fr.ziedelth.ziedbot.utils.Const
+import fr.ziedelth.ziedbot.utils.ISO8601
 import fr.ziedelth.ziedbot.utils.animes.*
 import org.jsoup.Jsoup
 import org.w3c.dom.Element
@@ -61,7 +63,7 @@ class Crunchyroll : Platform {
                         val news =
                             News(
                                 this.getName(),
-                                toStringCalendar(releaseDate),
+                                ISO8601.fromCalendar(releaseDate),
                                 title,
                                 description,
                                 content,
@@ -107,19 +109,26 @@ class Crunchyroll : Platform {
                     val date = element.getElementsByTagName("pubDate").item(0)?.textContent
                     if (date.isNullOrEmpty()) continue
                     val releaseDate = toCalendar(date)
-                    val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
-                    val title: String? = element.getElementsByTagName("crunchyroll:episodeTitle").item(0)?.textContent
+                    val season = Const.toInt(
+                        element.getElementsByTagName("crunchyroll:season").item(0)?.textContent ?: ""
+                    )
+                    var anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
+                    if (season.isNotEmpty()) anime += " - Saison $season"
+                    var title: String? = element.getElementsByTagName("crunchyroll:episodeTitle").item(0)?.textContent
+                    if (title.isNullOrEmpty()) title = null
                     val image =
                         (element.getElementsByTagName("media:thumbnail").item(0) as Element?)?.getAttribute("url")
                             ?.replace(" ", "%20") ?: ""
                     val link = element.getElementsByTagName("guid").item(0).textContent.replace(" ", "%20")
-                    val number = element.getElementsByTagName("crunchyroll:episodeNumber").item(0)?.textContent
-                    if (number.isNullOrEmpty()) continue
+                    val number = Const.toInt(
+                        element.getElementsByTagName("crunchyroll:episodeNumber").item(0)?.textContent ?: ""
+                    )
+                    if (number.isEmpty()) continue
                     val subtitles =
                         element.getElementsByTagName("crunchyroll:subtitleLanguages").item(0)?.textContent ?: ""
                     val spay = element.getElementsByTagName("media:restriction").item(0).textContent
                     val type =
-                        if (subtitles.equals(country.language, true)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+                        if (subtitles.equals(country.language, true)) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                     val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
 
                     if (spay.split(" ").contains(country.country) && subtitles.split(",")
@@ -127,7 +136,7 @@ class Crunchyroll : Platform {
                     ) {
                         val episode = Episode(
                             platform = this.getName(),
-                            calendar = toStringCalendar(releaseDate),
+                            calendar = ISO8601.fromCalendar(releaseDate),
                             anime = anime,
                             id = id,
                             title = title,

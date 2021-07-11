@@ -23,10 +23,8 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 import java.awt.Color
 import java.io.File
 import java.nio.file.Files
-import java.text.SimpleDateFormat
 import java.time.temporal.TemporalAccessor
 import java.util.*
-import kotlin.math.min
 
 class DiscordClient : Client {
     private val file = File("discord.json")
@@ -108,11 +106,11 @@ class DiscordClient : Client {
 
                 if (size <= 12) {
                     countryEpisodes.forEach {
-                        val messageArray = episodesObj[it.token]?.asJsonArray ?: JsonArray()
+                        val messageArray = episodesObj[it.globalId]?.asJsonArray ?: JsonArray()
                         val embed = getEpisodeEmbed(it).build()
 
                         guilds.forEach { (_, ziedGuild) ->
-                            ziedGuild.animeChannels.filter { (_, countries) -> countries.contains(country) }
+                            ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
                                 .forEach { (textChannelId, _) ->
                                     val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
                                     val message = textChannel?.sendMessageEmbeds(embed)?.complete()
@@ -120,7 +118,7 @@ class DiscordClient : Client {
                                 }
                         }
 
-                        episodesObj.add(it.token, messageArray)
+                        episodesObj.add(it.globalId, messageArray)
                     }
 
                     if (size > 0) {
@@ -130,26 +128,36 @@ class DiscordClient : Client {
                 } else {
                     val animes: MutableList<String> = mutableListOf()
                     val stringBuilder: StringBuilder = StringBuilder()
+                    var i = 0
+                    var image = ""
 
                     countryEpisodes.forEach {
                         if (!animes.contains(it.anime)) {
+                            val size = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
+
+                            if (size > i) {
+                                i = size
+                                image = it.image
+                            }
+
                             animes.add(it.anime)
 
                             val display = "• ${it.anime}"
-                            val s = "• [** ${it.anime} **](${it.link})\n"
+                            val s = "• [${it.anime}](${it.link})\n"
 
                             if (stringBuilder.length + display.length < 2000) stringBuilder.append(s)
                         }
                     }
 
                     val embed = setEmbed(
-                        title = "$size episodes",
+                        title = "${country.flag}  ${country.countryName}\n$size ${country.episode}s",
                         description = stringBuilder.toString(),
+                        image = image,
                         timestamp = Calendar.getInstance().toInstant()
                     ).build()
 
                     guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.animeChannels.filter { (_, countries) -> countries.contains(country) }
+                        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
                             .forEach { (textChannelId, _) ->
                                 val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
                                 textChannel?.sendMessageEmbeds(embed)?.queue()
@@ -159,7 +167,7 @@ class DiscordClient : Client {
             }
         } else {
             episodes.forEach {
-                val messageArray = episodesObj[it.token]?.asJsonArray ?: JsonArray()
+                val messageArray = episodesObj[it.globalId]?.asJsonArray ?: JsonArray()
                 val embed = getEpisodeEmbed(it).build()
 
                 messageArray.forEach { messageId ->
@@ -184,7 +192,7 @@ class DiscordClient : Client {
             val embed = getNewsEmbed(it).build()
 
             guilds.forEach { (_, ziedGuild) ->
-                ziedGuild.animeChannels.filter { (_, countries) -> countries.contains(it.country) }
+                ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(it.country) }
                     .forEach { (textChannelId, _) ->
                         val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
                         textChannel?.sendMessageEmbeds(embed)?.queue()
@@ -221,10 +229,6 @@ class DiscordClient : Client {
         return embedBuilder
     }
 
-    private fun substring(string: String, int: Int): String {
-        return string.substring(0, min(string.length, int))
-    }
-
     private fun getEpisodeEmbed(episode: Episode): EmbedBuilder {
         return setEmbed(
             episode.p?.getName(),
@@ -238,8 +242,8 @@ class DiscordClient : Client {
             """.trimIndent(),
             color = episode.p?.getColor(),
             image = episode.image,
-            footer = if (episode.type == EpisodeType.SUBTITLES) episode.country.subtitles else episode.country.voice,
-            timestamp = toCalendar(episode.calendar).toInstant()
+            footer = if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed,
+            timestamp = ISO8601.toCalendar(episode.calendar).toInstant()
         )
     }
 
@@ -251,19 +255,12 @@ class DiscordClient : Client {
             news.title,
             news.link,
             description = """
-            ** ${substring(news.description, 100)}... **
+            ** ${Const.substring(news.description, 450)}... **
             
-            ${substring(news.content, 1500)}...
+            ${Const.substring(news.content, 1500)}...
             """.trimIndent(),
             color = news.p?.getColor(),
-            timestamp = toCalendar(news.calendar).toInstant()
+            timestamp = ISO8601.toCalendar(news.calendar).toInstant()
         )
-    }
-
-    private fun toCalendar(s: String): Calendar {
-        val calendar = GregorianCalendar.getInstance()
-        val date = SimpleDateFormat("HH:mm:ss yyyy/MM/dd").parse(s)
-        calendar.time = date
-        return calendar
     }
 }
