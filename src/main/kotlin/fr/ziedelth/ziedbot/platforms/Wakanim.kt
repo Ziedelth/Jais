@@ -89,7 +89,7 @@ class Wakanim : Platform {
                     }
                 }
             } catch (e: Exception) {
-                return getLastEpisodes()
+                return l.toTypedArray()
             } finally {
                 driver.quit()
             }
