@@ -7,7 +7,7 @@ import java.net.URL
 
 object Request {
     private fun getResponse(connection: HttpURLConnection): String {
-        val reader = BufferedReader(InputStreamReader(connection.inputStream))
+        val reader = BufferedReader(InputStreamReader(connection.inputStream, Const.DEFAULT_CHARSET))
         val stringBuilder = StringBuilder()
         reader.forEachLine { stringBuilder.append(it) }
         reader.close()
