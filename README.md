@@ -1,6 +1,6 @@
-# ZiedBot
+# Jaïs
 
-ZiedBot est un programme permettant d'être notifié de toutes les nouveautés en rapport avec les animes.
+Jaïs est un programme permettant d'être notifié de toutes les nouveautés en rapport avec les animes.
 
 ### Plateformes de messages prises en charges
 
