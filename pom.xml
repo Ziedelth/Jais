@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>consoleApp</artifactId>
+    <artifactId>jais</artifactId>
     <groupId>fr.ziedelth</groupId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ziedbot</name>
+    <name>jais</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,7 +22,7 @@
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
-        <finalName>ZiedBot</finalName>
+        <finalName>Jaïs</finalName>
 
         <plugins>
             <plugin>
@@ -59,7 +59,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>fr.ziedelth.ziedbot.ZiedBot</mainClass>
+                    <mainClass>fr.ziedelth.jais.Jais</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -70,7 +70,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>fr.ziedelth.ziedbot.ZiedBot</mainClass>
+                            <mainClass>fr.ziedelth.jais.Jais</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -89,7 +89,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>fr.ziedelth.ziedbot.ZiedBot</mainClass>
+                                    <mainClass>fr.ziedelth.jais.Jais</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
