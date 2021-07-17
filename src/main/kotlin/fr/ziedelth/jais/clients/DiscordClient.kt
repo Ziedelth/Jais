@@ -220,7 +220,7 @@ class DiscordClient : Client {
         embedBuilder.setThumbnail(if (thumbnail == null || thumbnail.isEmpty()) master?.avatarUrl else thumbnail)
         embedBuilder.setDescription(description)
         embedBuilder.setColor(color)
-        embedBuilder.setImage(image)
+        if (!image.isNullOrEmpty()) embedBuilder.setImage(image)
         embedBuilder.setFooter(
             "${if (!footer.isNullOrEmpty()) "$footer  •  " else ""}Powered by Ziedelth.fr \uD83D\uDDA4",
             this.image
