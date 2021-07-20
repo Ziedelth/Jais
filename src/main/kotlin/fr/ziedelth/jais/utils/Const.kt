@@ -15,7 +15,7 @@ import kotlin.experimental.and
 import kotlin.math.min
 
 object Const {
-    val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
+    val GSON: Gson = GsonBuilder().create()
     val CLIENTS: MutableList<Client> = mutableListOf()
     val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), Wakanim())
     const val DELAY_BETWEEN_REQUEST = 3L

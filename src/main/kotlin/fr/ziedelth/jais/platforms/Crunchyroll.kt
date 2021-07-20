@@ -24,6 +24,15 @@ class Crunchyroll : Platform {
     override fun getColor(): Color = Color(255, 108, 0)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE, Country.UNITED_STATES)
 
+    private fun getItems(url: URLConnection): NodeList {
+        val dbf = DocumentBuilderFactory.newInstance()
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+        val db = dbf.newDocumentBuilder()
+        val doc = db.parse(url.getInputStream())
+        doc.documentElement.normalize()
+        return doc.getElementsByTagName("item")
+    }
+
     override fun getLastNews(): Array<News> {
         val calendar = Calendar.getInstance()
         val l: MutableList<News> = mutableListOf()
@@ -34,12 +43,7 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("https://www.crunchyroll.com/newsrss?lang=${country.lang}").openConnection()
-                val dbf = DocumentBuilderFactory.newInstance()
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                val db = dbf.newDocumentBuilder()
-                val doc = db.parse(url.getInputStream())
-                doc.documentElement.normalize()
-                list = doc.getElementsByTagName("item")
+                list = getItems(url)
             } catch (exception: Exception) {
                 return l.toTypedArray()
             }
@@ -90,12 +94,7 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("https://www.crunchyroll.com/rss/anime?lang=${country.lang}").openConnection()
-                val dbf = DocumentBuilderFactory.newInstance()
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                val db = dbf.newDocumentBuilder()
-                val doc = db.parse(url.getInputStream())
-                doc.documentElement.normalize()
-                list = doc.getElementsByTagName("item")
+                list = getItems(url)
             } catch (exception: Exception) {
                 return l.toTypedArray()
             }
@@ -130,6 +129,7 @@ class Crunchyroll : Platform {
                     val type =
                         if (subtitles.equals(country.language, true)) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                     val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
+                    val duration = element.getElementsByTagName("crunchyroll:duration").item(0)?.textContent ?: "1440"
 
                     if (spay.split(" ").contains(country.country) && subtitles.split(",")
                             .contains(country.language) && this.isSameDay(calendar, releaseDate)
@@ -138,13 +138,14 @@ class Crunchyroll : Platform {
                             platform = this.getName(),
                             calendar = ISO8601.fromCalendar(releaseDate),
                             anime = anime,
+                            number = number,
+                            country = country,
+                            type = type,
                             id = id,
                             title = title,
                             image = image,
                             link = link,
-                            number = number,
-                            country = country,
-                            type = type
+                            duration = duration.toLong()
                         )
                         episode.p = this
                         l.add(episode)

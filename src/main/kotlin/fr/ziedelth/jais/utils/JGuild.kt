@@ -19,7 +19,7 @@ private fun get(guild: Guild): JGuild {
 }
 
 class JGuild(val guild: Guild) {
-    private val KEY_ANIME_CHANNELS = "anime-channels"
+    private val keyAnimeChannels = "anime-channels"
 
     private val file = File(Const.GUILDS_FOLDER, "${guild.idLong}.json")
     var animeChannels: MutableMap<String, Channel> = mutableMapOf()
@@ -33,8 +33,8 @@ class JGuild(val guild: Guild) {
             val jsonObject =
                 Const.GSON.fromJson(Files.readString(file.toPath(), Const.DEFAULT_CHARSET), JsonObject::class.java)
 
-            if (jsonObject.has(KEY_ANIME_CHANNELS) && !jsonObject[KEY_ANIME_CHANNELS].isJsonNull) {
-                val acObject = jsonObject[KEY_ANIME_CHANNELS].asJsonObject
+            if (jsonObject.has(keyAnimeChannels) && !jsonObject[keyAnimeChannels].isJsonNull) {
+                val acObject = jsonObject[keyAnimeChannels].asJsonObject
                 acObject.entrySet().forEach { entry ->
                     this.animeChannels[entry.key] = Const.GSON.fromJson(entry.value, Channel::class.java)
                 }
@@ -44,7 +44,7 @@ class JGuild(val guild: Guild) {
 
     fun save() {
         val jsonObject = JsonObject()
-        jsonObject.add(KEY_ANIME_CHANNELS, Const.GSON.toJsonTree(this.animeChannels))
+        jsonObject.add(keyAnimeChannels, Const.GSON.toJsonTree(this.animeChannels))
         Files.writeString(file.toPath(), Const.GSON.toJson(jsonObject), Const.DEFAULT_CHARSET)
     }
 }

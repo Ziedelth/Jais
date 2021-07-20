@@ -87,13 +87,7 @@ class AnimeThread : Runnable {
 
                 editEpisodes.forEach {
                     val episode = this.episodesList[it.globalId]!!
-
-                    episode.id = it.id
-                    episode.title = it.title
-                    episode.image = it.image
-                    episode.link = it.link
-                    episode.p = it.p
-
+                    episode.edit(it)
                     this.episodesList[it.globalId] = episode
                     a.add(episode)
                 }

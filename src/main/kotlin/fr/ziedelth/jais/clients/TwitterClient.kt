@@ -18,6 +18,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
+import java.text.SimpleDateFormat
+import java.util.*
 import javax.imageio.ImageIO
 
 class TwitterClient : Client {
@@ -80,15 +82,14 @@ class TwitterClient : Client {
 
             if (size <= 12) {
                 countryEpisodes.forEach {
-                    val bufferedImage = ImageIO.read(URL(it.image))
-                    val baos = ByteArrayOutputStream()
-                    ImageIO.write(bufferedImage, "jpg", baos)
-                    val inputStream = ByteArrayInputStream(baos.toByteArray())
-
-                    val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", inputStream)
+                    val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
 
                     val statusMessage = StatusUpdate(
-                        "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n#Anime #${
+                        "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n\uD83C\uDFAC ${
+                            SimpleDateFormat(
+                                "mm:ss"
+                            ).format(Date(it.duration))
+                        }\n#Anime #${
                             it.platform.replace(
                                 " ",
                                 ""
@@ -111,22 +112,29 @@ class TwitterClient : Client {
         } else {
             episodes.forEach {
                 val oldTweet = episodesObj[it.globalId]?.asLong ?: 0L
-
-                val bufferedImage = ImageIO.read(URL(it.image))
-                val baos = ByteArrayOutputStream()
-                ImageIO.write(bufferedImage, "jpg", baos)
-                val inputStream = ByteArrayInputStream(baos.toByteArray())
-
-                val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", inputStream)
+                val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
 
                 val statusMessage =
-                    StatusUpdate("Modification :\n${if (it.title != null) "${it.title}\n" else ""}\n${it.link}")
+                    StatusUpdate(
+                        "Modification :\n${if (it.title != null) "${it.title}\n" else ""}\uD83C\uDFAC ${
+                            SimpleDateFormat(
+                                "mm:ss"
+                            ).format(Date(it.duration))
+                        }\n\n${it.link}"
+                    )
                 statusMessage.setMediaIds(uploadMedia.mediaId)
                 statusMessage.inReplyToStatusId = oldTweet
 
                 this.twitter!!.updateStatus(statusMessage)
             }
         }
+    }
+
+    private fun downloadImageEpisode(episode: Episode): ByteArrayInputStream {
+        val bufferedImage = ImageIO.read(URL(episode.image))
+        val baos = ByteArrayOutputStream()
+        ImageIO.write(bufferedImage, "jpg", baos)
+        return ByteArrayInputStream(baos.toByteArray())
     }
 
     override fun sendNews(news: Array<News>) {

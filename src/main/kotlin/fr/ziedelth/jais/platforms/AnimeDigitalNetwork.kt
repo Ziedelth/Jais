@@ -72,19 +72,21 @@ class AnimeDigitalNetwork : Platform {
                         )
                     }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                 val id = "${jObject.get("id").asInt}"
+                val duration = jObject["duration"].asLong
 
                 if (calendar.after(releaseDate)) {
                     val episode = Episode(
                         platform = this.getName(),
                         calendar = ISO8601.fromCalendar(releaseDate),
                         anime = anime,
+                        number = number,
+                        country = country,
+                        type = type,
                         id = id,
                         title = title,
                         image = image,
                         link = link,
-                        number = number,
-                        country = country,
-                        type = type
+                        duration = duration
                     )
                     episode.p = this
                     l.add(episode)

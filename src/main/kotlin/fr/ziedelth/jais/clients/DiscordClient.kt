@@ -23,9 +23,18 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 import java.awt.Color
 import java.io.File
 import java.nio.file.Files
+import java.text.SimpleDateFormat
 import java.time.temporal.TemporalAccessor
 import java.util.*
 
+/**
+ * Support Discord
+ *
+ * This class send messages to discord servers who use the bot
+ *
+ * @author Ziedelth
+ * @see Client
+ */
 class DiscordClient : Client {
     private val file = File("discord.json")
     private val obj: JsonObject = if (!this.file.exists()) JsonObject() else Const.GSON.fromJson(
@@ -41,12 +50,19 @@ class DiscordClient : Client {
     private var image: String? = null
     private val commands: Array<Command> = arrayOf(AnimeCommand())
 
+    /**
+     * Init the client
+     */
     init {
+        // If the client file doesn't exists
         if (!this.tokenFile.exists()) {
             this.init = false
             JLogger.warning("Discord token not exists!")
             Files.writeString(this.tokenFile.toPath(), Const.GSON.toJson(DiscordToken()), Const.DEFAULT_CHARSET)
-        } else {
+        }
+        // If the client file exists
+        else {
+            // Get token in file
             val discordToken = Const.GSON.fromJson(
                 Files.readString(
                     this.tokenFile.toPath(),
@@ -54,37 +70,43 @@ class DiscordClient : Client {
                 ), DiscordToken::class.java
             )
 
+            // If the token is empty
             if (discordToken.token.isEmpty()) {
                 this.init = false
                 JLogger.warning("Discord token is empty!")
-            } else {
+            }
+            // Token not empty
+            else {
                 this.init = true
+                // Create the connection with the bot
                 this.jda = JDABuilder.createDefault(discordToken.token).build()
                 this.jda!!.presence.setPresence(OnlineStatus.IDLE, true)
                 this.jda!!.awaitReady()
 
-                this.jda!!.guilds.forEach {
-                    it.getJGuild()
-                    val commandUpdateAction: CommandListUpdateAction = it.updateCommands()
+                // Init all connected servers
+                this.jda!!.guilds.forEach { it.getJGuild() }
 
-                    commands.forEach { command ->
-                        run {
-                            val commandData = CommandData(command.name, command.description)
-                            command.options.forEach { option ->
-                                commandData.addOption(
-                                    option.type,
-                                    option.name,
-                                    option.description,
-                                    option.required
-                                )
-                            }
-                            commandUpdateAction.addCommands(commandData)
+                // Create public command
+                val commandUpdateAction: CommandListUpdateAction = this.jda!!.updateCommands()
+
+                commands.forEach { command ->
+                    run {
+                        val commandData = CommandData(command.name, command.description)
+                        command.options.forEach { option ->
+                            commandData.addOption(
+                                option.type,
+                                option.name,
+                                option.description,
+                                option.required
+                            )
                         }
+                        commandUpdateAction.addCommands(commandData)
                     }
-
-                    commandUpdateAction.submit()
                 }
 
+                commandUpdateAction.submit()
+
+                // Register all functions to the bot
                 JLogger.info("Connected to ${this.jda!!.guilds.size} guild(s)!")
                 this.image = this.jda!!.selfUser.avatarUrl
                 this.jda!!.addEventListener(SlashCommand(commands), GuildMessageReactionAdd())
@@ -129,14 +151,14 @@ class DiscordClient : Client {
                     val animes: MutableList<String> = mutableListOf()
                     val stringBuilder: StringBuilder = StringBuilder()
                     var i = 0
-                    var image = ""
+                    var image: String? = ""
 
                     countryEpisodes.forEach {
                         if (!animes.contains(it.anime)) {
-                            val size = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
+                            val length = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
 
-                            if (size > i) {
-                                i = size
+                            if (length > i) {
+                                i = length
                                 image = it.image
                             }
 
@@ -239,6 +261,7 @@ class DiscordClient : Client {
             description = """
                 ${if (episode.title != null) "** ${episode.title} **" else ""}
                 ${episode.country.episode} ${episode.number}
+                🎬 ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}
             """.trimIndent(),
             color = episode.p?.getColor(),
             image = episode.image,

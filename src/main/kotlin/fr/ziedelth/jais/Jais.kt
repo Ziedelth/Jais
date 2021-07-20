@@ -7,14 +7,17 @@ import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
 
 object Jais {
+    var isRunning = true
+
     @JvmStatic
     fun main(args: Array<String>) {
         JLogger.info("Init...")
         JLogger.info("Request per day: ${(60L / Const.DELAY_BETWEEN_REQUEST) * 24L}")
 
-        Const.CLIENTS.add(DiscordClient())
-        Const.CLIENTS.add(TwitterClient())
+        Const.CLIENTS.addAll(arrayOf(DiscordClient(), TwitterClient()))
 
         AnimeThread()
+
+        while (isRunning) Thread.sleep(25)
     }
 }
