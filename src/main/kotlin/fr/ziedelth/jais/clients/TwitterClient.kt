@@ -19,7 +19,6 @@ import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.text.SimpleDateFormat
-import java.util.*
 import javax.imageio.ImageIO
 
 class TwitterClient : Client {
@@ -88,7 +87,7 @@ class TwitterClient : Client {
                         "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n\uD83C\uDFAC ${
                             SimpleDateFormat(
                                 "mm:ss"
-                            ).format(Date(it.duration))
+                            ).format(it.duration * 1000)
                         }\n#Anime #${
                             it.platform.replace(
                                 " ",
@@ -116,10 +115,10 @@ class TwitterClient : Client {
 
                 val statusMessage =
                     StatusUpdate(
-                        "Modification :\n${if (it.title != null) "${it.title}\n" else ""}\uD83C\uDFAC ${
-                            SimpleDateFormat(
-                                "mm:ss"
-                            ).format(Date(it.duration))
+                        "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
+                            SimpleDateFormat("mm:ss").format(
+                                it.duration * 1000
+                            )
                         }\n\n${it.link}"
                     )
                 statusMessage.setMediaIds(uploadMedia.mediaId)
