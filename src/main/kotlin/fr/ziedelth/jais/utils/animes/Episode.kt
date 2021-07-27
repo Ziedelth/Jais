@@ -21,8 +21,13 @@ class Episode(
             32
         )
 
+    val datas: MutableList<String> = mutableListOf()
+
     @Transient
     var p: Platform? = null
+
+    @Transient
+    var data: String = Const.substring(Const.encodeMD5("$id$title$image$link$duration".toByteArray()), 64)
 
     fun edit(other: Episode) {
         this.id = other.id
@@ -31,6 +36,7 @@ class Episode(
         this.link = other.link
         this.duration = other.duration
         this.p = other.p
+        this.data = Const.substring(Const.encodeMD5("$id$title$image$link$duration".toByteArray()), 64)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -45,12 +51,8 @@ class Episode(
         if (number != other.number) return false
         if (country != other.country) return false
         if (type != other.type) return false
-        if (id != other.id) return false
-        if (title != other.title) return false
-        if (image != other.image) return false
-        if (link != other.link) return false
-        if (duration != other.duration) return false
         if (globalId != other.globalId) return false
+        if (data != other.data) return false
 
         return true
     }
@@ -62,13 +64,10 @@ class Episode(
         result = 31 * result + number.hashCode()
         result = 31 * result + country.hashCode()
         result = 31 * result + type.hashCode()
-        result = 31 * result + id.hashCode()
-        result = 31 * result + (title?.hashCode() ?: 0)
-        result = 31 * result + (image?.hashCode() ?: 0)
-        result = 31 * result + (link?.hashCode() ?: 0)
-        result = 31 * result + duration.hashCode()
         result = 31 * result + globalId.hashCode()
-        result = 31 * result + (p?.hashCode() ?: 0)
+        result = 31 * result + data.hashCode()
         return result
     }
+
+
 }

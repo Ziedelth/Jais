@@ -18,6 +18,8 @@ import java.util.logging.Logger
 import kotlin.math.pow
 
 class Wakanim : Platform {
+    private val options: FirefoxOptions = FirefoxOptions().setHeadless(true)
+
     init {
         System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, "true")
         System.setProperty(FirefoxDriver.SystemProperty.BROWSER_LOGFILE, "/dev/null")
@@ -37,12 +39,11 @@ class Wakanim : Platform {
         val l: MutableList<Episode> = mutableListOf()
         val calendar = Calendar.getInstance()
         val date = this.date(calendar)
-        Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
         Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
-            val options = FirefoxOptions()
-            options.setHeadless(true)
-            val driver = FirefoxDriver(options)
+            Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+
+            val driver = FirefoxDriver(this.options)
             val wait = WebDriverWait(driver, 60)
 
             try {
@@ -78,13 +79,23 @@ class Wakanim : Platform {
                                     var duration: Long = 0
 
                                     if (tt.equals("episode", true)) {
-                                        driver.get(link)
-                                        val d = aPS(wait, "currentEp", "slider_item_duration")?.text ?: "24:00"
+                                        Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+
+                                        val driverEpisode = FirefoxDriver(this.options)
+
+                                        driverEpisode.get(link)
+
+                                        val d = driverEpisode.findElement(By.className("currentEp"))
+                                            .findElement(By.className("slider_item_inner"))
+                                            .findElement(By.className("slider_item_resolution"))
+                                            .findElement(By.className("slider_item_duration")).text
 
                                         val ds = d.split(":")
                                         val dl = ds.size
                                         for (i in dl downTo 1) duration += ds[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
                                             .toLong()
+
+                                        driverEpisode.quit()
                                     } else duration = 1440
 
                                     val episode = Episode(
@@ -102,6 +113,8 @@ class Wakanim : Platform {
                                     )
                                     episode.p = this
                                     l.add(episode)
+
+                                    Thread.currentThread().join(5000)
                                 }
                             }
                         }
@@ -128,6 +141,10 @@ class Wakanim : Platform {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         return calendar
+    }
+
+    private fun aS(wait: WebDriverWait, sClass: String): WebElement? {
+        return wait.until(ExpectedConditions.presenceOfElementLocated(By.className(sClass)))
     }
 
     private fun aPS(wait: WebDriverWait, parent: WebElement, sClass: String): WebElement? {

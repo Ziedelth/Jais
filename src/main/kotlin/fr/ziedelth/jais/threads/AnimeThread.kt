@@ -46,6 +46,9 @@ class AnimeThread : Runnable {
 
     override fun run() {
         while (!this.thread.isInterrupted) {
+            JLogger.warning("Checking news...")
+            var start = System.currentTimeMillis()
+
             val news: MutableList<News> = mutableListOf()
             Const.PLATFORMS.forEach { news.addAll(it.getLastNews()) }
             val newNews = news.stream().filter { !this.contains(it) }.collect(Collectors.toList())
@@ -57,23 +60,37 @@ class AnimeThread : Runnable {
                 Files.writeString(this.newsFile.toPath(), Const.GSON.toJson(this.newsList), Const.DEFAULT_CHARSET)
             }
 
+            var end = System.currentTimeMillis()
+            JLogger.warning("Took ${(end - start)}ms to check news")
+            JLogger.warning("Checking episodes...")
+            start = System.currentTimeMillis()
+
             val episodes: MutableList<Episode> = mutableListOf()
             Const.PLATFORMS.forEach { episodes.addAll(it.getLastEpisodes()) }
 
             val newEpisodes =
                 episodes.stream().filter { !this.episodesList.containsKey(it.globalId) }.collect(Collectors.toList())
             val editEpisodes = episodes.stream()
-                .filter { this.episodesList.containsKey(it.globalId) && this.episodesList[it.globalId]!! != it }
+                .filter {
+                    this.episodesList.containsKey(it.globalId) && this.episodesList[it.globalId]!! != it && !this.episodesList[it.globalId]!!.datas.contains(
+                        it.data
+                    )
+                }
                 .collect(Collectors.toList())
 
             if (newEpisodes.isNotEmpty()) {
-                newEpisodes.forEach { this.episodesList[it.globalId] = it }
+                newEpisodes.forEach {
+                    it.datas.add(it.data)
+                    this.episodesList[it.globalId] = it
+                }
+
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client ->
                     client.sendEpisode(
                         newEpisodes.toTypedArray(),
                         true
                     )
                 }
+
                 JLogger.info("New ${newEpisodes.size} episode(s)!")
                 Files.writeString(
                     this.episodesFile.toPath(),
@@ -88,6 +105,7 @@ class AnimeThread : Runnable {
                 editEpisodes.forEach {
                     val episode = this.episodesList[it.globalId]!!
                     episode.edit(it)
+                    episode.datas.add(episode.data)
                     this.episodesList[it.globalId] = episode
                     a.add(episode)
                 }
@@ -101,6 +119,8 @@ class AnimeThread : Runnable {
                 )
             }
 
+            end = System.currentTimeMillis()
+            JLogger.warning("Took ${(end - start)}ms to check episodes")
             this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
         }
     }

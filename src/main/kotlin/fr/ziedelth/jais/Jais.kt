@@ -1,7 +1,6 @@
 package fr.ziedelth.jais
 
 import fr.ziedelth.jais.clients.DiscordClient
-import fr.ziedelth.jais.clients.TwitterClient
 import fr.ziedelth.jais.threads.AnimeThread
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
@@ -14,7 +13,7 @@ object Jais {
         JLogger.info("Init...")
         JLogger.info("Request per day: ${(60L / Const.DELAY_BETWEEN_REQUEST) * 24L}")
 
-        Const.CLIENTS.addAll(arrayOf(DiscordClient(), TwitterClient()))
+        Const.CLIENTS.addAll(arrayOf(DiscordClient() /* TwitterClient() */))
 
         AnimeThread()
 
