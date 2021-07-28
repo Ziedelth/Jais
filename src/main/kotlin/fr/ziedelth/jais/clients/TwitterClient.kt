@@ -59,16 +59,20 @@ class TwitterClient : Client {
                 val twitterFactory = TwitterFactory(configurationBuilder.build())
 
                 this.twitter = twitterFactory.instance
-                JLogger.info(
-                    "Connected with ${
-                        this.twitter!!.getFollowersList(
-                            this.twitter!!.screenName,
-                            -1
-                        ).size
-                    } follower(s)!"
-                )
+                this.update()
             }
         }
+    }
+
+    override fun update() {
+        JLogger.info(
+            "[${this.javaClass.simpleName}] Connected with ${
+                this.twitter!!.getFollowersList(
+                    this.twitter!!.screenName,
+                    -1
+                ).size
+            } follower(s)!"
+        )
     }
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
@@ -110,21 +114,23 @@ class TwitterClient : Client {
             }
         } else {
             episodes.forEach {
-                val oldTweet = episodesObj[it.globalId]?.asLong ?: 0L
-                val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
+                if (episodesObj.has(it.globalId)) {
+                    val oldTweet = episodesObj[it.globalId]!!.asLong
+                    val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
 
-                val statusMessage =
-                    StatusUpdate(
-                        "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
-                            SimpleDateFormat("mm:ss").format(
-                                it.duration * 1000
-                            )
-                        }\n\n${it.link}"
-                    )
-                statusMessage.setMediaIds(uploadMedia.mediaId)
-                statusMessage.inReplyToStatusId = oldTweet
+                    val statusMessage =
+                        StatusUpdate(
+                            "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
+                                SimpleDateFormat("mm:ss").format(
+                                    it.duration * 1000
+                                )
+                            }\n\n${it.link}"
+                        )
+                    statusMessage.setMediaIds(uploadMedia.mediaId)
+                    statusMessage.inReplyToStatusId = oldTweet
 
-                this.twitter!!.updateStatus(statusMessage)
+                    this.twitter!!.updateStatus(statusMessage)
+                }
             }
         }
     }

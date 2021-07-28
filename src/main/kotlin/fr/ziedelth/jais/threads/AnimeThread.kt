@@ -46,7 +46,7 @@ class AnimeThread : Runnable {
 
     override fun run() {
         while (!this.thread.isInterrupted) {
-            JLogger.warning("Checking news...")
+            JLogger.info("Checking news...")
             var start = System.currentTimeMillis()
 
             val news: MutableList<News> = mutableListOf()
@@ -61,8 +61,8 @@ class AnimeThread : Runnable {
             }
 
             var end = System.currentTimeMillis()
-            JLogger.warning("Took ${(end - start)}ms to check news")
-            JLogger.warning("Checking episodes...")
+            JLogger.info("Took ${(end - start)}ms to check news")
+            JLogger.info("Checking episodes...")
             start = System.currentTimeMillis()
 
             val episodes: MutableList<Episode> = mutableListOf()
@@ -120,7 +120,7 @@ class AnimeThread : Runnable {
             }
 
             end = System.currentTimeMillis()
-            JLogger.warning("Took ${(end - start)}ms to check episodes")
+            JLogger.info("Took ${(end - start)}ms to check episodes")
             this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
         }
     }

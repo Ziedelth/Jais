@@ -8,8 +8,6 @@ import org.openqa.selenium.WebElement
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.remote.ProtocolHandshake
-import org.openqa.selenium.support.ui.ExpectedConditions
-import org.openqa.selenium.support.ui.WebDriverWait
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
@@ -19,6 +17,7 @@ import kotlin.math.pow
 
 class Wakanim : Platform {
     private val options: FirefoxOptions = FirefoxOptions().setHeadless(true)
+    private val episodes: MutableMap<String, Long> = mutableMapOf()
 
     init {
         System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, "true")
@@ -40,11 +39,10 @@ class Wakanim : Platform {
         val calendar = Calendar.getInstance()
         val date = this.date(calendar)
 
-        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
+        this.getAllowedCountries().forEach { country ->
             Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
             val driver = FirefoxDriver(this.options)
-            val wait = WebDriverWait(driver, 60)
 
             try {
                 driver.get("https://www.wakanim.tv/${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
@@ -52,11 +50,11 @@ class Wakanim : Platform {
                     driver.findElement(By.className("Calendar-today")).findElements(By.className("Calendar-ep"))
 
                 if (!a.isNullOrEmpty()) {
-                    val list = aM(wait)
-
-                    list?.forEach {
-                        val time: String? = aPS(wait, it, "Calendar-hourTxt")?.text
-                        val linkElement: WebElement? = aPS(wait, it, "Calendar-linkImg")
+                    a.forEach {
+                        val time: String? = it?.findElement(By.className("Calendar-hour"))
+                            ?.findElement(By.className("Calendar-hourTxt"))?.text
+                        val linkElement: WebElement? = it?.findElement(By.className("Calendar-imageWrapper"))
+                            ?.findElement(By.className("Calendar-linkImg"))
 
                         if (linkElement != null) {
                             val link = linkElement.getAttribute("href")
@@ -65,10 +63,12 @@ class Wakanim : Platform {
                                 val releaseDate = setDate(time.split(":")[0].toInt(), time.split(":")[1].toInt())
 
                                 if (calendar.after(releaseDate)) {
-                                    val anime = aPS(wait, it, "Calendar-epTitle")!!.text
-                                    val image = aPS(wait, linkElement, "Calendar-image")!!.getAttribute("src")
-                                    val number = Const.toInt(aPS(wait, linkElement, "Calendar-epNumber")!!.text)
-                                    val ltype = aPS(wait, it, "Calendar-tagTranslation")!!.text
+                                    val anime = it.findElement(By.className("Calendar-epTitle"))!!.text
+                                    val image =
+                                        linkElement.findElement(By.className("Calendar-image")).getAttribute("src")
+                                    val number =
+                                        Const.toInt(linkElement.findElement(By.className("Calendar-epNumber"))!!.text)
+                                    val ltype = it.findElement(By.className("Calendar-tagTranslation"))!!.text
                                     val episodeType = if (ltype.equals(
                                             country.dubbed,
                                             true
@@ -79,23 +79,26 @@ class Wakanim : Platform {
                                     var duration: Long = 0
 
                                     if (tt.equals("episode", true)) {
-                                        Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+                                        if (!this.episodes.containsKey(id)) {
+                                            Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
-                                        val driverEpisode = FirefoxDriver(this.options)
+                                            val driverEpisode = FirefoxDriver(this.options)
 
-                                        driverEpisode.get(link)
+                                            driverEpisode.get(link)
 
-                                        val d = driverEpisode.findElement(By.className("currentEp"))
-                                            .findElement(By.className("slider_item_inner"))
-                                            .findElement(By.className("slider_item_resolution"))
-                                            .findElement(By.className("slider_item_duration")).text
+                                            val d = driverEpisode.findElement(By.className("currentEp"))
+                                                .findElement(By.className("slider_item_inner"))
+                                                .findElement(By.className("slider_item_resolution"))
+                                                .findElement(By.className("slider_item_duration")).text
 
-                                        val ds = d.split(":")
-                                        val dl = ds.size
-                                        for (i in dl downTo 1) duration += ds[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
-                                            .toLong()
+                                            val ds = d.split(":")
+                                            val dl = ds.size
+                                            for (i in dl downTo 1) duration += ds[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
+                                                .toLong()
 
-                                        driverEpisode.quit()
+                                            driverEpisode.quit()
+                                            this.episodes[id] = duration
+                                        } else duration = this.episodes[id]!!
                                     } else duration = 1440
 
                                     val episode = Episode(
@@ -113,8 +116,6 @@ class Wakanim : Platform {
                                     )
                                     episode.p = this
                                     l.add(episode)
-
-                                    Thread.currentThread().join(5000)
                                 }
                             }
                         }
@@ -141,31 +142,5 @@ class Wakanim : Platform {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         return calendar
-    }
-
-    private fun aS(wait: WebDriverWait, sClass: String): WebElement? {
-        return wait.until(ExpectedConditions.presenceOfElementLocated(By.className(sClass)))
-    }
-
-    private fun aPS(wait: WebDriverWait, parent: WebElement, sClass: String): WebElement? {
-        return wait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(parent, By.className(sClass)))
-    }
-
-    private fun aPS(wait: WebDriverWait, parent: String, sClass: String): WebElement? {
-        return wait.until(
-            ExpectedConditions.presenceOfNestedElementLocatedBy(
-                By.className(parent),
-                By.className(sClass)
-            )
-        )
-    }
-
-    private fun aM(wait: WebDriverWait): List<WebElement>? {
-        return wait.until(
-            ExpectedConditions.presenceOfNestedElementsLocatedBy(
-                By.className("Calendar-today"),
-                By.className("Calendar-ep")
-            )
-        )
     }
 }

@@ -27,14 +27,6 @@ import java.text.SimpleDateFormat
 import java.time.temporal.TemporalAccessor
 import java.util.*
 
-/**
- * Support Discord
- *
- * This class send messages to discord servers who use the bot
- *
- * @author Ziedelth
- * @see Client
- */
 class DiscordClient : Client {
     private val file = File("discord.json")
     private val obj: JsonObject = if (!this.file.exists()) JsonObject() else Const.GSON.fromJson(
@@ -50,19 +42,12 @@ class DiscordClient : Client {
     private var image: String? = null
     private val commands: Array<Command> = arrayOf(AnimeCommand())
 
-    /**
-     * Init the client
-     */
     init {
-        // If the client file doesn't exists
         if (!this.tokenFile.exists()) {
             this.init = false
             JLogger.warning("Discord token not exists!")
             Files.writeString(this.tokenFile.toPath(), Const.GSON.toJson(DiscordToken()), Const.DEFAULT_CHARSET)
-        }
-        // If the client file exists
-        else {
-            // Get token in file
+        } else {
             val discordToken = Const.GSON.fromJson(
                 Files.readString(
                     this.tokenFile.toPath(),
@@ -70,26 +55,20 @@ class DiscordClient : Client {
                 ), DiscordToken::class.java
             )
 
-            // If the token is empty
             if (discordToken.token.isEmpty()) {
                 this.init = false
                 JLogger.warning("Discord token is empty!")
-            }
-            // Token not empty
-            else {
+            } else {
                 this.init = true
-                // Create the connection with the bot
                 this.jda = JDABuilder.createDefault(discordToken.token).build()
                 this.jda!!.presence.setPresence(OnlineStatus.IDLE, true)
                 this.jda!!.awaitReady()
 
-                // Init all connected servers
                 this.jda!!.guilds.forEach { it.getJGuild() }
 
-                // Create public command
                 val commandUpdateAction: CommandListUpdateAction = this.jda!!.updateCommands()
 
-                commands.forEach { command ->
+                this.commands.forEach { command ->
                     run {
                         val commandData = CommandData(command.name, command.description)
                         command.options.forEach { option ->
@@ -106,15 +85,18 @@ class DiscordClient : Client {
 
                 commandUpdateAction.submit()
 
-                // Register all functions to the bot
-                JLogger.info("Connected to ${this.jda!!.guilds.size} guild(s)!")
-                this.image = this.jda!!.selfUser.avatarUrl
-                this.jda!!.addEventListener(SlashCommand(commands), GuildMessageReactionAdd())
-                this.jda!!.retrieveUserById(132903783792377856L).queue { user -> master = user }
-                this.jda!!.presence.activity = Activity.playing("bugged with master")
-                this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
+                this.jda!!.addEventListener(SlashCommand(this.commands), GuildMessageReactionAdd())
+                this.update()
             }
         }
+    }
+
+    override fun update() {
+        JLogger.info("[${this.javaClass.simpleName}] Connected to ${this.jda!!.guilds.size} guild(s)!")
+        this.image = this.jda!!.selfUser.avatarUrl
+        this.jda!!.retrieveUserById(132903783792377856L).queue { user -> master = user }
+        this.jda!!.presence.activity = Activity.playing("bugged with master")
+        this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
     }
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
@@ -189,17 +171,19 @@ class DiscordClient : Client {
             }
         } else {
             episodes.forEach {
-                val messageArray = episodesObj[it.globalId]?.asJsonArray ?: JsonArray()
-                val embed = getEpisodeEmbed(it).build()
+                if (episodesObj.has(it.globalId)) {
+                    val messageArray = episodesObj[it.globalId]!!.asJsonArray
+                    val embed = getEpisodeEmbed(it).build()
 
-                messageArray.forEach { messageId ->
-                    guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.guild.textChannels.forEach { textChannel ->
-                            textChannel.retrieveMessageById(messageId.asLong).queue({ message ->
-                                run {
-                                    message.editMessageEmbeds(embed).queue()
-                                }
-                            }, { })
+                    messageArray.forEach { messageId ->
+                        guilds.forEach { (_, ziedGuild) ->
+                            ziedGuild.guild.textChannels.forEach { textChannel ->
+                                textChannel.retrieveMessageById(messageId.asLong).queue({ message ->
+                                    run {
+                                        message.editMessageEmbeds(embed).queue()
+                                    }
+                                }, { })
+                            }
                         }
                     }
                 }

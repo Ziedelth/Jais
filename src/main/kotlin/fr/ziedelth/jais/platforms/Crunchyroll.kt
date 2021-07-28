@@ -37,7 +37,7 @@ class Crunchyroll : Platform {
         val calendar = Calendar.getInstance()
         val l: MutableList<News> = mutableListOf()
 
-        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
+        this.getAllowedCountries().forEach { country ->
             val url: URLConnection
             val list: NodeList
 
@@ -88,7 +88,7 @@ class Crunchyroll : Platform {
         val calendar = Calendar.getInstance()
         val l: MutableList<Episode> = mutableListOf()
 
-        Country.values().filter { this.getAllowedCountries().contains(it) }.forEach { country ->
+        this.getAllowedCountries().forEach { country ->
             val url: URLConnection
             val list: NodeList
 
