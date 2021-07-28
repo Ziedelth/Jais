@@ -5,8 +5,7 @@ Jaïs est un programme permettant d'être notifié de toutes les nouveautés en 
 ### Plateformes de messages prises en charges
 
 - [x] Discord
-- [x] Twitter (Juste pour les animes)
-- [ ] Reddit
+- [x] Twitter
 
 ### Plateformes d'animes prises en charges
 

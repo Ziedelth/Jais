@@ -78,9 +78,9 @@ class TwitterClient : Client {
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
         if (!this.init) return
         val episodesObj: JsonObject = this.obj["episodes"]?.asJsonObject ?: JsonObject()
+        val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
 
         if (new) {
-            val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
             val size = countryEpisodes.size
 
             if (size <= 12) {
@@ -113,7 +113,7 @@ class TwitterClient : Client {
                 this.twitter!!.updateStatus("Il y a trop d'animes qui sortent en même temps que je m'en perds dans mes circuits ! (${size}, c'est beaucoup trop pour moi)")
             }
         } else {
-            episodes.forEach {
+            countryEpisodes.forEach {
                 if (episodesObj.has(it.globalId)) {
                     val oldTweet = episodesObj[it.globalId]!!.asLong
                     val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
@@ -144,5 +144,18 @@ class TwitterClient : Client {
 
     override fun sendNews(news: Array<News>) {
         if (!this.init) return
+
+        news.filter { it.country == Country.FRANCE }.forEach {
+            val statusMessage = StatusUpdate(
+                "${it.title}\n#${
+                    it.platform.replace(
+                        " ",
+                        ""
+                    )
+                }\n\n${it.link}"
+            )
+
+            this.twitter!!.updateStatus(statusMessage)
+        }
     }
 }
