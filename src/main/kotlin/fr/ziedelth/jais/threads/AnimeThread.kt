@@ -66,7 +66,13 @@ class AnimeThread : Runnable {
             start = System.currentTimeMillis()
 
             val episodes: MutableList<Episode> = mutableListOf()
-            Const.PLATFORMS.forEach { episodes.addAll(it.getLastEpisodes()) }
+
+            Const.PLATFORMS.forEach {
+                val startPlatformCheckTime = System.currentTimeMillis()
+                episodes.addAll(it.getLastEpisodes())
+                val endPlatformCheckTime = System.currentTimeMillis()
+                JLogger.info("Took ${endPlatformCheckTime - startPlatformCheckTime}ms to check episodes on platform ${it.getName()} ")
+            }
 
             val newEpisodes =
                 episodes.stream().filter { !this.episodesList.containsKey(it.globalId) }.collect(Collectors.toList())

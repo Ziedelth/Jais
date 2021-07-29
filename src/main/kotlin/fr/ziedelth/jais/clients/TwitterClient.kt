@@ -9,9 +9,7 @@ import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.tokens.TwitterToken
-import twitter4j.StatusUpdate
-import twitter4j.Twitter
-import twitter4j.TwitterFactory
+import twitter4j.*
 import twitter4j.conf.ConfigurationBuilder
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -22,6 +20,7 @@ import java.text.SimpleDateFormat
 import javax.imageio.ImageIO
 
 class TwitterClient : Client {
+    private val location = GeoLocation(45.764043, 4.835659)
     private val file = File("twitter.json")
     private val obj: JsonObject = if (!this.file.exists()) JsonObject() else Const.GSON.fromJson(
         Files.readString(
@@ -100,9 +99,14 @@ class TwitterClient : Client {
                         }\n\n${it.link}"
                     )
                     statusMessage.setMediaIds(uploadMedia.mediaId)
+                    statusMessage.location = this.location
 
-                    val tweet = this.twitter!!.updateStatus(statusMessage)
-                    episodesObj.addProperty(it.globalId, tweet.id)
+                    try {
+                        val tweet = this.twitter!!.updateStatus(statusMessage)
+                        episodesObj.addProperty(it.globalId, tweet.id)
+                    } catch (twitterException: TwitterException) {
+                        JLogger.warning("Can not tweet episodes: ${twitterException.message ?: "Nothing..."}")
+                    }
                 }
 
                 if (size > 0) {
@@ -110,7 +114,13 @@ class TwitterClient : Client {
                     Files.writeString(this.file.toPath(), Const.GSON.toJson(this.obj), Const.DEFAULT_CHARSET)
                 }
             } else {
-                this.twitter!!.updateStatus("Il y a trop d'animes qui sortent en même temps que je m'en perds dans mes circuits ! (${size}, c'est beaucoup trop pour moi)")
+                this.twitter!!.updateStatus(
+                    "Il y a trop d'animes qui sortent en même temps que je m'en perds dans mes circuits ! (${size}, c'est beaucoup trop pour moi)\n${
+                        Const.generate(
+                            8
+                        )
+                    }"
+                )
             }
         } else {
             countryEpisodes.forEach {
@@ -128,8 +138,13 @@ class TwitterClient : Client {
                         )
                     statusMessage.setMediaIds(uploadMedia.mediaId)
                     statusMessage.inReplyToStatusId = oldTweet
+                    statusMessage.location = this.location
 
-                    this.twitter!!.updateStatus(statusMessage)
+                    try {
+                        this.twitter!!.updateStatus(statusMessage)
+                    } catch (twitterException: TwitterException) {
+                        JLogger.warning("Can not tweet edit episode: ${twitterException.message ?: "Nothing..."}")
+                    }
                 }
             }
         }
@@ -154,8 +169,13 @@ class TwitterClient : Client {
                     )
                 }\n\n${it.link}"
             )
+            statusMessage.location = this.location
 
-            this.twitter!!.updateStatus(statusMessage)
+            try {
+                this.twitter!!.updateStatus(statusMessage)
+            } catch (twitterException: TwitterException) {
+                JLogger.warning("Can not tweet news: ${twitterException.message ?: "Nothing..."}")
+            }
         }
     }
 }
