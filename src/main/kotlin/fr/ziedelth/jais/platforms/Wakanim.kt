@@ -56,79 +56,90 @@ class Wakanim : Platform {
 
                 if (!(episodeList.size == 1 && episodeList[0].text == "Pas de nouveaux épisodes !")) {
                     episodeList.forEachIndexed { index, webElement ->
-                        val linkElement =
-                            driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a")))
-                        val link = linkElement.getAttribute("href")
                         val fullText = webElement.text.replace("\n", " ")
                         val splitFullText = fullText.split(" ")
 
                         // UNCHANGED
                         val releaseDate =
                             setDate(splitFullText[0].split(":")[0].toInt(), splitFullText[0].split(":")[1].toInt())
-                        val anime = StringBuilder()
-                        val max = splitFullText.indexOf("Séries") - 1
-                        for (i in 1..max) anime.append(splitFullText[i]).append(if (i >= max) "" else " ")
-                        val number = Const.toInt(splitFullText[splitFullText.size - 2])
-                        val type = if (splitFullText[splitFullText.size - 1].equals(
-                                country.dubbed,
-                                true
-                            )
-                        ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
 
-                        // CHANGED
-                        val image =
-                            driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a/img")))
-                                .getAttribute("src")
-                        val id = link.replace("//", "/").split("/")[6]
-                        val tt = link.replace("//", "/").split("/")[5]
-                        var duration: Long = 0
+                        if (calendar.after(releaseDate)) {
+                            val linkElement =
+                                driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a")))
+                            val link = linkElement.getAttribute("href")
 
-                        if (tt.equals("episode", true)) {
-                            if (!this.episodes.containsKey(id)) {
-                                Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
-                                val driverEpisode = FirefoxDriver(this.options)
-                                val driverEpisodeWait = WebDriverWait(driverEpisode, this.timeout)
+                            // UNCHANGED// UNCHANGED
+                            val anime = StringBuilder()
+                            val max = splitFullText.indexOf("Séries") - 1
+                            for (i in 1..max) anime.append(splitFullText[i]).append(if (i >= max) "" else " ")
+                            val number = Const.toInt(splitFullText[splitFullText.size - 2])
+                            val type = if (splitFullText[splitFullText.size - 1].equals(
+                                    country.dubbed,
+                                    true
+                                )
+                            ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
 
-                                driverEpisode.get(link)
+                            // CHANGED
+                            val image =
+                                driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a/img")))
+                                    .getAttribute("src")
+                            val id = link.replace("//", "/").split("/")[6]
+                            val tt = link.replace("//", "/").split("/")[5]
+                            var duration: Long = 0
 
-                                val list =
-                                    driverEpisodeWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("/html/body/section[2]/div/div/div[1]/div/ul/li")))
-                                val time = driverEpisodeWait.until(
-                                    ExpectedConditions.presenceOfElementLocated(
-                                        By.xpath(
-                                            "/html/body/section[2]/div/div/div[1]/div/ul/li[${
-                                                min(
-                                                    5,
-                                                    list.size
+                            if (tt.equals("episode", true)) {
+                                if (!this.episodes.containsKey(id)) {
+                                    Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+                                    val driverEpisode = FirefoxDriver(this.options)
+                                    val driverEpisodeWait = WebDriverWait(driverEpisode, this.timeout)
+
+                                    driverEpisode.get(link)
+
+                                    val list =
+                                        driverEpisodeWait.until(
+                                            ExpectedConditions.presenceOfAllElementsLocatedBy(
+                                                By.xpath(
+                                                    "/html/body/section[2]/div/div/div[1]/div/ul/li"
                                                 )
-                                            }]/div/div[2]/span"
+                                            )
                                         )
-                                    )
-                                ).text.split(":")
-                                val dl = time.size
-                                for (i in dl downTo 1) duration += time[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
-                                    .toLong()
+                                    val time = driverEpisodeWait.until(
+                                        ExpectedConditions.presenceOfElementLocated(
+                                            By.xpath(
+                                                "/html/body/section[2]/div/div/div[1]/div/ul/li[${
+                                                    min(
+                                                        5,
+                                                        list.size
+                                                    )
+                                                }]/div/div[2]/span"
+                                            )
+                                        )
+                                    ).text.split(":")
+                                    val dl = time.size
+                                    for (i in dl downTo 1) duration += time[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
+                                        .toLong()
 
-                                driverEpisode.quit()
-                                this.episodes[id] = duration
-                            } else duration = this.episodes[id]!!
-                        } else duration = 1440
+                                    driverEpisode.quit()
+                                    this.episodes[id] = duration
+                                } else duration = this.episodes[id]!!
+                            } else duration = 1440
 
-                        val episode = Episode(
-                            platform = this.getName(),
-                            calendar = ISO8601.fromCalendar(releaseDate),
-                            anime = anime.toString(),
-                            number = number,
-                            country = country,
-                            type = type,
-                            id = id,
-                            title = null,
-                            image = image,
-                            link = link,
-                            duration = duration
-                        )
-                        episode.p = this
-                        l.add(episode)
+                            val episode = Episode(
+                                platform = this.getName(),
+                                calendar = ISO8601.fromCalendar(releaseDate),
+                                anime = anime.toString(),
+                                number = number,
+                                country = country,
+                                type = type,
+                                id = id,
+                                title = null,
+                                image = image,
+                                link = link,
+                                duration = duration
+                            )
+                            episode.p = this
+                            l.add(episode)
+                        }
                     }
                 }
             } catch (e: Exception) {
