@@ -30,7 +30,7 @@ class Wakanim : Platform {
     override fun getName(): String = "Wakanim"
     override fun getURL(): String = "https://www.wakanim.tv/"
     override fun getImage(): String =
-        "https://play-lh.googleusercontent.com/J5_U63e4nJPrSUHeqqGIoZIaqQ1EYKEeXpcNaVbf95adUu9O9VnEgXC_ejUZPaCjpw"
+        "https://ziedelth.fr/images/wakanim.png"
 
     override fun getColor(): Color = Color(227, 71, 75)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
@@ -49,7 +49,7 @@ class Wakanim : Platform {
             val driverWait = WebDriverWait(driver, this.timeout)
 
             try {
-                driver.get("https://www.wakanim.tv/${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
+                driver.get("${this.getURL()}${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
 
                 val episodeList =
                     driverWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("/html/body/div[1]/div[2]/div")))

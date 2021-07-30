@@ -13,7 +13,7 @@ import java.util.*
 class AnimeDigitalNetwork : Platform {
     override fun getName(): String = "Anime Digital Network"
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
-    override fun getImage(): String = "https://img.apksum.com/e6/fr.anidn/v4.1.65/icon.png"
+    override fun getImage(): String = "https://ziedelth.fr/images/adn.png"
     override fun getColor(): Color = Color(0, 150, 255)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 

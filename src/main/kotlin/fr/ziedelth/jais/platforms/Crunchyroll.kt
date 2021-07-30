@@ -19,7 +19,7 @@ class Crunchyroll : Platform {
     override fun getName(): String = "Crunchyroll"
     override fun getURL(): String = "https://www.crunchyroll.com/"
     override fun getImage(): String =
-        "https://archive.org/download/crunchyroll.-1.1.0/Crunchyroll.1.1.0/ico_android_settings.png"
+        "https://ziedelth.fr/images/crunchyroll.png"
 
     override fun getColor(): Color = Color(255, 108, 0)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE, Country.UNITED_STATES)
@@ -42,7 +42,7 @@ class Crunchyroll : Platform {
             val list: NodeList
 
             try {
-                url = URL("https://www.crunchyroll.com/newsrss?lang=${country.lang}").openConnection()
+                url = URL("${this.getURL()}newsrss?lang=${country.lang}").openConnection()
                 list = getItems(url)
             } catch (exception: Exception) {
                 return l.toTypedArray()
@@ -93,7 +93,7 @@ class Crunchyroll : Platform {
             val list: NodeList
 
             try {
-                url = URL("https://www.crunchyroll.com/rss/anime?lang=${country.lang}").openConnection()
+                url = URL("${this.getURL()}rss/anime?lang=${country.lang}").openConnection()
                 list = getItems(url)
             } catch (exception: Exception) {
                 return l.toTypedArray()

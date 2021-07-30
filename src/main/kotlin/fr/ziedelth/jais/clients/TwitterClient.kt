@@ -66,10 +66,14 @@ class TwitterClient : Client {
     override fun update() {
         JLogger.info(
             "[${this.javaClass.simpleName}] Connected with ${
-                this.twitter!!.getFollowersList(
-                    this.twitter!!.screenName,
+                try {
+                    this.twitter!!.getFollowersList(
+                        this.twitter!!.screenName,
+                        -1
+                    ).size
+                } catch (twitterException: TwitterException) {
                     -1
-                ).size
+                }
             } follower(s)!"
         )
     }
@@ -162,7 +166,7 @@ class TwitterClient : Client {
 
         news.filter { it.country == Country.FRANCE }.forEach {
             val statusMessage = StatusUpdate(
-                "${it.title}\n#${
+                "${Const.substring(it.title, 100)}\n${Const.substring(it.description, 100)}\n\n#${
                     it.platform.replace(
                         " ",
                         ""
