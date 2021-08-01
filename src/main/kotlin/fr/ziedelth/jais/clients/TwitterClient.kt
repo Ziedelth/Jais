@@ -88,24 +88,24 @@ class TwitterClient : Client {
 
             if (size <= 12) {
                 countryEpisodes.forEach {
-                    val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
-
-                    val statusMessage = StatusUpdate(
-                        "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n\uD83C\uDFAC ${
-                            SimpleDateFormat(
-                                "mm:ss"
-                            ).format(it.duration * 1000)
-                        }\n#Anime #${
-                            it.platform.replace(
-                                " ",
-                                ""
-                            )
-                        }\n\n${it.link}"
-                    )
-                    statusMessage.setMediaIds(uploadMedia.mediaId)
-                    statusMessage.location = this.location
-
                     try {
+                        val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
+
+                        val statusMessage = StatusUpdate(
+                            "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n\uD83C\uDFAC ${
+                                SimpleDateFormat(
+                                    "mm:ss"
+                                ).format(it.duration * 1000)
+                            }\n#Anime #${
+                                it.platform.replace(
+                                    " ",
+                                    ""
+                                )
+                            }\n\n${it.link}"
+                        )
+                        statusMessage.setMediaIds(uploadMedia.mediaId)
+                        statusMessage.location = this.location
+
                         val tweet = this.twitter!!.updateStatus(statusMessage)
                         episodesObj.addProperty(it.globalId, tweet.id)
                     } catch (twitterException: TwitterException) {
@@ -129,22 +129,22 @@ class TwitterClient : Client {
         } else {
             countryEpisodes.forEach {
                 if (episodesObj.has(it.globalId)) {
-                    val oldTweet = episodesObj[it.globalId]!!.asLong
-                    val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
-
-                    val statusMessage =
-                        StatusUpdate(
-                            "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
-                                SimpleDateFormat("mm:ss").format(
-                                    it.duration * 1000
-                                )
-                            }\n\n${it.link}"
-                        )
-                    statusMessage.setMediaIds(uploadMedia.mediaId)
-                    statusMessage.inReplyToStatusId = oldTweet
-                    statusMessage.location = this.location
-
                     try {
+                        val oldTweet = episodesObj[it.globalId]!!.asLong
+                        val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
+
+                        val statusMessage =
+                            StatusUpdate(
+                                "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
+                                    SimpleDateFormat("mm:ss").format(
+                                        it.duration * 1000
+                                    )
+                                }\n\n${it.link}"
+                            )
+                        statusMessage.setMediaIds(uploadMedia.mediaId)
+                        statusMessage.inReplyToStatusId = oldTweet
+                        statusMessage.location = this.location
+
                         this.twitter!!.updateStatus(statusMessage)
                     } catch (twitterException: TwitterException) {
                         JLogger.warning("Can not tweet edit episode: ${twitterException.message ?: "Nothing..."}")
@@ -165,17 +165,17 @@ class TwitterClient : Client {
         if (!this.init) return
 
         news.filter { it.country == Country.FRANCE }.forEach {
-            val statusMessage = StatusUpdate(
-                "${Const.substring(it.title, 100)}\n${Const.substring(it.description, 100)}\n\n#${
-                    it.platform.replace(
-                        " ",
-                        ""
-                    )
-                }\n\n${it.link}"
-            )
-            statusMessage.location = this.location
-
             try {
+                val statusMessage = StatusUpdate(
+                    "${Const.substring(it.title, 100)}...\n#${
+                        it.platform.replace(
+                            " ",
+                            ""
+                        )
+                    }\n\nLire l'actualité :\n${it.link}"
+                )
+                statusMessage.location = this.location
+
                 this.twitter!!.updateStatus(statusMessage)
             } catch (twitterException: TwitterException) {
                 JLogger.warning("Can not tweet news: ${twitterException.message ?: "Nothing..."}")

@@ -18,7 +18,7 @@ object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
     val CLIENTS: MutableList<Client> = mutableListOf()
     val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), Wakanim())
-    const val DELAY_BETWEEN_REQUEST = 3L
+    const val DELAY_BETWEEN_REQUEST = 5L
     const val SEND_MESSAGES = true
     val DEFAULT_CHARSET: Charset = StandardCharsets.UTF_8
     val GUILDS_FOLDER = File("guilds")

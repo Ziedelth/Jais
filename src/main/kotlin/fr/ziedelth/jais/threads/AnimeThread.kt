@@ -8,6 +8,7 @@ import fr.ziedelth.jais.utils.animes.News
 import java.io.File
 import java.nio.file.Files
 import java.util.stream.Collectors
+import kotlin.math.max
 
 class AnimeThread : Runnable {
     private val thread = Thread(this, "AnimeThread")
@@ -47,6 +48,8 @@ class AnimeThread : Runnable {
     override fun run() {
         while (!this.thread.isInterrupted) {
             JLogger.info("Checking news...")
+            val checkStart = System.currentTimeMillis()
+
             var start = System.currentTimeMillis()
 
             val news: MutableList<News> = mutableListOf()
@@ -127,7 +130,20 @@ class AnimeThread : Runnable {
 
             end = System.currentTimeMillis()
             JLogger.info("Took ${(end - start)}ms to check episodes")
-            this.thread.join(Const.DELAY_BETWEEN_REQUEST * 60000)
+
+            val checkEnd = System.currentTimeMillis()
+            val fullCheckTime = checkEnd - checkStart
+            val waitingTimeToNextProcess = (Const.DELAY_BETWEEN_REQUEST * 60000) - fullCheckTime
+            JLogger.warning("Took ${(fullCheckTime / 1000)}s to full check!")
+            JLogger.warning(
+                "Need to wait ${
+                    (max(
+                        0,
+                        waitingTimeToNextProcess
+                    )).toDouble() / 1000.0
+                }s to do the next check! ${if (waitingTimeToNextProcess < 0) "OVERLOAD" else ""}"
+            )
+            this.thread.join(if (waitingTimeToNextProcess < 0) 1 else waitingTimeToNextProcess)
         }
     }
 

@@ -14,6 +14,7 @@ class UpdateThread : Runnable {
         while (!this.thread.isInterrupted) {
             this.thread.join(3600000L)
             Const.CLIENTS.forEach { it.update() }
+            System.gc()
         }
     }
 }

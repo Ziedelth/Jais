@@ -2,6 +2,7 @@ package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.*
 import org.openqa.selenium.By
 import org.openqa.selenium.firefox.FirefoxDriver
@@ -12,13 +13,14 @@ import org.openqa.selenium.support.ui.WebDriverWait
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.math.min
 import kotlin.math.pow
 
 class Wakanim : Platform {
-    private val timeout = 120L
+    private val timeout = 60L
     private val options: FirefoxOptions = FirefoxOptions().setHeadless(true)
     private val episodes: MutableMap<String, Long> = mutableMapOf()
 
@@ -46,6 +48,8 @@ class Wakanim : Platform {
             Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
             val driver = FirefoxDriver(this.options)
+            driver.manage().timeouts().pageLoadTimeout(this.timeout, TimeUnit.SECONDS)
+            driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS)
             val driverWait = WebDriverWait(driver, this.timeout)
 
             try {
@@ -89,37 +93,49 @@ class Wakanim : Platform {
 
                             if (tt.equals("episode", true)) {
                                 if (!this.episodes.containsKey(id)) {
+                                    JLogger.info("Check time for episode $anime...")
                                     Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
                                     val driverEpisode = FirefoxDriver(this.options)
+                                    driverEpisode.manage().timeouts().pageLoadTimeout(this.timeout, TimeUnit.SECONDS)
+                                    driverEpisode.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS)
                                     val driverEpisodeWait = WebDriverWait(driverEpisode, this.timeout)
 
-                                    driverEpisode.get(link)
+                                    try {
+                                        driverEpisode.get(link)
 
-                                    val list =
-                                        driverEpisodeWait.until(
-                                            ExpectedConditions.presenceOfAllElementsLocatedBy(
-                                                By.xpath(
-                                                    "/html/body/section[2]/div/div/div[1]/div/ul/li"
+                                        val list =
+                                            driverEpisodeWait.until(
+                                                ExpectedConditions.presenceOfAllElementsLocatedBy(
+                                                    By.xpath(
+                                                        "/html/body/section[2]/div/div/div[1]/div/ul/li"
+                                                    )
                                                 )
                                             )
-                                        )
-                                    val time = driverEpisodeWait.until(
-                                        ExpectedConditions.presenceOfElementLocated(
-                                            By.xpath(
-                                                "/html/body/section[2]/div/div/div[1]/div/ul/li[${
-                                                    min(
-                                                        5,
-                                                        list.size
-                                                    )
-                                                }]/div/div[2]/span"
-                                            )
-                                        )
-                                    ).text.split(":")
-                                    val dl = time.size
-                                    for (i in dl downTo 1) duration += time[dl - i].toLong() * 60.0.pow(((i - 1).toDouble()))
-                                        .toLong()
 
-                                    driverEpisode.quit()
+                                        val time = driverEpisodeWait.until(
+                                            ExpectedConditions.presenceOfElementLocated(
+                                                By.xpath(
+                                                    "/html/body/section[2]/div/div/div[1]/div/ul/li[${
+                                                        min(
+                                                            5,
+                                                            list.size
+                                                        )
+                                                    }]/div/div[2]/span"
+                                                )
+                                            )
+                                        ).text.split(":")
+
+                                        val dl = time.size
+                                        for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
+                                            ((i - 1).toDouble())
+                                        ).toLong()
+                                    } catch (exception: Exception) {
+                                        duration = 1440
+                                        JLogger.warning("Error on get time $anime episode: ${exception.message}")
+                                    } finally {
+                                        driverEpisode.quit()
+                                    }
+
                                     this.episodes[id] = duration
                                 } else duration = this.episodes[id]!!
                             } else duration = 1440
@@ -142,8 +158,8 @@ class Wakanim : Platform {
                         }
                     }
                 }
-            } catch (e: Exception) {
-                return getLastEpisodes()
+            } catch (exception: Exception) {
+                JLogger.warning("Error on get Wakanim episode: ${exception.message}")
             } finally {
                 driver.quit()
             }
