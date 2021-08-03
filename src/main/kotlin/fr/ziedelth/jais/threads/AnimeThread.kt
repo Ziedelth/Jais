@@ -12,76 +12,62 @@ import kotlin.math.max
 
 class AnimeThread : Runnable {
     private val thread = Thread(this, "AnimeThread")
-    private val episodesFile = File("episodes.json")
-    private val newsFile = File("news.json")
-    private var episodesList: MutableMap<String, Episode> = mutableMapOf()
-    private var newsList: MutableList<News> = mutableListOf()
 
     init {
         this.thread.isDaemon = true
         this.thread.start()
-
-        if (this.episodesFile.exists()) {
-            val array: JsonArray =
-                Const.GSON.fromJson(
-                    Files.readString(this.episodesFile.toPath(), Const.DEFAULT_CHARSET),
-                    JsonArray::class.java
-                )
-
-            array.filter { !it.isJsonNull && it.isJsonObject }.forEach {
-                val episode = Const.GSON.fromJson(it, Episode::class.java)
-                this.episodesList[episode.globalId] = episode
-            }
-        }
-
-        if (this.newsFile.exists()) {
-            val array: JsonArray =
-                Const.GSON.fromJson(
-                    Files.readString(this.newsFile.toPath(), Const.DEFAULT_CHARSET),
-                    JsonArray::class.java
-                )
-            array.filter { !it.isJsonNull && it.isJsonObject }
-                .forEach { this.newsList.add(Const.GSON.fromJson(it, News::class.java)) }
-        }
     }
 
     override fun run() {
         while (!this.thread.isInterrupted) {
-            JLogger.info("Checking news...")
             val checkStart = System.currentTimeMillis()
+            val episodesFile = File("episodes.json")
+            val newsFile = File("news.json")
+            val episodesList: MutableMap<String, Episode> = mutableMapOf()
+            val newsList: MutableList<News> = mutableListOf()
 
-            var start = System.currentTimeMillis()
+            if (episodesFile.exists()) {
+                val array: JsonArray =
+                    Const.GSON.fromJson(
+                        Files.readString(episodesFile.toPath(), Const.DEFAULT_CHARSET),
+                        JsonArray::class.java
+                    )
+
+                array.filter { !it.isJsonNull && it.isJsonObject }.forEach {
+                    val episode = Const.GSON.fromJson(it, Episode::class.java)
+                    episodesList[episode.globalId] = episode
+                }
+            }
+
+            if (newsFile.exists()) {
+                val array: JsonArray =
+                    Const.GSON.fromJson(
+                        Files.readString(newsFile.toPath(), Const.DEFAULT_CHARSET),
+                        JsonArray::class.java
+                    )
+                array.filter { !it.isJsonNull && it.isJsonObject }
+                    .forEach { newsList.add(Const.GSON.fromJson(it, News::class.java)) }
+            }
 
             val news: MutableList<News> = mutableListOf()
             Const.PLATFORMS.forEach { news.addAll(it.getLastNews()) }
-            val newNews = news.stream().filter { !this.contains(it) }.collect(Collectors.toList())
+            val newNews = news.stream().filter { !this.contains(newsList, it) }.collect(Collectors.toList())
 
             if (newNews.isNotEmpty()) {
-                newNews.forEach { this.newsList.add(it) }
+                newNews.forEach { newsList.add(it) }
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendNews(newNews.toTypedArray()) }
-                JLogger.info("New ${newNews.size} news(s)!")
-                Files.writeString(this.newsFile.toPath(), Const.GSON.toJson(this.newsList), Const.DEFAULT_CHARSET)
+                Files.writeString(newsFile.toPath(), Const.GSON.toJson(newsList), Const.DEFAULT_CHARSET)
             }
-
-            var end = System.currentTimeMillis()
-            JLogger.info("Took ${(end - start)}ms to check news")
-            JLogger.info("Checking episodes...")
-            start = System.currentTimeMillis()
 
             val episodes: MutableList<Episode> = mutableListOf()
 
-            Const.PLATFORMS.forEach {
-                val startPlatformCheckTime = System.currentTimeMillis()
-                episodes.addAll(it.getLastEpisodes())
-                val endPlatformCheckTime = System.currentTimeMillis()
-                JLogger.info("Took ${endPlatformCheckTime - startPlatformCheckTime}ms to check episodes on platform ${it.getName()} ")
-            }
+            Const.PLATFORMS.forEach { episodes.addAll(it.getLastEpisodes()) }
 
             val newEpisodes =
-                episodes.stream().filter { !this.episodesList.containsKey(it.globalId) }.collect(Collectors.toList())
+                episodes.stream().filter { !episodesList.containsKey(it.globalId) }.collect(Collectors.toList())
             val editEpisodes = episodes.stream()
                 .filter {
-                    this.episodesList.containsKey(it.globalId) && this.episodesList[it.globalId]!! != it && !this.episodesList[it.globalId]!!.datas.contains(
+                    episodesList.containsKey(it.globalId) && episodesList[it.globalId]!! != it && !episodesList[it.globalId]!!.datas.contains(
                         it.data
                     )
                 }
@@ -90,7 +76,7 @@ class AnimeThread : Runnable {
             if (newEpisodes.isNotEmpty()) {
                 newEpisodes.forEach {
                     it.datas.add(it.data)
-                    this.episodesList[it.globalId] = it
+                    episodesList[it.globalId] = it
                 }
 
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client ->
@@ -100,10 +86,9 @@ class AnimeThread : Runnable {
                     )
                 }
 
-                JLogger.info("New ${newEpisodes.size} episode(s)!")
                 Files.writeString(
-                    this.episodesFile.toPath(),
-                    Const.GSON.toJson(this.episodesList.values),
+                    episodesFile.toPath(),
+                    Const.GSON.toJson(episodesList.values),
                     Const.DEFAULT_CHARSET
                 )
             }
@@ -112,41 +97,39 @@ class AnimeThread : Runnable {
                 val a: MutableList<Episode> = mutableListOf()
 
                 editEpisodes.forEach {
-                    val episode = this.episodesList[it.globalId]!!
+                    val episode = episodesList[it.globalId]!!
                     episode.edit(it)
                     episode.datas.add(episode.data)
-                    this.episodesList[it.globalId] = episode
+                    episodesList[it.globalId] = episode
                     a.add(episode)
                 }
 
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client -> client.sendEpisode(a.toTypedArray(), false) }
-                JLogger.info("Edit ${editEpisodes.size} episode(s)!")
+
                 Files.writeString(
-                    this.episodesFile.toPath(),
-                    Const.GSON.toJson(this.episodesList.values),
+                    episodesFile.toPath(),
+                    Const.GSON.toJson(episodesList.values),
                     Const.DEFAULT_CHARSET
                 )
             }
 
-            end = System.currentTimeMillis()
-            JLogger.info("Took ${(end - start)}ms to check episodes")
-
             val checkEnd = System.currentTimeMillis()
             val fullCheckTime = checkEnd - checkStart
             val waitingTimeToNextProcess = (Const.DELAY_BETWEEN_REQUEST * 60000) - fullCheckTime
-            JLogger.warning("Took ${(fullCheckTime / 1000)}s to full check!")
-            JLogger.warning(
-                "Need to wait ${
+
+            JLogger.info(
+                "Took ${(fullCheckTime / 1000)}s to full check! Need to wait ${
                     (max(
                         0,
                         waitingTimeToNextProcess
                     )).toDouble() / 1000.0
                 }s to do the next check! ${if (waitingTimeToNextProcess < 0) "OVERLOAD" else ""}"
             )
+
             this.thread.join(if (waitingTimeToNextProcess < 0) 1 else waitingTimeToNextProcess)
         }
     }
 
-    fun contains(string: String): Boolean = this.newsList.any { it.toString() == string }
-    fun contains(news: News): Boolean = this.contains(news.toString())
+    fun contains(newsList: Collection<News>, string: String): Boolean = newsList.any { it.toString() == string }
+    fun contains(newsList: Collection<News>, news: News): Boolean = this.contains(newsList, news.toString())
 }

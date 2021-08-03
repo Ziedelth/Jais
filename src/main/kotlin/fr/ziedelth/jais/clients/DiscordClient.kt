@@ -2,9 +2,9 @@ package fr.ziedelth.jais.clients
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import fr.ziedelth.jais.commands.AnimeCommand
-import fr.ziedelth.jais.listeners.GuildMessageReactionAdd
-import fr.ziedelth.jais.listeners.SlashCommand
+import fr.ziedelth.jais.commands.ConfigCommand
+import fr.ziedelth.jais.commands.PlatformsCommand
+import fr.ziedelth.jais.listeners.*
 import fr.ziedelth.jais.utils.*
 import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
@@ -28,19 +28,12 @@ import java.time.temporal.TemporalAccessor
 import java.util.*
 
 class DiscordClient : Client {
-    private val file = File("discord.json")
-    private val obj: JsonObject = if (!this.file.exists()) JsonObject() else Const.GSON.fromJson(
-        Files.readString(
-            this.file.toPath(),
-            Const.DEFAULT_CHARSET
-        ), JsonObject::class.java
-    )
     private val tokenFile = File(Const.TOKENS_FOLDER, "discord.json")
     private val init: Boolean
     private var jda: JDA? = null
     private var master: User? = null
     private var image: String? = null
-    private val commands: Array<Command> = arrayOf(AnimeCommand())
+    val commands: Array<Command> = arrayOf(PlatformsCommand(), ConfigCommand())
 
     init {
         if (!this.tokenFile.exists()) {
@@ -64,28 +57,61 @@ class DiscordClient : Client {
                 this.jda!!.presence.setPresence(OnlineStatus.IDLE, true)
                 this.jda!!.awaitReady()
 
-                this.jda!!.guilds.forEach { it.getJGuild() }
+                this.jda!!.guilds.forEach {
+                    it.getJGuild()
 
-                val commandUpdateAction: CommandListUpdateAction = this.jda!!.updateCommands()
+                    if (!Const.PUBLIC) {
+                        val clua = it.updateCommands()
 
-                this.commands.forEach { command ->
-                    run {
-                        val commandData = CommandData(command.name, command.description)
-                        command.options.forEach { option ->
-                            commandData.addOption(
-                                option.type,
-                                option.name,
-                                option.description,
-                                option.required
-                            )
+                        this.commands.forEach { command ->
+                            run {
+                                val commandData = CommandData(command.name, command.description)
+                                command.options.forEach { option ->
+                                    commandData.addOption(
+                                        option.type,
+                                        option.name,
+                                        option.description,
+                                        option.required
+                                    )
+                                }
+
+                                clua.addCommands(commandData)
+                            }
                         }
-                        commandUpdateAction.addCommands(commandData)
-                    }
+
+                        clua.submit()
+                    } else it.updateCommands().submit()
                 }
 
-                commandUpdateAction.submit()
+                if (Const.PUBLIC) {
+                    val commandUpdateAction: CommandListUpdateAction = this.jda!!.updateCommands()
 
-                this.jda!!.addEventListener(SlashCommand(this.commands), GuildMessageReactionAdd())
+                    this.commands.forEach { command ->
+                        run {
+                            val commandData = CommandData(command.name, command.description)
+                            command.options.forEach { option ->
+                                commandData.addOption(
+                                    option.type,
+                                    option.name,
+                                    option.description,
+                                    option.required
+                                )
+                            }
+                            commandUpdateAction.addCommands(commandData)
+                        }
+                    }
+
+                    commandUpdateAction.submit()
+                }
+
+                this.jda!!.addEventListener(
+                    SlashCommand(this.commands),
+                    GuildMessageReceived(),
+                    GuildMessageReactionAdd(),
+                    GuildMessageReactionRemove(),
+                    GuildJoin(this.commands),
+                    GuildLeave()
+                )
                 this.update()
             }
         }
@@ -101,7 +127,14 @@ class DiscordClient : Client {
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
         if (!this.init) return
-        val episodesObj: JsonObject = this.obj["episodes"]?.asJsonObject ?: JsonObject()
+        val file = File("discord.json")
+        val obj: JsonObject = if (!file.exists()) JsonObject() else Const.GSON.fromJson(
+            Files.readString(
+                file.toPath(),
+                Const.DEFAULT_CHARSET
+            ), JsonObject::class.java
+        )
+        val episodesObj: JsonObject = obj["episodes"]?.asJsonObject ?: JsonObject()
 
         if (new) {
             Country.values().forEach { country ->
@@ -126,8 +159,8 @@ class DiscordClient : Client {
                     }
 
                     if (size > 0) {
-                        this.obj.add("episodes", episodesObj)
-                        Files.writeString(this.file.toPath(), Const.GSON.toJson(this.obj), Const.DEFAULT_CHARSET)
+                        obj.add("episodes", episodesObj)
+                        Files.writeString(file.toPath(), Const.GSON.toJson(obj), Const.DEFAULT_CHARSET)
                     }
                 } else {
                     val animes: MutableList<String> = mutableListOf()

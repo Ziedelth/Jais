@@ -1,6 +1,7 @@
 package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
+import fr.ziedelth.jais.utils.DriverBuilder
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.*
@@ -16,6 +17,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.collections.set
 import kotlin.math.min
 import kotlin.math.pow
 
@@ -54,6 +56,7 @@ class Wakanim : Platform {
 
             try {
                 driver.get("${this.getURL()}${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
+                DriverBuilder.addDriver(driver)
 
                 val episodeList =
                     driverWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("/html/body/div[1]/div[2]/div")))
@@ -72,7 +75,7 @@ class Wakanim : Platform {
                                 driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a")))
                             val link = linkElement.getAttribute("href")
 
-                            // UNCHANGED// UNCHANGED
+                            // UNCHANGED
                             val anime = StringBuilder()
                             val max = splitFullText.indexOf("Séries") - 1
                             for (i in 1..max) anime.append(splitFullText[i]).append(if (i >= max) "" else " ")
@@ -93,7 +96,6 @@ class Wakanim : Platform {
 
                             if (tt.equals("episode", true)) {
                                 if (!this.episodes.containsKey(id)) {
-                                    JLogger.info("Check time for episode $anime...")
                                     Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
                                     val driverEpisode = FirefoxDriver(this.options)
                                     driverEpisode.manage().timeouts().pageLoadTimeout(this.timeout, TimeUnit.SECONDS)
@@ -102,6 +104,7 @@ class Wakanim : Platform {
 
                                     try {
                                         driverEpisode.get(link)
+                                        DriverBuilder.addDriver(driverEpisode)
 
                                         val list =
                                             driverEpisodeWait.until(
@@ -131,8 +134,8 @@ class Wakanim : Platform {
                                         ).toLong()
                                     } catch (exception: Exception) {
                                         duration = 1440
-                                        JLogger.warning("Error on get time $anime episode: ${exception.message}")
                                     } finally {
+                                        DriverBuilder.removeDriver(driverEpisode)
                                         driverEpisode.quit()
                                     }
 
@@ -161,6 +164,7 @@ class Wakanim : Platform {
             } catch (exception: Exception) {
                 JLogger.warning("Error on get Wakanim episode: ${exception.message}")
             } finally {
+                DriverBuilder.removeDriver(driver)
                 driver.quit()
             }
         }

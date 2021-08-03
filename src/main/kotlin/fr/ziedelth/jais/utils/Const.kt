@@ -6,6 +6,7 @@ import fr.ziedelth.jais.platforms.AnimeDigitalNetwork
 import fr.ziedelth.jais.platforms.Crunchyroll
 import fr.ziedelth.jais.platforms.Wakanim
 import fr.ziedelth.jais.utils.animes.Platform
+import java.awt.Color
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -31,6 +32,9 @@ object Const {
             if (!field.exists()) field.mkdirs()
             return field
         }
+    val MAIN_COLOR: Color = Color.YELLOW
+    const val PUBLIC: Boolean = true
+    const val DISPLAY = 5
 
     private fun encode(algorithm: String, bytes: ByteArray): String {
         val md = MessageDigest.getInstance(algorithm)

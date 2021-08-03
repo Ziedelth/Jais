@@ -21,13 +21,6 @@ import javax.imageio.ImageIO
 
 class TwitterClient : Client {
     private val location = GeoLocation(45.764043, 4.835659)
-    private val file = File("twitter.json")
-    private val obj: JsonObject = if (!this.file.exists()) JsonObject() else Const.GSON.fromJson(
-        Files.readString(
-            this.file.toPath(),
-            Const.DEFAULT_CHARSET
-        ), JsonObject::class.java
-    )
     private val tokenFile = File(Const.TOKENS_FOLDER, "twitter.json")
     private val init: Boolean
     private var twitter: Twitter? = null
@@ -80,7 +73,14 @@ class TwitterClient : Client {
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
         if (!this.init) return
-        val episodesObj: JsonObject = this.obj["episodes"]?.asJsonObject ?: JsonObject()
+        val file = File("twitter.json")
+        val obj: JsonObject = if (!file.exists()) JsonObject() else Const.GSON.fromJson(
+            Files.readString(
+                file.toPath(),
+                Const.DEFAULT_CHARSET
+            ), JsonObject::class.java
+        )
+        val episodesObj: JsonObject = obj["episodes"]?.asJsonObject ?: JsonObject()
         val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
 
         if (new) {
@@ -114,8 +114,8 @@ class TwitterClient : Client {
                 }
 
                 if (size > 0) {
-                    this.obj.add("episodes", episodesObj)
-                    Files.writeString(this.file.toPath(), Const.GSON.toJson(this.obj), Const.DEFAULT_CHARSET)
+                    obj.add("episodes", episodesObj)
+                    Files.writeString(file.toPath(), Const.GSON.toJson(obj), Const.DEFAULT_CHARSET)
                 }
             } else {
                 this.twitter!!.updateStatus(
