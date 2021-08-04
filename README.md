@@ -6,24 +6,24 @@ Jaïs est un programme permettant d'être notifié de toutes les nouveautés en 
 
 _Version de développement, pas encore accès au public_
 
-### Sommaire
+## Sommaire
 
 1. [Réseaux sociaux](#réseaux-sociaux)
 2. [Plateformes d'animes prises en charges](#plateformes-danimes-prises-en-charges)
 3. [Dépendances](#dépendances)
 
-### Réseaux sociaux
+## Réseaux sociaux
 
 - [x] Discord
 - [x] Twitter
 
-### Plateformes d'animes prises en charges
+## Plateformes d'animes prises en charges
 
 - [x] Anime Digital Network
 - [x] Crunchyroll
 - [x] Wakanim
 
-### Dépendances
+## Dépendances
 
 Ce projet nécessite **Java 11+**.<br>
 Toutes les dépendances sont gérés automatiquement par Maven.
