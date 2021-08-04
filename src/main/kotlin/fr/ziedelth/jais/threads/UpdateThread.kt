@@ -20,7 +20,6 @@ class UpdateThread : Runnable {
             removeAllDeprecatedReactions()
             removeAllDeprecatedConfigurations()
             DriverBuilder.removeAllDeprecatedDrivers()
-            System.gc()
         }
     }
 }
