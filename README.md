@@ -1,4 +1,4 @@
-<img src="https://ziedelth.fr/images/brand.jpg?raw=true" height="200" width="200" alt="Jaïs logo" style="margin: 1vh; float: right; border: black solid 1px; border-radius: 360px">
+<img align="right" src="https://ziedelth.fr/images/brand.jpg?raw=true" height="200" width="200" alt="Jaïs logo">
 
 # Jaïs
 
@@ -8,11 +8,11 @@ _Version de développement, pas encore accès au public_
 
 ### Sommaire
 
-1. [Plateformes de messages prises en charges](#plateformes-de-messages-prises-en-charges)
-2. [Plateformes d'animes prises en charges](#plateformes-d'animes-prises-en-charges)
+1. [Réseaux sociaux](#réseaux-sociaux)
+2. [Plateformes d'animes prises en charges](#plateformes-danimes-prises-en-charges)
 3. [Dépendances](#dépendances)
 
-### Plateformes de messages prises en charges
+### Réseaux sociaux
 
 - [x] Discord
 - [x] Twitter
