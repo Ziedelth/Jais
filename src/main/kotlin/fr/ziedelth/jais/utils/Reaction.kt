@@ -12,18 +12,19 @@ fun removeAllReactionsFrom(message: Message) {
 
 fun removeAllDeprecatedReactions() {
     val ids: MutableList<String> = mutableListOf()
-    reactions.filter { (_, reaction) -> (System.currentTimeMillis() - reaction.timestamp) >= 3600000L }
+    reactions.filter { (_, reaction) -> reaction.deprecatedWithTime && (System.currentTimeMillis() - reaction.timestamp) >= 3600000L }
         .forEach { (id, _) -> ids.add(id) }
     ids.forEach { reactions.remove(it) }
 }
 
 class Reaction(
     val timestamp: Long = System.currentTimeMillis(),
+    val deprecatedWithTime: Boolean = true,
     val message: Message,
     val unicode: String,
     val onClick: ClickRunnable
 ) {
-    val id = Const.encodeMD5("${this.message.idLong}${this.unicode}".toByteArray())
+    val id = Const.encodeMD5("${this.message.idLong}${this.unicode}")
 
     fun add(action: Runnable? = null) {
         if (!reactions.containsKey(this.id)) {

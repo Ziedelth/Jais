@@ -1,15 +1,16 @@
 package fr.ziedelth.jais.clients
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import fr.ziedelth.jais.commands.ConfigCommand
 import fr.ziedelth.jais.commands.PlatformsCommand
 import fr.ziedelth.jais.listeners.*
 import fr.ziedelth.jais.utils.*
+import fr.ziedelth.jais.utils.Emoji.CLAP
 import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
+import fr.ziedelth.jais.utils.clients.Client
+import fr.ziedelth.jais.utils.clients.JClient
 import fr.ziedelth.jais.utils.commands.Command
 import fr.ziedelth.jais.utils.tokens.DiscordToken
 import net.dv8tion.jda.api.EmbedBuilder
@@ -28,12 +29,13 @@ import java.time.temporal.TemporalAccessor
 import java.util.*
 
 class DiscordClient : Client {
+    private val file = File("discord.json")
     private val tokenFile = File(Const.TOKENS_FOLDER, "discord.json")
     private val init: Boolean
     private var jda: JDA? = null
     private var master: User? = null
     private var image: String? = null
-    val commands: Array<Command> = arrayOf(PlatformsCommand(), ConfigCommand())
+    private val commands: Array<Command> = arrayOf(PlatformsCommand(), ConfigCommand())
 
     init {
         if (!this.tokenFile.exists()) {
@@ -117,6 +119,17 @@ class DiscordClient : Client {
         }
     }
 
+    override fun getJClient(): JClient {
+        return if (this.file.exists()) Const.GSON.fromJson(
+            Files.readString(this.file.toPath(), Const.DEFAULT_CHARSET),
+            JClient::class.java
+        ) else JClient()
+    }
+
+    override fun saveJClient(jClient: JClient) {
+        Files.writeString(this.file.toPath(), Const.GSON.toJson(jClient), Const.DEFAULT_CHARSET)
+    }
+
     override fun update() {
         JLogger.info("[${this.javaClass.simpleName}] Connected to ${this.jda!!.guilds.size} guild(s)!")
         this.image = this.jda!!.selfUser.avatarUrl
@@ -127,14 +140,7 @@ class DiscordClient : Client {
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
         if (!this.init) return
-        val file = File("discord.json")
-        val obj: JsonObject = if (!file.exists()) JsonObject() else Const.GSON.fromJson(
-            Files.readString(
-                file.toPath(),
-                Const.DEFAULT_CHARSET
-            ), JsonObject::class.java
-        )
-        val episodesObj: JsonObject = obj["episodes"]?.asJsonObject ?: JsonObject()
+        val jClient = this.getJClient()
 
         if (new) {
             Country.values().forEach { country ->
@@ -143,7 +149,7 @@ class DiscordClient : Client {
 
                 if (size <= 12) {
                     countryEpisodes.forEach {
-                        val messageArray = episodesObj[it.globalId]?.asJsonArray ?: JsonArray()
+                        val jEpisode = jClient.getEpisodeById(it.globalId)
                         val embed = getEpisodeEmbed(it).build()
 
                         guilds.forEach { (_, ziedGuild) ->
@@ -151,67 +157,71 @@ class DiscordClient : Client {
                                 .forEach { (textChannelId, _) ->
                                     val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
                                     val message = textChannel?.sendMessageEmbeds(embed)?.complete()
-                                    if (message != null) messageArray.add(message.idLong)
+
+                                    if (message != null) jEpisode.messages.add(message.idLong)
                                 }
                         }
 
-                        episodesObj.add(it.globalId, messageArray)
+                        jClient.addEpisode(jEpisode)
                     }
 
-                    if (size > 0) {
-                        obj.add("episodes", episodesObj)
-                        Files.writeString(file.toPath(), Const.GSON.toJson(obj), Const.DEFAULT_CHARSET)
-                    }
+                    if (size > 0) this.saveJClient(jClient)
                 } else {
-                    val animes: MutableList<String> = mutableListOf()
-                    val stringBuilder: StringBuilder = StringBuilder()
-                    var i = 0
-                    var image: String? = ""
+                    Const.PLATFORMS.forEach { platform ->
+                        val animes: MutableList<String> = mutableListOf()
+                        val stringBuilder: StringBuilder = StringBuilder()
+                        var i = 0
+                        var image: String? = ""
 
-                    countryEpisodes.forEach {
-                        if (!animes.contains(it.anime)) {
-                            val length = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
+                        countryEpisodes.filter { it.platform == platform.getName() }.forEach {
+                            if (!animes.contains(it.anime)) {
+                                val length = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
 
-                            if (length > i) {
-                                i = length
-                                image = it.image
+                                if (length > i) {
+                                    i = length
+                                    image = it.image
+                                }
+
+                                animes.add(it.anime)
+
+                                val display = "• ${it.anime}"
+                                val s = "• [${it.anime}](${it.link})\n"
+
+                                if (stringBuilder.length + display.length < 2000) stringBuilder.append(s)
                             }
-
-                            animes.add(it.anime)
-
-                            val display = "• ${it.anime}"
-                            val s = "• [${it.anime}](${it.link})\n"
-
-                            if (stringBuilder.length + display.length < 2000) stringBuilder.append(s)
                         }
-                    }
 
-                    val embed = setEmbed(
-                        title = "${country.flag}  ${country.countryName}\n$size ${country.episode}s",
-                        description = stringBuilder.toString(),
-                        image = image,
-                        timestamp = Calendar.getInstance().toInstant()
-                    ).build()
+                        val embed = setEmbed(
+                            author = platform.getName(),
+                            authorUrl = platform.getURL(),
+                            authorIcon = platform.getImage(),
+                            title = "${country.flag}  ${country.countryName} > ${countryEpisodes.filter { it.platform == platform.getName() }.size} ${country.episode}s",
+                            description = stringBuilder.toString(),
+                            color = platform.getColor(),
+                            image = image,
+                            timestamp = Calendar.getInstance().toInstant()
+                        ).build()
 
-                    guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
-                            .forEach { (textChannelId, _) ->
-                                val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                                textChannel?.sendMessageEmbeds(embed)?.queue()
-                            }
+                        guilds.forEach { (_, ziedGuild) ->
+                            ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
+                                .forEach { (textChannelId, _) ->
+                                    val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
+                                    textChannel?.sendMessageEmbeds(embed)?.queue()
+                                }
+                        }
                     }
                 }
             }
         } else {
             episodes.forEach {
-                if (episodesObj.has(it.globalId)) {
-                    val messageArray = episodesObj[it.globalId]!!.asJsonArray
+                if (jClient.hasEpisode(it.globalId)) {
+                    val jEpisode = jClient.getEpisodeById(it.globalId)
                     val embed = getEpisodeEmbed(it).build()
 
-                    messageArray.forEach { messageId ->
+                    jEpisode.messages.forEach { messageId ->
                         guilds.forEach { (_, ziedGuild) ->
                             ziedGuild.guild.textChannels.forEach { textChannel ->
-                                textChannel.retrieveMessageById(messageId.asLong).queue({ message ->
+                                textChannel.retrieveMessageById(messageId).queue({ message ->
                                     run {
                                         message.editMessageEmbeds(embed).queue()
                                     }
@@ -277,8 +287,9 @@ class DiscordClient : Client {
             episode.link,
             description = """
                 ${if (episode.title != null) "** ${episode.title} **" else ""}
+                ${episode.country.season} ${episode.season}
                 ${episode.country.episode} ${episode.number}
-                🎬 ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}
+                $CLAP ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}
             """.trimIndent(),
             color = episode.p?.getColor(),
             image = episode.image,

@@ -44,20 +44,14 @@ class AnimeDigitalNetwork : Platform {
                 val showObject = jObject.getAsJsonObject("show")
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
 
-                val season: String? = if (!jsonObject.has("season") || jObject["season"]?.isJsonNull == true) {
-                    null
-                } else {
-                    try {
-                        val i: Int = jObject["season"].asString.toInt()
-                        if (i > 1) "Saison $i"
-                        else null
-                    } catch (exception: Exception) {
-                        jObject["season"].asString
-                    }
-                }
-
-                var anime = showObject.get("title").asString
-                if (!anime.contains("Saison", true) && season != null) anime += " - $season"
+                val season: String = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
+                    jObject["season"]?.asString,
+                    "1"
+                ) else "1"
+                val anime =
+                    if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
+                        "title"
+                    ).asString
 
                 val title: String? =
                     if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
@@ -79,6 +73,7 @@ class AnimeDigitalNetwork : Platform {
                         platform = this.getName(),
                         calendar = ISO8601.fromCalendar(releaseDate),
                         anime = anime,
+                        season = season,
                         number = number,
                         country = country,
                         type = type,

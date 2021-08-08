@@ -14,7 +14,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.awt.Color
 import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.collections.set
@@ -24,6 +26,8 @@ class Wakanim : Platform {
     private val timeout = 60L
     private val options: FirefoxOptions = FirefoxOptions().setHeadless(true).setProfile(FirefoxProfile())
     private val episodes: MutableMap<String, Long> = mutableMapOf()
+    private val seasons: MutableMap<String, String> = mutableMapOf()
+    private var lastDate: String? = null
 
     init {
         System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, "true")
@@ -45,10 +49,20 @@ class Wakanim : Platform {
         val calendar = Calendar.getInstance()
         val date = this.date(calendar)
 
+        if (this.lastDate.isNullOrEmpty()) this.lastDate = date
+        else {
+            if (this.lastDate != date) {
+                this.lastDate = date
+                this.episodes.clear()
+                this.seasons.clear()
+            }
+        }
+
         this.getAllowedCountries().forEach { country ->
             Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
             val driver = FirefoxDriver(this.options)
+            driver.manage().timeouts().pageLoadTimeout(this.timeout, TimeUnit.SECONDS)
             val driverWait = WebDriverWait(driver, this.timeout)
 
             try {
@@ -65,6 +79,7 @@ class Wakanim : Platform {
                         val episodeBuilder = EpisodeBuilder()
                         val fullText = webElement.text.replace("\n", " ")
                         val splitFullText = fullText.split(" ")
+                        val time = splitFullText[0]
 
                         val releaseDate = setDate(
                             date,
@@ -91,14 +106,26 @@ class Wakanim : Platform {
                             )
                         ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                         episodeBuilder.type = type
-
                         val image =
                             driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a/img")))
                                 .getAttribute("src")
                         episodeBuilder.image = image
 
-                        val id = link.replace("//", "/").split("/")[6]
+                        val linkSplit = link.replace("//", "/").split("/")
+                        val tt = linkSplit[5]
+                        val id = linkSplit[6]
                         episodeBuilder.id = id
+
+                        val seasonId = Const.encodeMD5("$time$anime$number$type")
+
+                        if (!this.seasons.containsKey(seasonId)) {
+                            if (tt.equals("show", true)) {
+                                val season = linkSplit.last().split("-")[1]
+                                episodeBuilder.season = season
+                                this.seasons[seasonId] = season
+                            } else episodeBuilder.season = "1"
+                        } else episodeBuilder.season = this.seasons[seasonId]
+
                         list.add(episodeBuilder)
                     }
 
@@ -109,19 +136,23 @@ class Wakanim : Platform {
                         if (calendar.after(it.calendar)) {
                             if (tt.equals("episode", true)) {
                                 if (!this.episodes.containsKey(it.id)) {
-                                    driver.get(it.link)
-                                    val time = driverWait.until(
-                                        ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                            By.className("currentEp"), By.className("slider_item_duration")
-                                        )
-                                    )[0].text.split(":")
+                                    try {
+                                        driver.get(it.link)
+                                        val time = driverWait.until(
+                                            ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                By.className("currentEp"), By.className("slider_item_duration")
+                                            )
+                                        )[0].text.split(":")
 
-                                    val dl = time.size
-                                    for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
-                                        ((i - 1).toDouble())
-                                    ).toLong()
+                                        val dl = time.size
+                                        for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
+                                            ((i - 1).toDouble())
+                                        ).toLong()
 
-                                    if (duration > 0L) this.episodes[it.id!!] = duration
+                                        if (duration > 0L) this.episodes[it.id!!] = duration
+                                    } catch (exception: Exception) {
+                                        duration = 1440
+                                    }
                                 } else duration = this.episodes[it.id]!!
                             } else duration = 1440
 
@@ -131,6 +162,7 @@ class Wakanim : Platform {
                                 platform = this.getName(),
                                 calendar = ISO8601.fromCalendar(it.calendar!!),
                                 anime = it.anime!!,
+                                season = it.season!!,
                                 number = it.number!!,
                                 country = country,
                                 type = it.type!!,
@@ -162,13 +194,15 @@ class Wakanim : Platform {
 
     private fun setDate(date: String, hour: Int, minutes: Int): Calendar {
         val calendar = Calendar.getInstance()
+        val timezone = ZonedDateTime.now().offset.totalSeconds
         val d = SimpleDateFormat("dd-MM-yyyy").parse(date)
         calendar.time = d
 
-        calendar.set(Calendar.HOUR_OF_DAY, hour + 2)
+        calendar.set(Calendar.HOUR_OF_DAY, hour)
         calendar.set(Calendar.MINUTE, minutes)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
+        calendar.add(Calendar.SECOND, timezone)
         return calendar
     }
 }

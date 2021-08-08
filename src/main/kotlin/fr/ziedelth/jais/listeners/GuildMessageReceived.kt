@@ -10,10 +10,11 @@ class GuildMessageReceived : ListenerAdapter() {
 
         if (event.author.isBot) return
 
+        val guild = event.guild
         val message = event.message
         val content = message.contentRaw
 
-        if (content.isNotEmpty()) JLogger.info("${event.author.asTag} send message: $content")
-        else JLogger.info("${event.author.asTag} send file(s)")
+        if (content.isNotEmpty()) JLogger.info("${event.author.asTag} send message on ${guild.name}: $content")
+        else JLogger.info("${event.author.asTag} send file(s) on ${guild.name}")
     }
 }

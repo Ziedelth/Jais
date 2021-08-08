@@ -1,12 +1,8 @@
 package fr.ziedelth.jais.threads
 
-import com.google.gson.JsonArray
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
-import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.News
-import java.io.File
-import java.nio.file.Files
+import fr.ziedelth.jais.utils.animes.*
 import java.util.stream.Collectors
 import kotlin.math.max
 
@@ -21,47 +17,28 @@ class AnimeThread : Runnable {
     override fun run() {
         while (!this.thread.isInterrupted) {
             val checkStart = System.currentTimeMillis()
-            val episodesFile = File("episodes.json")
-            val newsFile = File("news.json")
-            val episodesList: MutableMap<String, Episode> = mutableMapOf()
-            val newsList: MutableList<News> = mutableListOf()
-
-            if (episodesFile.exists()) {
-                val array: JsonArray =
-                    Const.GSON.fromJson(
-                        Files.readString(episodesFile.toPath(), Const.DEFAULT_CHARSET),
-                        JsonArray::class.java
-                    )
-
-                array.filter { !it.isJsonNull && it.isJsonObject }.forEach {
-                    val episode = Const.GSON.fromJson(it, Episode::class.java)
-                    episodesList[episode.globalId] = episode
-                }
-            }
-
-            if (newsFile.exists()) {
-                val array: JsonArray =
-                    Const.GSON.fromJson(
-                        Files.readString(newsFile.toPath(), Const.DEFAULT_CHARSET),
-                        JsonArray::class.java
-                    )
-                array.filter { !it.isJsonNull && it.isJsonObject }
-                    .forEach { newsList.add(Const.GSON.fromJson(it, News::class.java)) }
-            }
+            val episodesList: MutableMap<String, Episode> = getEpisodes()
+            val newsList: MutableList<News> = getNews()
 
             val news: MutableList<News> = mutableListOf()
-            Const.PLATFORMS.forEach { news.addAll(it.getLastNews()) }
+
+            Const.PLATFORMS.forEach {
+                news.addAll(it.getLastNews())
+            }
+
             val newNews = news.stream().filter { !this.contains(newsList, it) }.collect(Collectors.toList())
 
             if (newNews.isNotEmpty()) {
                 newNews.forEach { newsList.add(it) }
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendNews(newNews.toTypedArray()) }
-                Files.writeString(newsFile.toPath(), Const.GSON.toJson(newsList), Const.DEFAULT_CHARSET)
+                saveNews(newsList)
             }
 
             val episodes: MutableList<Episode> = mutableListOf()
 
-            Const.PLATFORMS.forEach { episodes.addAll(it.getLastEpisodes()) }
+            Const.PLATFORMS.forEach {
+                episodes.addAll(it.getLastEpisodes())
+            }
 
             val newEpisodes =
                 episodes.stream().filter { !episodesList.containsKey(it.globalId) }.collect(Collectors.toList())
@@ -86,11 +63,7 @@ class AnimeThread : Runnable {
                     )
                 }
 
-                Files.writeString(
-                    episodesFile.toPath(),
-                    Const.GSON.toJson(episodesList.values),
-                    Const.DEFAULT_CHARSET
-                )
+                saveEpisodes(episodesList.values)
             }
 
             if (editEpisodes.isNotEmpty()) {
@@ -106,11 +79,7 @@ class AnimeThread : Runnable {
 
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client -> client.sendEpisode(a.toTypedArray(), false) }
 
-                Files.writeString(
-                    episodesFile.toPath(),
-                    Const.GSON.toJson(episodesList.values),
-                    Const.DEFAULT_CHARSET
-                )
+                saveEpisodes(episodesList.values)
             }
 
             val checkEnd = System.currentTimeMillis()
@@ -123,10 +92,10 @@ class AnimeThread : Runnable {
                         0,
                         waitingTimeToNextProcess
                     )).toDouble() / 1000.0
-                }s to do the next check! ${if (waitingTimeToNextProcess < 0) "OVERLOAD" else ""}"
+                }s to do the next check! ${if (waitingTimeToNextProcess <= 0) "OVERLOAD" else ""}"
             )
 
-            this.thread.join(if (waitingTimeToNextProcess < 0) 1 else waitingTimeToNextProcess)
+            this.thread.join(if (waitingTimeToNextProcess <= 0) 1 else waitingTimeToNextProcess)
         }
     }
 

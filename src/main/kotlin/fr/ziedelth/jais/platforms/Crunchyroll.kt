@@ -108,11 +108,8 @@ class Crunchyroll : Platform {
                     val date = element.getElementsByTagName("pubDate").item(0)?.textContent
                     if (date.isNullOrEmpty()) continue
                     val releaseDate = toCalendar(date)
-                    val season = Const.toInt(
-                        element.getElementsByTagName("crunchyroll:season").item(0)?.textContent ?: ""
-                    )
-                    var anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
-                    if (season.isNotEmpty()) anime += " - Saison $season"
+                    val season = element.getElementsByTagName("crunchyroll:season").item(0)?.textContent ?: "1"
+                    val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
                     var title: String? = element.getElementsByTagName("crunchyroll:episodeTitle").item(0)?.textContent
                     if (title.isNullOrEmpty()) title = null
                     val image =
@@ -138,6 +135,7 @@ class Crunchyroll : Platform {
                             platform = this.getName(),
                             calendar = ISO8601.fromCalendar(releaseDate),
                             anime = anime,
+                            season = season,
                             number = number,
                             country = country,
                             type = type,

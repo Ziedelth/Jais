@@ -22,13 +22,14 @@ fun removeConfiguration(textChannel: TextChannel) {
 
 fun removeAllDeprecatedConfigurations() {
     val ids: MutableList<Long> = mutableListOf()
-    configurations.filter { (_, configuration) -> (System.currentTimeMillis() - configuration.timestamp) >= 3600000L }
+    configurations.filter { (_, configuration) -> configuration.deprecatedWithTime && (System.currentTimeMillis() - configuration.timestamp) >= 3600000L }
         .forEach { (id, _) -> ids.add(id) }
     ids.forEach { configurations.remove(it) }
 }
 
 class ConfigurationBuilder(
     val timestamp: Long = System.currentTimeMillis(),
+    val deprecatedWithTime: Boolean = true,
     val user: User,
     val textChannel: TextChannel,
     var configurationStep: ConfigurationStep = ConfigurationStep.UNKNOWN

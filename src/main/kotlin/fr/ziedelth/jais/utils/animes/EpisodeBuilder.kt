@@ -5,6 +5,7 @@ import java.util.*
 class EpisodeBuilder {
     var calendar: Calendar? = null
     var anime: String? = null
+    var season: String? = null
     var number: String? = null
     var type: EpisodeType? = null
     var id: String? = null

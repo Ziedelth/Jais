@@ -3,6 +3,7 @@ package fr.ziedelth.jais.utils.animes
 enum class Country(
     val countryName: String,
     val flag: String,
+    val season: String,
     val episode: String,
     val subtitled: String,
     val dubbed: String,
@@ -10,7 +11,17 @@ enum class Country(
     val lang: String,
     val language: String
 ) {
-    FRANCE("France", "🇫🇷", "Épisode", "VOSTFR", "VF", "fr", "frFR", "fr - fr"),
-    UNITED_STATES("United States", "\uD83C\uDDFA\uD83C\uDDF8", "Episode", "SUB", "DUB", "us", "enUS", "en - us"),
+    FRANCE("France", "🇫🇷", "Saison", "Épisode", "VOSTFR", "VF", "fr", "frFR", "fr - fr"),
+    UNITED_STATES(
+        "United States",
+        "\uD83C\uDDFA\uD83C\uDDF8",
+        "Season",
+        "Episode",
+        "SUB",
+        "DUB",
+        "us",
+        "enUS",
+        "en - us"
+    ),
     ;
 }

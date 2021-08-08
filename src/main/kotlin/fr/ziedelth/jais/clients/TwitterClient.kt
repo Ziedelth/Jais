@@ -1,13 +1,14 @@
 package fr.ziedelth.jais.clients
 
-import com.google.gson.JsonObject
-import fr.ziedelth.jais.utils.Client
 import fr.ziedelth.jais.utils.Const
+import fr.ziedelth.jais.utils.Emoji
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
+import fr.ziedelth.jais.utils.clients.Client
+import fr.ziedelth.jais.utils.clients.JClient
 import fr.ziedelth.jais.utils.tokens.TwitterToken
 import twitter4j.*
 import twitter4j.conf.ConfigurationBuilder
@@ -20,6 +21,7 @@ import java.text.SimpleDateFormat
 import javax.imageio.ImageIO
 
 class TwitterClient : Client {
+    private val file = File("twitter.json")
     private val location = GeoLocation(45.764043, 4.835659)
     private val tokenFile = File(Const.TOKENS_FOLDER, "twitter.json")
     private val init: Boolean
@@ -56,6 +58,17 @@ class TwitterClient : Client {
         }
     }
 
+    override fun getJClient(): JClient {
+        return if (this.file.exists()) Const.GSON.fromJson(
+            Files.readString(this.file.toPath(), Const.DEFAULT_CHARSET),
+            JClient::class.java
+        ) else JClient()
+    }
+
+    override fun saveJClient(jClient: JClient) {
+        Files.writeString(this.file.toPath(), Const.GSON.toJson(jClient), Const.DEFAULT_CHARSET)
+    }
+
     override fun update() {
         JLogger.info(
             "[${this.javaClass.simpleName}] Connected with ${
@@ -73,14 +86,7 @@ class TwitterClient : Client {
 
     override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
         if (!this.init) return
-        val file = File("twitter.json")
-        val obj: JsonObject = if (!file.exists()) JsonObject() else Const.GSON.fromJson(
-            Files.readString(
-                file.toPath(),
-                Const.DEFAULT_CHARSET
-            ), JsonObject::class.java
-        )
-        val episodesObj: JsonObject = obj["episodes"]?.asJsonObject ?: JsonObject()
+        val jClient = this.getJClient()
         val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
 
         if (new) {
@@ -89,10 +95,11 @@ class TwitterClient : Client {
             if (size <= 12) {
                 countryEpisodes.forEach {
                     try {
+                        val jEpisode = jClient.getEpisodeById(it.globalId)
                         val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
 
                         val statusMessage = StatusUpdate(
-                            "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n\uD83C\uDFAC ${
+                            "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.season} ${it.season}\n${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n${Emoji.CLAP} ${
                                 SimpleDateFormat(
                                     "mm:ss"
                                 ).format(it.duration * 1000)
@@ -107,16 +114,14 @@ class TwitterClient : Client {
                         statusMessage.location = this.location
 
                         val tweet = this.twitter!!.updateStatus(statusMessage)
-                        episodesObj.addProperty(it.globalId, tweet.id)
+                        jEpisode.messages.add(tweet.id)
+                        jClient.addEpisode(jEpisode)
                     } catch (twitterException: TwitterException) {
                         JLogger.warning("Can not tweet episodes: ${twitterException.message ?: "Nothing..."}")
                     }
                 }
 
-                if (size > 0) {
-                    obj.add("episodes", episodesObj)
-                    Files.writeString(file.toPath(), Const.GSON.toJson(obj), Const.DEFAULT_CHARSET)
-                }
+                if (size > 0) this.saveJClient(jClient)
             } else {
                 this.twitter!!.updateStatus(
                     "Il y a trop d'animes qui sortent en même temps que je m'en perds dans mes circuits ! (${size}, c'est beaucoup trop pour moi)\n${
@@ -128,21 +133,21 @@ class TwitterClient : Client {
             }
         } else {
             countryEpisodes.forEach {
-                if (episodesObj.has(it.globalId)) {
+                if (jClient.hasEpisode(it.globalId)) {
                     try {
-                        val oldTweet = episodesObj[it.globalId]!!.asLong
+                        val jEpisode = jClient.getEpisodeById(it.globalId)
                         val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
 
                         val statusMessage =
                             StatusUpdate(
-                                "Modification :\n${if (it.title != null) "${it.title}\n" else ""}🎬 ${
+                                "Modification :\n${if (it.title != null) "${it.title}\n" else ""}${Emoji.CLAP} ${
                                     SimpleDateFormat("mm:ss").format(
                                         it.duration * 1000
                                     )
                                 }\n\n${it.link}"
                             )
                         statusMessage.setMediaIds(uploadMedia.mediaId)
-                        statusMessage.inReplyToStatusId = oldTweet
+                        statusMessage.inReplyToStatusId = jEpisode.messages.firstOrNull() ?: 0
                         statusMessage.location = this.location
 
                         this.twitter!!.updateStatus(statusMessage)

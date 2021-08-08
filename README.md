@@ -42,13 +42,16 @@ Toutes les dépendances sont gérés automatiquement par Maven.
     * [Site Web](https://jsoup.org/)
     * [GitHub](https://github.com/jhy/jsoup/)
 * Gson
-    * Version : **2.8.7**
-    * [GitHub](https://github.com/google/gson)
+  * Version : **2.8.7**
+  * [GitHub](https://github.com/google/gson)
 * Selenium
-    * Version : **3.141.59**
-    * [Site Web](https://www.selenium.dev/)
-    * [GitHub](https://github.com/SeleniumHQ/selenium)
+  * Version : **3.141.59**
+  * [Site Web](https://www.selenium.dev/)
+  * [GitHub](https://github.com/SeleniumHQ/selenium)
 * Twitter4J
-    * Version : **4.0.7**
-    * [Site Web](https://twitter4j.org/)
-    * [GitHub](https://github.com/Twitter4J/Twitter4J)
+  * Version : **4.0.7**
+  * [Site Web](https://twitter4j.org/)
+  * [GitHub](https://github.com/Twitter4J/Twitter4J)
+* Guava
+  * Version : **30.1.1-jre**
+  * [GitHub](https://github.com/google/guava)

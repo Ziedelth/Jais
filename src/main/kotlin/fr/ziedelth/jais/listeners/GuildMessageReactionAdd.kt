@@ -11,7 +11,7 @@ class GuildMessageReactionAdd : ListenerAdapter() {
         super.onGuildMessageReactionAdd(event)
         if (event.user.isBot) return
 
-        val id = Const.encodeMD5("${event.messageIdLong}${event.reactionEmote.asReactionCode}".toByteArray())
-        if (reactions.containsKey(id)) reactions[id]!!.onClick.run(reactions[id]!!, ClickType.ADD, event.userIdLong)
+        val id = Const.encodeMD5("${event.messageIdLong}${event.reactionEmote.asReactionCode}")
+        if (reactions.containsKey(id)) reactions[id]!!.onClick.run(ClickType.ADD, event.userIdLong)
     }
 }

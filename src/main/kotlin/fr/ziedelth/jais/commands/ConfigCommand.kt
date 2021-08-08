@@ -20,13 +20,13 @@ class ConfigCommand : Command(
             val configurationBuilder = getConfiguration(textChannel)!!
 
             if (configurationBuilder.user == user) event.reply("Editing...")
-                .queue { it -> it.retrieveOriginal().queue { sendConfiguration(it, configurationBuilder) } }
+                .queue { it -> it.retrieveOriginal().queue { this.sendConfiguration(it, configurationBuilder) } }
             else event.reply("This channel is in configuration, please wait...").setEphemeral(true).queue()
         } else {
             if (event.member!!.hasPermission(Permission.ADMINISTRATOR)) {
                 event.reply("Editing...").queue { it ->
                     it.retrieveOriginal().queue {
-                        sendConfiguration(
+                        this.sendConfiguration(
                             it,
                             ConfigurationBuilder(
                                 user = user,
@@ -49,21 +49,26 @@ class ConfigCommand : Command(
 
             when (configurationBuilder.configurationStep) {
                 ConfigurationStep.COUNTRIES -> {
-                    reactions.add(Reaction(message = message, unicode = "◀", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
-                            if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
-                                    configurationBuilder
-                                )
-                            ) {
-                                var page = configurationBuilder.page - 1
-                                if (page <= 0) page = 1
-                                configurationBuilder.page = page
+                    reactions.add(
+                        Reaction(
+                            message = message,
+                            unicode = Emoji.BACKWARD,
+                            onClick = object : ClickRunnable {
+                                override fun run(clickType: ClickType, user: Long) {
+                                    if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
+                                            configurationBuilder
+                                        )
+                                    ) {
+                                        var page = configurationBuilder.page - 1
+                                        if (page <= 0) page = 1
+                                        configurationBuilder.page = page
 
-                                message.editMessageEmbeds(getEmbed(configurationBuilder).build()).queue()
-                                addConfiguration(configurationBuilder)
-                            }
-                        }
-                    }))
+                                        message.editMessageEmbeds(getEmbed(configurationBuilder).build()).queue()
+                                        addConfiguration(configurationBuilder)
+                                    }
+                                }
+                            })
+                    )
 
                     configurationBuilder.getCountriesPerPage().forEach { country: Country ->
                         reactions.add(
@@ -71,7 +76,7 @@ class ConfigCommand : Command(
                                 message = message,
                                 unicode = country.flag,
                                 onClick = object : ClickRunnable {
-                                    override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                                    override fun run(clickType: ClickType, user: Long) {
                                         if (user == configurationBuilder.user.idLong && hasConfiguration(
                                                 configurationBuilder
                                             )
@@ -87,95 +92,100 @@ class ConfigCommand : Command(
                         )
                     }
 
-                    reactions.add(Reaction(message = message, unicode = "▶", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
-                            if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
-                                    configurationBuilder
-                                )
-                            ) {
-                                var page = configurationBuilder.page + 1
-                                if (page >= configurationBuilder.getMaxPagesDisplay()) page =
-                                    configurationBuilder.getMaxPagesDisplay()
-                                configurationBuilder.page = page
+                    reactions.add(
+                        Reaction(
+                            message = message,
+                            unicode = Emoji.FORWARD,
+                            onClick = object : ClickRunnable {
+                                override fun run(clickType: ClickType, user: Long) {
+                                    if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
+                                            configurationBuilder
+                                        )
+                                    ) {
+                                        var page = configurationBuilder.page + 1
+                                        if (page >= configurationBuilder.getMaxPagesDisplay()) page =
+                                            configurationBuilder.getMaxPagesDisplay()
+                                        configurationBuilder.page = page
 
-                                message.editMessageEmbeds(getEmbed(configurationBuilder).build()).queue()
-                                addConfiguration(configurationBuilder)
-                            }
-                        }
-                    }))
+                                        message.editMessageEmbeds(getEmbed(configurationBuilder).build()).queue()
+                                        addConfiguration(configurationBuilder)
+                                    }
+                                }
+                            })
+                    )
 
-                    reactions.add(Reaction(message = message, unicode = "✅", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.CHECK, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.nextStep()
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
                 }
 
                 ConfigurationStep.ANIME -> {
-                    reactions.add(Reaction(message = message, unicode = "✅", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.CHECK, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.anime = true
                                 configurationBuilder.nextStep()
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
 
-                    reactions.add(Reaction(message = message, unicode = "❌", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.NO, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.anime = false
                                 configurationBuilder.nextStep()
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
                 }
 
                 ConfigurationStep.NEWS -> {
-                    reactions.add(Reaction(message = message, unicode = "✅", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.CHECK, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.news = true
                                 configurationBuilder.nextStep()
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
 
-                    reactions.add(Reaction(message = message, unicode = "❌", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.NO, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.news = false
                                 configurationBuilder.nextStep()
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
                 }
 
                 ConfigurationStep.FINISH -> {
-                    reactions.add(Reaction(message = message, unicode = "✅", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.CHECK, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
@@ -196,14 +206,14 @@ class ConfigCommand : Command(
                         }
                     }))
 
-                    reactions.add(Reaction(message = message, unicode = "❌", onClick = object : ClickRunnable {
-                        override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+                    reactions.add(Reaction(message = message, unicode = Emoji.NO, onClick = object : ClickRunnable {
+                        override fun run(clickType: ClickType, user: Long) {
                             if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                                     configurationBuilder
                                 )
                             ) {
                                 configurationBuilder.configurationStep = ConfigurationStep.COUNTRIES
-                                sendConfiguration(message, configurationBuilder)
+                                this@ConfigCommand.sendConfiguration(message, configurationBuilder)
                             }
                         }
                     }))
@@ -215,8 +225,8 @@ class ConfigCommand : Command(
             }
 
             // DELETE
-            reactions.add(Reaction(message = message, unicode = "\uD83D\uDDD1", onClick = object : ClickRunnable {
-                override fun run(reaction: Reaction, clickType: ClickType, user: Long) {
+            reactions.add(Reaction(message = message, unicode = Emoji.TRASH_CAN, onClick = object : ClickRunnable {
+                override fun run(clickType: ClickType, user: Long) {
                     if (user == configurationBuilder.user.idLong && clickType == ClickType.ADD && hasConfiguration(
                             configurationBuilder
                         )
@@ -230,12 +240,12 @@ class ConfigCommand : Command(
             }))
 
             message.editMessageEmbeds(getEmbed(configurationBuilder).build())
-                .queue { sendReaction(reactions.toTypedArray(), 0) }
+                .queue { this.sendReaction(reactions.toTypedArray(), 0) }
         }
     }
 
     private fun sendReaction(reactions: Array<Reaction>, index: Int) {
-        reactions.getOrNull(index)?.add { sendReaction(reactions, index + 1) }
+        reactions.getOrNull(index)?.add { this.sendReaction(reactions, index + 1) }
     }
 
     private fun getEmbed(configurationBuilder: ConfigurationBuilder?): EmbedBuilder {
@@ -265,12 +275,12 @@ class ConfigCommand : Command(
 
             ConfigurationStep.ANIME -> {
                 embed.setTitle("Configuration\n→ Anime")
-                embed.setDescription("Select if you want to receive the anime\n\n• ✅ Yes\n• ❌ No")
+                embed.setDescription("Select if you want to receive the anime\n\n• ${Emoji.CHECK} Yes\n• ${Emoji.NO} No")
             }
 
             ConfigurationStep.NEWS -> {
                 embed.setTitle("Configuration\n→ News")
-                embed.setDescription("Select if you want to receive the news\n\n• ✅ Yes\n• ❌ No")
+                embed.setDescription("Select if you want to receive the news\n\n• ${Emoji.CHECK} Yes\n• ${Emoji.NO} No")
             }
 
             ConfigurationStep.FINISH -> {

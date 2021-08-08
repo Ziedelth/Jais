@@ -1,5 +1,32 @@
 package fr.ziedelth.jais.utils.animes
 
+import com.google.gson.JsonArray
+import fr.ziedelth.jais.utils.Const
+import java.io.File
+import java.nio.file.Files
+
+private val file = File("news.json")
+
+fun getNews(): MutableList<News> {
+    val news: MutableList<News> = mutableListOf()
+
+    if (file.exists()) {
+        val array: JsonArray =
+            Const.GSON.fromJson(
+                Files.readString(file.toPath(), Const.DEFAULT_CHARSET),
+                JsonArray::class.java
+            )
+        array.filter { !it.isJsonNull && it.isJsonObject }
+            .forEach { news.add(Const.GSON.fromJson(it, News::class.java)) }
+    }
+
+    return news
+}
+
+fun saveNews(news: Collection<News>) {
+    Files.writeString(file.toPath(), Const.GSON.toJson(news), Const.DEFAULT_CHARSET)
+}
+
 class News(
     val platform: String,
     val calendar: String,

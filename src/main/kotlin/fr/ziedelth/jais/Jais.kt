@@ -8,7 +8,7 @@ import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
 
 object Jais {
-    var isRunning = true
+    private var isRunning = true
 
     @JvmStatic
     fun main(args: Array<String>) {
