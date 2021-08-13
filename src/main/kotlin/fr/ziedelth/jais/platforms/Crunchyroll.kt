@@ -22,7 +22,7 @@ class Crunchyroll : Platform {
         "https://ziedelth.fr/images/crunchyroll.png"
 
     override fun getColor(): Color = Color(255, 108, 0)
-    override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE, Country.UNITED_STATES)
+    override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
     private fun getItems(url: URLConnection): NodeList {
         val dbf = DocumentBuilderFactory.newInstance()
@@ -108,7 +108,14 @@ class Crunchyroll : Platform {
                     val date = element.getElementsByTagName("pubDate").item(0)?.textContent
                     if (date.isNullOrEmpty()) continue
                     val releaseDate = toCalendar(date)
-                    val season = element.getElementsByTagName("crunchyroll:season").item(0)?.textContent ?: "1"
+                    val s: String? = element.getElementsByTagName("crunchyroll:season")?.item(0)?.textContent
+
+                    val season: String = if (s.isNullOrEmpty() || s.equals("null", true)) {
+                        "${country.season} 1"
+                    } else {
+                        Const.toInt(s, "${country.season} 1", country.season)
+                    }
+
                     val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent
                     var title: String? = element.getElementsByTagName("crunchyroll:episodeTitle").item(0)?.textContent
                     if (title.isNullOrEmpty()) title = null
@@ -125,28 +132,28 @@ class Crunchyroll : Platform {
                     val spay = element.getElementsByTagName("media:restriction").item(0).textContent
                     val type =
                         if (subtitles.equals(country.language, true)) EpisodeType.DUBBED else EpisodeType.SUBTITLED
-                    val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent
+                    val id = element.getElementsByTagName("crunchyroll:mediaId").item(0).textContent.toLong()
                     val duration = element.getElementsByTagName("crunchyroll:duration").item(0)?.textContent ?: "1440"
 
                     if (spay.split(" ").contains(country.country) && subtitles.split(",")
                             .contains(country.language) && this.isSameDay(calendar, releaseDate)
                     ) {
-                        val episode = Episode(
-                            platform = this.getName(),
-                            calendar = ISO8601.fromCalendar(releaseDate),
-                            anime = anime,
-                            season = season,
-                            number = number,
-                            country = country,
-                            type = type,
-                            id = id,
-                            title = title,
-                            image = image,
-                            link = link,
-                            duration = duration.toLong()
+                        l.add(
+                            Episode(
+                                platform = this,
+                                calendar = ISO8601.fromCalendar(releaseDate),
+                                anime = anime,
+                                number = number,
+                                country = country,
+                                type = type,
+                                season = season,
+                                episodeId = id,
+                                title = title,
+                                image = image,
+                                url = link,
+                                duration = duration.toLong()
+                            )
                         )
-                        episode.p = this
-                        l.add(episode)
                     }
                 }
             }

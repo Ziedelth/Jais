@@ -8,6 +8,6 @@ interface Platform {
     fun getImage(): String
     fun getColor(): Color
     fun getAllowedCountries(): Array<Country> = arrayOf()
-    fun getLastNews(): Array<News>
-    fun getLastEpisodes(): Array<Episode>
+    fun getLastNews(): Array<News> = arrayOf()
+    fun getLastEpisodes(): Array<Episode> = arrayOf()
 }

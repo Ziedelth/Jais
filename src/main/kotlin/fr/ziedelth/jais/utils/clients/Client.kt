@@ -8,6 +8,14 @@ interface Client {
     fun saveJClient(jClient: JClient)
 
     fun update()
-    fun sendEpisode(episodes: Array<Episode>, new: Boolean)
+
+    fun sendNewEpisodes(episodes: Array<Episode>) {
+        TODO()
+    }
+
+    fun sendEditEpisodes(episodes: Array<Episode>) {
+        TODO()
+    }
+
     fun sendNews(news: Array<News>)
 }

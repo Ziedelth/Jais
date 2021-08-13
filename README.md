@@ -34,13 +34,14 @@ Toutes les dépendances sont gérés automatiquement par Maven.
 * slf4j-simple
     * Version : **1.7.32**
     * [Site Web](http://www.slf4j.org/)
+    * [GitHub](https://github.com/qos-ch/slf4j)
 * Apache Commons Logging
     * Version : **1.2**
     * [Site Web](https://commons.apache.org/proper/commons-logging/)
 * jsoup
-    * Version : **1.14.1**
-    * [Site Web](https://jsoup.org/)
-    * [GitHub](https://github.com/jhy/jsoup/)
+  * Version : **1.14.1**
+  * [Site Web](https://jsoup.org/)
+  * [GitHub](https://github.com/jhy/jsoup/)
 * Gson
   * Version : **2.8.7**
   * [GitHub](https://github.com/google/gson)
@@ -55,3 +56,7 @@ Toutes les dépendances sont gérés automatiquement par Maven.
 * Guava
   * Version : **30.1.1-jre**
   * [GitHub](https://github.com/google/guava)
+* MariaDB Java Connector
+  * Version : **2.7.3**
+  * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
+  * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)

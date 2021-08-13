@@ -1,11 +1,11 @@
 package fr.ziedelth.jais.clients
 
+import fr.ziedelth.jais.commands.ClearCommand
 import fr.ziedelth.jais.commands.ConfigCommand
 import fr.ziedelth.jais.commands.PlatformsCommand
 import fr.ziedelth.jais.listeners.*
 import fr.ziedelth.jais.utils.*
 import fr.ziedelth.jais.utils.Emoji.CLAP
-import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
@@ -26,7 +27,7 @@ import java.io.File
 import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.time.temporal.TemporalAccessor
-import java.util.*
+import java.util.concurrent.CompletableFuture
 
 class DiscordClient : Client {
     private val file = File("discord.json")
@@ -35,7 +36,7 @@ class DiscordClient : Client {
     private var jda: JDA? = null
     private var master: User? = null
     private var image: String? = null
-    private val commands: Array<Command> = arrayOf(PlatformsCommand(), ConfigCommand())
+    private val commands: Array<Command> = arrayOf(PlatformsCommand(), ClearCommand(), ConfigCommand())
 
     init {
         if (!this.tokenFile.exists()) {
@@ -138,95 +139,50 @@ class DiscordClient : Client {
         this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
     }
 
-    override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
-        if (!this.init) return
+    override fun sendNewEpisodes(episodes: Array<Episode>) {
+        if (!this.init || episodes.isEmpty()) return
+        val jClient = this.getJClient()
+        val list: MutableList<CompletableFuture<Message>> = mutableListOf()
+
+        episodes.forEach { episode ->
+            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
+            val embed = getEpisodeEmbed(episode).build()
+
+            guilds.values.forEach { ziedGuild ->
+                ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(episode.country) }
+                    .forEach { (textChannelId, _) ->
+                        val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
+                        if (textChannel != null) list.add(
+                            textChannel.sendMessageEmbeds(embed).submit().whenComplete { message, _ ->
+                                jEpisode.messages.add(message.idLong); jClient.addEpisode(jEpisode)
+                            })
+                    }
+            }
+        }
+
+        CompletableFuture.allOf(*list.toTypedArray()).whenComplete { _, _ ->
+            JLogger.info("Saving ${list.size} messages for ${episodes.size} episodes...")
+            this.saveJClient(jClient)
+        }
+    }
+
+    override fun sendEditEpisodes(episodes: Array<Episode>) {
+        if (!this.init || episodes.isEmpty()) return
         val jClient = this.getJClient()
 
-        if (new) {
-            Country.values().forEach { country ->
-                val countryEpisodes = episodes.filter { it.country == country }
-                val size = countryEpisodes.size
+        episodes.forEach { episode ->
+            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
+            val embed = getEpisodeEmbed(episode).build()
 
-                if (size <= 12) {
-                    countryEpisodes.forEach {
-                        val jEpisode = jClient.getEpisodeById(it.globalId)
-                        val embed = getEpisodeEmbed(it).build()
-
-                        guilds.forEach { (_, ziedGuild) ->
-                            ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
-                                .forEach { (textChannelId, _) ->
-                                    val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                                    val message = textChannel?.sendMessageEmbeds(embed)?.complete()
-
-                                    if (message != null) jEpisode.messages.add(message.idLong)
+            if (jClient.hasEpisode(Const.toId(episode))) {
+                jEpisode.messages.forEach { messageId ->
+                    guilds.forEach { (_, ziedGuild) ->
+                        ziedGuild.guild.textChannels.forEach { textChannel ->
+                            textChannel.retrieveMessageById(messageId).queue({ message ->
+                                run {
+                                    message.editMessageEmbeds(embed).queue()
                                 }
-                        }
-
-                        jClient.addEpisode(jEpisode)
-                    }
-
-                    if (size > 0) this.saveJClient(jClient)
-                } else {
-                    Const.PLATFORMS.forEach { platform ->
-                        val animes: MutableList<String> = mutableListOf()
-                        val stringBuilder: StringBuilder = StringBuilder()
-                        var i = 0
-                        var image: String? = ""
-
-                        countryEpisodes.filter { it.platform == platform.getName() }.forEach {
-                            if (!animes.contains(it.anime)) {
-                                val length = countryEpisodes.filter { episode -> episode.anime == it.anime }.size
-
-                                if (length > i) {
-                                    i = length
-                                    image = it.image
-                                }
-
-                                animes.add(it.anime)
-
-                                val display = "• ${it.anime}"
-                                val s = "• [${it.anime}](${it.link})\n"
-
-                                if (stringBuilder.length + display.length < 2000) stringBuilder.append(s)
-                            }
-                        }
-
-                        val embed = setEmbed(
-                            author = platform.getName(),
-                            authorUrl = platform.getURL(),
-                            authorIcon = platform.getImage(),
-                            title = "${country.flag}  ${country.countryName} > ${countryEpisodes.filter { it.platform == platform.getName() }.size} ${country.episode}s",
-                            description = stringBuilder.toString(),
-                            color = platform.getColor(),
-                            image = image,
-                            timestamp = Calendar.getInstance().toInstant()
-                        ).build()
-
-                        guilds.forEach { (_, ziedGuild) ->
-                            ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
-                                .forEach { (textChannelId, _) ->
-                                    val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                                    textChannel?.sendMessageEmbeds(embed)?.queue()
-                                }
-                        }
-                    }
-                }
-            }
-        } else {
-            episodes.forEach {
-                if (jClient.hasEpisode(it.globalId)) {
-                    val jEpisode = jClient.getEpisodeById(it.globalId)
-                    val embed = getEpisodeEmbed(it).build()
-
-                    jEpisode.messages.forEach { messageId ->
-                        guilds.forEach { (_, ziedGuild) ->
-                            ziedGuild.guild.textChannels.forEach { textChannel ->
-                                textChannel.retrieveMessageById(messageId).queue({ message ->
-                                    run {
-                                        message.editMessageEmbeds(embed).queue()
-                                    }
-                                }, { })
-                            }
+                            }, { })
                         }
                     }
                 }
@@ -235,7 +191,7 @@ class DiscordClient : Client {
     }
 
     override fun sendNews(news: Array<News>) {
-        if (!this.init) return
+        if (!this.init || news.isEmpty()) return
 
         news.forEach {
             val embed = getNewsEmbed(it).build()
@@ -280,18 +236,17 @@ class DiscordClient : Client {
 
     private fun getEpisodeEmbed(episode: Episode): EmbedBuilder {
         return setEmbed(
-            episode.p?.getName(),
-            episode.p?.getURL(),
-            episode.p?.getImage(),
+            episode.platform.getName(),
+            episode.platform.getURL(),
+            episode.platform.getImage(),
             episode.anime,
-            episode.link,
+            episode.url,
             description = """
                 ${if (episode.title != null) "** ${episode.title} **" else ""}
-                ${episode.country.season} ${episode.season}
-                ${episode.country.episode} ${episode.number}
-                $CLAP ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}
+                ${episode.season} • ${episode.country.episode} ${episode.number}
+                ${if (episode.duration > 0) "$CLAP ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}" else ""}
             """.trimIndent(),
-            color = episode.p?.getColor(),
+            color = episode.platform.getColor(),
             image = episode.image,
             footer = if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed,
             timestamp = ISO8601.toCalendar(episode.calendar).toInstant()

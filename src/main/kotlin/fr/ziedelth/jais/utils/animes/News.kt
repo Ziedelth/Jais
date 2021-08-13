@@ -57,7 +57,7 @@ class News(
     }
 
     override fun toString(): String {
-        return "News(platform='$platform', calendar='$calendar', title='$title', description='$description', content='$content', link='$link', language=$country)"
+        return "News(platform='$platform', calendar='$calendar', language=$country)"
     }
 
     override fun hashCode(): Int {

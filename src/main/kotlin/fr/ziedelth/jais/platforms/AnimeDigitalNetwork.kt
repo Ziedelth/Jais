@@ -5,7 +5,10 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Request
-import fr.ziedelth.jais.utils.animes.*
+import fr.ziedelth.jais.utils.animes.Country
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.EpisodeType
+import fr.ziedelth.jais.utils.animes.Platform
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
@@ -16,8 +19,6 @@ class AnimeDigitalNetwork : Platform {
     override fun getImage(): String = "https://ziedelth.fr/images/adn.png"
     override fun getColor(): Color = Color(0, 150, 255)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
-
-    override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
 
     override fun getLastEpisodes(): Array<Episode> {
         val calendar = Calendar.getInstance()
@@ -44,10 +45,7 @@ class AnimeDigitalNetwork : Platform {
                 val showObject = jObject.getAsJsonObject("show")
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
 
-                val season: String = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
-                    jObject["season"]?.asString,
-                    "1"
-                ) else "1"
+                val season = Const.toInt(jObject["season"]?.asString, "${country.season} 1", country.season)
                 val anime =
                     if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
                         "title"
@@ -65,26 +63,26 @@ class AnimeDigitalNetwork : Platform {
                             true
                         )
                     }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
-                val id = "${jObject.get("id").asInt}"
+                val id = jObject.get("id").asLong
                 val duration = jObject["duration"].asLong
 
                 if (calendar.after(releaseDate)) {
-                    val episode = Episode(
-                        platform = this.getName(),
-                        calendar = ISO8601.fromCalendar(releaseDate),
-                        anime = anime,
-                        season = season,
-                        number = number,
-                        country = country,
-                        type = type,
-                        id = id,
-                        title = title,
-                        image = image,
-                        link = link,
-                        duration = duration
+                    l.add(
+                        Episode(
+                            platform = this,
+                            calendar = ISO8601.fromCalendar(releaseDate),
+                            anime = anime,
+                            number = number,
+                            country = country,
+                            type = type,
+                            season = season,
+                            episodeId = id,
+                            title = title,
+                            image = image,
+                            url = link,
+                            duration = duration
+                        )
                     )
-                    episode.p = this
-                    l.add(episode)
                 }
             }
         }

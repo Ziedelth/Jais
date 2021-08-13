@@ -1,8 +1,14 @@
 package fr.ziedelth.jais.threads
 
 import fr.ziedelth.jais.utils.Const
+import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
-import fr.ziedelth.jais.utils.animes.*
+import fr.ziedelth.jais.utils.JTime
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.News
+import fr.ziedelth.jais.utils.animes.getNews
+import fr.ziedelth.jais.utils.animes.saveNews
+import fr.ziedelth.jais.utils.database.JAccess
 import java.util.stream.Collectors
 import kotlin.math.max
 
@@ -16,15 +22,13 @@ class AnimeThread : Runnable {
 
     override fun run() {
         while (!this.thread.isInterrupted) {
-            val checkStart = System.currentTimeMillis()
-            val episodesList: MutableMap<String, Episode> = getEpisodes()
+            JTime.start("JT-Anime")
             val newsList: MutableList<News> = getNews()
 
+            // NEWS
             val news: MutableList<News> = mutableListOf()
 
-            Const.PLATFORMS.forEach {
-                news.addAll(it.getLastNews())
-            }
+            Const.PLATFORMS.forEach { news.addAll(it.getLastNews()) }
 
             val newNews = news.stream().filter { !this.contains(newsList, it) }.collect(Collectors.toList())
 
@@ -34,59 +38,104 @@ class AnimeThread : Runnable {
                 saveNews(newsList)
             }
 
+            // EPISODES
+            val connection = JAccess.getConnection()
             val episodes: MutableList<Episode> = mutableListOf()
+            val newEpisodes: MutableList<Episode> = mutableListOf()
+            val editEpisodes: MutableList<Episode> = mutableListOf()
 
-            Const.PLATFORMS.forEach {
-                episodes.addAll(it.getLastEpisodes())
+            Const.PLATFORMS.forEach { platform ->
+                JTime.start("JT-Platform", "Starting episodes detection for ${platform.getName()}...")
+                episodes.addAll(platform.getLastEpisodes())
+                JTime.end(
+                    "JT-Platform",
+                    "Finish episodes detection for ${platform.getName()}. Takes %ms to full detect."
+                )
             }
 
-            val newEpisodes =
-                episodes.stream().filter { !episodesList.containsKey(it.globalId) }.collect(Collectors.toList())
-            val editEpisodes = episodes.stream()
-                .filter {
-                    episodesList.containsKey(it.globalId) && episodesList[it.globalId]!! != it && !episodesList[it.globalId]!!.datas.contains(
-                        it.data
-                    )
-                }
-                .collect(Collectors.toList())
+            if (episodes.isNotEmpty()) {
+                JTime.start("JT-Saving", "Saving all episodes")
+                episodes.sortedBy { ISO8601.toCalendar(it.calendar) }.forEach { episode ->
+                    // NEW
+                    if (JAccess.getJEpisode(
+                            connection,
+                            episode.platform.getName(),
+                            episode.country.country,
+                            episode.anime,
+                            episode.season,
+                            episode.number,
+                            episode.type.name
+                        ) == null
+                    ) {
+                        newEpisodes.add(episode)
 
-            if (newEpisodes.isNotEmpty()) {
-                newEpisodes.forEach {
-                    it.datas.add(it.data)
-                    episodesList[it.globalId] = it
+                        val jPlatform = JAccess.insertPlatform(connection, episode.platform) ?: return@forEach
+                        val jCountry = JAccess.insertCountry(connection, episode.country.country) ?: return@forEach
+                        val jAnime = JAccess.insertAnime(connection, episode.calendar, jCountry, episode.anime, null)
+                            ?: return@forEach
+                        val jSeason =
+                            JAccess.insertSeason(connection, episode.calendar, jAnime, episode.season) ?: return@forEach
+                        val jNumber = JAccess.insertNumber(connection, episode.calendar, jSeason, episode.number)
+                            ?: return@forEach
+                        JAccess.insertEpisode(
+                            connection,
+                            episode.calendar,
+                            jPlatform,
+                            jNumber,
+                            episode.type.name,
+                            episode.episodeId,
+                            episode.title,
+                            episode.image,
+                            episode.url,
+                            episode.duration
+                        )
+                    }
+                    // EDIT
+                    else {
+                        val jEpisode = JAccess.getJEpisode(
+                            connection,
+                            episode.platform.getName(),
+                            episode.country.country,
+                            episode.anime,
+                            episode.season,
+                            episode.number,
+                            episode.type.name
+                        ) ?: return@forEach
+
+                        if (episode.episodeId != jEpisode.episodeId ||
+                            episode.title != jEpisode.title ||
+                            episode.image != jEpisode.image ||
+                            episode.url != jEpisode.url ||
+                            episode.duration != jEpisode.duration
+                        ) {
+                            editEpisodes.add(episode)
+                            JLogger.warning("Edit $episode > $jEpisode")
+
+                            JAccess.updateEpisode(
+                                connection,
+                                jEpisode,
+                                episode.episodeId,
+                                episode.title,
+                                episode.image,
+                                episode.url,
+                                episode.duration
+                            )
+                        }
+                    }
                 }
+                JTime.end("JT-Saving", "All episodes are saved. Takes %ms.")
 
                 if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client ->
-                    client.sendEpisode(
-                        newEpisodes.toTypedArray(),
-                        true
-                    )
+                    client.sendNewEpisodes(newEpisodes.toTypedArray())
+                    client.sendEditEpisodes(editEpisodes.toTypedArray())
                 }
-
-                saveEpisodes(episodesList.values)
             }
 
-            if (editEpisodes.isNotEmpty()) {
-                val a: MutableList<Episode> = mutableListOf()
-
-                editEpisodes.forEach {
-                    val episode = episodesList[it.globalId]!!
-                    episode.edit(it)
-                    episode.datas.add(episode.data)
-                    episodesList[it.globalId] = episode
-                    a.add(episode)
-                }
-
-                if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { client -> client.sendEpisode(a.toTypedArray(), false) }
-
-                saveEpisodes(episodesList.values)
-            }
-
-            val checkEnd = System.currentTimeMillis()
-            val fullCheckTime = checkEnd - checkStart
+            connection?.close()
+            val fullCheckTime = JTime.end("JT-Anime")
             val waitingTimeToNextProcess = (Const.DELAY_BETWEEN_REQUEST * 60000) - fullCheckTime
 
-            JLogger.info(
+            JLogger.warning(
                 "Took ${(fullCheckTime / 1000)}s to full check! Need to wait ${
                     (max(
                         0,

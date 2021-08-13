@@ -6,9 +6,9 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.*
 import org.openqa.selenium.By
-import org.openqa.selenium.firefox.FirefoxDriver
-import org.openqa.selenium.firefox.FirefoxOptions
-import org.openqa.selenium.firefox.FirefoxProfile
+import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeDriverService
+import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.remote.ProtocolHandshake
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -16,7 +16,6 @@ import java.awt.Color
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.collections.set
@@ -24,14 +23,15 @@ import kotlin.math.pow
 
 class Wakanim : Platform {
     private val timeout = 60L
-    private val options: FirefoxOptions = FirefoxOptions().setHeadless(true).setProfile(FirefoxProfile())
-    private val episodes: MutableMap<String, Long> = mutableMapOf()
-    private val seasons: MutableMap<String, String> = mutableMapOf()
+    private val options = ChromeOptions().setHeadless(true)
+    private val service = ChromeDriverService.Builder().withSilent(true).build() as ChromeDriverService
+    private val episodes: MutableMap<String, EpisodeBuilder> = mutableMapOf()
     private var lastDate: String? = null
+    private var dateSize: Int = -1
 
     init {
-        System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, "true")
-        System.setProperty(FirefoxDriver.SystemProperty.BROWSER_LOGFILE, "/dev/null")
+        System.setProperty(ChromeDriverService.CHROME_DRIVER_SILENT_OUTPUT_PROPERTY, "true")
+        System.setProperty(ChromeDriverService.CHROME_DRIVER_VERBOSE_LOG_PROPERTY, "true")
     }
 
     override fun getName(): String = "Wakanim"
@@ -42,8 +42,6 @@ class Wakanim : Platform {
     override fun getColor(): Color = Color(227, 71, 75)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
-    override fun getLastNews(): Array<News> = arrayListOf<News>().toTypedArray()
-
     override fun getLastEpisodes(): Array<Episode> {
         val l: MutableList<Episode> = mutableListOf()
         val calendar = Calendar.getInstance()
@@ -53,135 +51,225 @@ class Wakanim : Platform {
         else {
             if (this.lastDate != date) {
                 this.lastDate = date
+                this.dateSize = -1
                 this.episodes.clear()
-                this.seasons.clear()
             }
         }
 
         this.getAllowedCountries().forEach { country ->
-            Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+            if (this.dateSize == -1 || this.dateSize != this.episodes.size) {
+                Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
+                val driver = ChromeDriver(this.service, this.options)
+                val driverWait = WebDriverWait(driver, this.timeout)
 
-            val driver = FirefoxDriver(this.options)
-            driver.manage().timeouts().pageLoadTimeout(this.timeout, TimeUnit.SECONDS)
-            val driverWait = WebDriverWait(driver, this.timeout)
+                try {
+                    driver.get("${this.getURL()}${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
+                    DriverBuilder.addDriver(driver)
 
-            try {
-                driver.get("${this.getURL()}${country.country}/v2/agenda/getevents?s=$date&e=$date&free=false")
-                DriverBuilder.addDriver(driver)
+                    val episodeList =
+                        driverWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("/html/body/div[1]/div[2]/div")))
+                    this.dateSize = episodeList.size
 
-                val episodeList =
-                    driverWait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("/html/body/div[1]/div[2]/div")))
+                    if (!(episodeList.size == 1 && episodeList[0].text == "Pas de nouveaux épisodes !")) {
+                        val list: MutableList<EpisodeBuilder> = mutableListOf()
 
-                if (!(episodeList.size == 1 && episodeList[0].text == "Pas de nouveaux épisodes !")) {
-                    val list: MutableList<EpisodeBuilder> = mutableListOf()
+                        episodeList.forEachIndexed { index, webElement ->
+                            val episodeBuilder = EpisodeBuilder(this, country)
+                            val fullText = webElement.text.replace("\n", " ")
+                            val splitFullText = fullText.split(" ")
+                            val time = splitFullText[0]
 
-                    episodeList.forEachIndexed { index, webElement ->
-                        val episodeBuilder = EpisodeBuilder()
-                        val fullText = webElement.text.replace("\n", " ")
-                        val splitFullText = fullText.split(" ")
-                        val time = splitFullText[0]
+                            val releaseDate = setDate(date, time.split(":")[0].toInt(), time.split(":")[1].toInt())
+                            episodeBuilder.calendar = releaseDate
 
-                        val releaseDate = setDate(
-                            date,
-                            splitFullText[0].split(":")[0].toInt(),
-                            splitFullText[0].split(":")[1].toInt()
-                        )
-                        episodeBuilder.calendar = releaseDate
+                            val url =
+                                driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a")))
+                                    .getAttribute("href")
+                            episodeBuilder.url = url
+                            val tt = url?.replace("//", "/")?.split("/")?.get(5)
 
-                        val linkElement =
-                            driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a")))
+                            val anime = StringBuilder()
+                            val max = splitFullText.indexOf("Séries") - 1
+                            for (i in 1..max) anime.append(splitFullText[i]).append(if (i >= max) "" else " ")
+                            episodeBuilder.anime = anime.toString()
+                            val number = Const.toInt(splitFullText[splitFullText.size - 2])
+                            episodeBuilder.number = number
+                            val type = if (splitFullText[splitFullText.size - 1].equals(
+                                    country.dubbed,
+                                    true
+                                )
+                            ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
+                            episodeBuilder.type = type
 
-                        val link = linkElement.getAttribute("href")
-                        episodeBuilder.link = link
-
-                        val anime = StringBuilder()
-                        val max = splitFullText.indexOf("Séries") - 1
-                        for (i in 1..max) anime.append(splitFullText[i]).append(if (i >= max) "" else " ")
-                        episodeBuilder.anime = anime.toString()
-                        val number = Const.toInt(splitFullText[splitFullText.size - 2])
-                        episodeBuilder.number = number
-                        val type = if (splitFullText[splitFullText.size - 1].equals(
-                                country.dubbed,
-                                true
-                            )
-                        ) EpisodeType.DUBBED else EpisodeType.SUBTITLED
-                        episodeBuilder.type = type
-                        val image =
-                            driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a/img")))
-                                .getAttribute("src")
-                        episodeBuilder.image = image
-
-                        val linkSplit = link.replace("//", "/").split("/")
-                        val tt = linkSplit[5]
-                        val id = linkSplit[6]
-                        episodeBuilder.id = id
-
-                        val seasonId = Const.encodeMD5("$time$anime$number$type")
-
-                        if (!this.seasons.containsKey(seasonId)) {
-                            if (tt.equals("show", true)) {
-                                val season = linkSplit.last().split("-")[1]
-                                episodeBuilder.season = season
-                                this.seasons[seasonId] = season
-                            } else episodeBuilder.season = "1"
-                        } else episodeBuilder.season = this.seasons[seasonId]
-
-                        list.add(episodeBuilder)
-                    }
-
-                    list.forEach {
-                        val tt = it.link?.replace("//", "/")?.split("/")?.get(5)
-                        var duration: Long = 0
-
-                        if (calendar.after(it.calendar)) {
                             if (tt.equals("episode", true)) {
-                                if (!this.episodes.containsKey(it.id)) {
-                                    try {
-                                        driver.get(it.link)
-                                        val time = driverWait.until(
-                                            ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                                By.className("currentEp"), By.className("slider_item_duration")
+                                val image =
+                                    driverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[1]/div[2]/div[${(index + 1)}]/div[2]/a/img")))
+                                        .getAttribute("src")
+                                episodeBuilder.image = image
+                                episodeBuilder.episodeId = url?.replace("//", "/")?.split("/")?.get(6)?.toLong() ?: 0
+                            }
+
+                            list.add(episodeBuilder)
+                        }
+
+                        list.forEach {
+                            val tt = it.url?.replace("//", "/")?.split("/")?.get(5)
+
+                            if (calendar.after(it.calendar)) {
+                                if (!this.episodes.containsKey(Const.toId(it))) {
+
+                                    if (tt.equals("show", true)) {
+                                        try {
+                                            driver.get(it.url)
+
+                                            val episodes = driverWait.until(
+                                                ExpectedConditions.visibilityOfAllElementsLocatedBy(
+                                                    By.className("slider_item_inner")
+                                                )
                                             )
-                                        )[0].text.split(":")
+                                            val webElement = episodes.lastOrNull()
 
-                                        val dl = time.size
-                                        for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
-                                            ((i - 1).toDouble())
-                                        ).toLong()
+                                            val numberCheck = driverWait.until(
+                                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                    webElement,
+                                                    By.className("slider_item_number")
+                                                )
+                                            )[0].text?.replace(" ", "")?.toInt()
 
-                                        if (duration > 0L) this.episodes[it.id!!] = duration
-                                    } catch (exception: Exception) {
-                                        duration = 1440
+                                            if (it.number.equals("$numberCheck", true)) {
+                                                val urlElement = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.className("slider_item_star")
+                                                    )
+                                                )[0]
+                                                it.url = urlElement.getAttribute("href")
+                                                it.episodeId =
+                                                    it.url?.replace("//", "/")?.split("/")?.get(6)?.toLong() ?: 0
+                                                val image = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.tagName("img")
+                                                    )
+                                                )?.get(0)?.getAttribute("src")
+                                                it.image = image
+                                                val season = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.className("slider_item_season")
+                                                    )
+                                                )[0].text
+                                                it.season = if (season.contains(country.season, true)) {
+                                                    val splitted = season.split(" ")
+                                                    "${country.season} ${splitted[splitted.indexOf(country.season) + 1]}"
+                                                } else "${country.season} 1"
+                                                val time = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.className("slider_item_duration")
+                                                    )
+                                                )[0].text.split(":")
+
+                                                var duration: Long = 0
+                                                val dl = time.size
+                                                for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
+                                                    ((i - 1).toDouble())
+                                                ).toLong()
+
+                                                it.duration = duration
+                                                this.episodes[Const.toId(it)] = it
+                                            }
+                                        } catch (exception: Exception) {
+                                            JLogger.log(
+                                                Level.WARNING,
+                                                "Error on get Wakanim more infos episode",
+                                                exception
+                                            )
+                                        }
+                                    } else if (tt.equals("episode", true)) {
+                                        try {
+                                            driver.get(it.url)
+
+                                            val episodes = driverWait.until(
+                                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                    By.className("currentEp"), By.className("slider_item_inner")
+                                                )
+                                            )
+                                            val webElement = episodes.lastOrNull()
+
+                                            val numberCheck = driverWait.until(
+                                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                    webElement,
+                                                    By.className("slider_item_number")
+                                                )
+                                            )[0].text?.replace(" ", "")?.toInt()
+
+                                            if (it.number.equals("$numberCheck", true)) {
+                                                val season = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.className("slider_item_season")
+                                                    )
+                                                )[0].text
+                                                it.season = if (season.contains(country.season, true)) {
+                                                    val splitted = season.split(" ")
+                                                    "${country.season} ${splitted[splitted.indexOf(country.season) + 1]}"
+                                                } else "${country.season} 1"
+                                                val time = driverWait.until(
+                                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                                        webElement,
+                                                        By.className("slider_item_duration")
+                                                    )
+                                                )[0].text.split(":")
+
+                                                var duration: Long = 0
+                                                val dl = time.size
+                                                for (i in dl downTo 1) duration += (time[dl - i].ifEmpty { "0" }).toLong() * 60.0.pow(
+                                                    ((i - 1).toDouble())
+                                                ).toLong()
+
+                                                it.duration = duration
+                                                this.episodes[Const.toId(it)] = it
+                                            }
+                                        } catch (exception: Exception) {
+                                            JLogger.log(
+                                                Level.WARNING,
+                                                "Error on get Wakanim more infos episode",
+                                                exception
+                                            )
+                                        }
                                     }
-                                } else duration = this.episodes[it.id]!!
-                            } else duration = 1440
+                                } else {
+                                    val old = this.episodes[Const.toId(it)]!!
+                                    it.set(old)
 
-                            it.duration = duration
+                                }
 
-                            val episode = Episode(
-                                platform = this.getName(),
-                                calendar = ISO8601.fromCalendar(it.calendar!!),
-                                anime = it.anime!!,
-                                season = it.season!!,
-                                number = it.number!!,
-                                country = country,
-                                type = it.type!!,
-                                id = it.id!!,
-                                title = null,
-                                image = it.image!!,
-                                link = it.link!!,
-                                duration = it.duration
-                            )
-                            episode.p = this
-                            l.add(episode)
+                                l.add(
+                                    Episode(
+                                        platform = this,
+                                        calendar = ISO8601.fromCalendar(it.calendar!!),
+                                        anime = it.anime!!,
+                                        number = it.number!!,
+                                        country = country,
+                                        type = it.type!!,
+                                        season = it.season!!,
+                                        episodeId = it.episodeId,
+                                        title = null,
+                                        image = it.image,
+                                        url = it.url,
+                                        duration = it.duration
+                                    )
+                                )
+                            }
                         }
                     }
+                } catch (exception: Exception) {
+                    JLogger.log(Level.WARNING, "Error on get Wakanim episode", exception)
+                } finally {
+                    DriverBuilder.removeDriver(driver)
+                    driver.quit()
                 }
-            } catch (exception: Exception) {
-                JLogger.log(Level.WARNING, "Error on get Wakanim episode", exception)
-            } finally {
-                DriverBuilder.removeDriver(driver)
-                driver.quit()
             }
         }
 

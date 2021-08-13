@@ -84,80 +84,48 @@ class TwitterClient : Client {
         )
     }
 
-    override fun sendEpisode(episodes: Array<Episode>, new: Boolean) {
-        if (!this.init) return
+    override fun sendNewEpisodes(episodes: Array<Episode>) {
+        if (!this.init || episodes.isEmpty()) return
         val jClient = this.getJClient()
         val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
 
-        if (new) {
-            val size = countryEpisodes.size
+        countryEpisodes.forEach { episode ->
+            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
 
-            if (size <= 12) {
-                countryEpisodes.forEach {
-                    try {
-                        val jEpisode = jClient.getEpisodeById(it.globalId)
-                        val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
+            try {
+                val uploadMedia =
+                    this.twitter!!.uploadMedia("${Const.toId(episode)}.jpg", downloadImageEpisode(episode))
 
-                        val statusMessage = StatusUpdate(
-                            "🔜 ${it.anime}\n${if (it.title != null) "${it.title}\n" else ""}${it.country.season} ${it.season}\n${it.country.episode} ${it.number} ${if (it.type == EpisodeType.SUBTITLED) it.country.subtitled else it.country.dubbed}\n${Emoji.CLAP} ${
+                val statusMessage = StatusUpdate(
+                    "🔜 ${episode.anime}\n${if (episode.title != null) "${episode.title}\n" else ""}" +
+                            "${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
+                            "${Emoji.CLAP} ${
                                 SimpleDateFormat(
                                     "mm:ss"
-                                ).format(it.duration * 1000)
-                            }\n#Anime #${
-                                it.platform.replace(
+                                ).format(episode.duration * 1000)
+                            }\n" +
+                            "#Anime #${
+                                episode.platform.getName().replace(
                                     " ",
                                     ""
                                 )
-                            }\n\n${it.link}"
-                        )
-                        statusMessage.setMediaIds(uploadMedia.mediaId)
-                        statusMessage.location = this.location
-
-                        val tweet = this.twitter!!.updateStatus(statusMessage)
-                        jEpisode.messages.add(tweet.id)
-                        jClient.addEpisode(jEpisode)
-                    } catch (twitterException: TwitterException) {
-                        JLogger.warning("Can not tweet episodes: ${twitterException.message ?: "Nothing..."}")
-                    }
-                }
-
-                if (size > 0) this.saveJClient(jClient)
-            } else {
-                this.twitter!!.updateStatus(
-                    "Il y a trop d'animes qui sortent en même temps que je m'en perds dans mes circuits ! (${size}, c'est beaucoup trop pour moi)\n${
-                        Const.generate(
-                            8
-                        )
-                    }"
+                            }\n\n${episode.url}"
                 )
-            }
-        } else {
-            countryEpisodes.forEach {
-                if (jClient.hasEpisode(it.globalId)) {
-                    try {
-                        val jEpisode = jClient.getEpisodeById(it.globalId)
-                        val uploadMedia = this.twitter!!.uploadMedia("${it.globalId}.jpg", downloadImageEpisode(it))
+                statusMessage.setMediaIds(uploadMedia.mediaId)
+                statusMessage.location = this.location
 
-                        val statusMessage =
-                            StatusUpdate(
-                                "Modification :\n${if (it.title != null) "${it.title}\n" else ""}${Emoji.CLAP} ${
-                                    SimpleDateFormat("mm:ss").format(
-                                        it.duration * 1000
-                                    )
-                                }\n\n${it.link}"
-                            )
-                        statusMessage.setMediaIds(uploadMedia.mediaId)
-                        statusMessage.inReplyToStatusId = jEpisode.messages.firstOrNull() ?: 0
-                        statusMessage.location = this.location
-
-                        this.twitter!!.updateStatus(statusMessage)
-                    } catch (twitterException: TwitterException) {
-                        JLogger.warning("Can not tweet edit episode: ${twitterException.message ?: "Nothing..."}")
-                    }
-                }
+                val tweet = this.twitter!!.updateStatus(statusMessage)
+                jEpisode.messages.add(tweet.id)
+                jClient.addEpisode(jEpisode)
+            } catch (exception: Exception) {
+                JLogger.warning("Can not tweet episodes: ${exception.message ?: "Nothing..."}")
             }
         }
+
+        this.saveJClient(jClient)
     }
+
+    override fun sendEditEpisodes(episodes: Array<Episode>) {}
 
     private fun downloadImageEpisode(episode: Episode): ByteArrayInputStream {
         val bufferedImage = ImageIO.read(URL(episode.image))

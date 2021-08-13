@@ -5,22 +5,22 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import fr.ziedelth.jais.platforms.AnimeDigitalNetwork
 import fr.ziedelth.jais.platforms.Crunchyroll
+import fr.ziedelth.jais.platforms.MangaScan
 import fr.ziedelth.jais.platforms.Wakanim
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.EpisodeBuilder
 import fr.ziedelth.jais.utils.animes.Platform
 import fr.ziedelth.jais.utils.clients.Client
 import java.awt.Color
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-import java.util.*
-import kotlin.experimental.and
 import kotlin.math.min
 
 object Const {
     val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
     val CLIENTS: MutableList<Client> = mutableListOf()
-    val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), Wakanim())
+    val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), MangaScan(), Wakanim())
     const val DELAY_BETWEEN_REQUEST = 2L
     const val SEND_MESSAGES = true
     val DEFAULT_CHARSET: Charset = StandardCharsets.UTF_8
@@ -38,26 +38,8 @@ object Const {
     const val PUBLIC: Boolean = true
     const val DISPLAY = 5
 
-    private fun encode(algorithm: String, bytes: ByteArray): String {
-        val md = MessageDigest.getInstance(algorithm)
-        val digest = md.digest(bytes)
-        val sb = StringBuilder()
-        for (b in digest) sb.append(((b and 255.toByte()) + 256).toString(16).substring(1))
-        return sb.toString()
-    }
-
-    fun encodeSHA512(string: String) = Hashing.sha512().hashString(string, DEFAULT_CHARSET).toString()
+    private fun encodeSHA512(string: String) = Hashing.sha512().hashString(string, DEFAULT_CHARSET).toString()
     fun encodeMD5(string: String) = Hashing.md5().hashString(string, DEFAULT_CHARSET).toString()
-
-    fun generate(length: Int): String {
-        val leftLimit = 48 // numeral '0'
-        val rightLimit = 122 // letter 'z'
-        val random = Random()
-        return random.ints(leftLimit, rightLimit + 1).filter { i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97) }
-            .limit(length.toLong())
-            .collect({ StringBuilder() }, java.lang.StringBuilder::appendCodePoint, java.lang.StringBuilder::append)
-            .toString()
-    }
 
     fun toInt(string: String): String = try {
         "${string.toInt()}"
@@ -65,11 +47,17 @@ object Const {
         string
     }
 
-    fun toInt(string: String?, stringError: String): String = try {
-        "${string?.toInt()}"
+    fun toInt(string: String?, stringError: String, prefix: String? = null): String = try {
+        "${if (prefix.isNullOrEmpty()) "" else prefix} ${string?.toInt()}"
     } catch (exception: Exception) {
         stringError
     }
 
     fun substring(string: String, int: Int) = string.substring(0, min(string.length, int))
+    fun toHexString(color: Color): String = String.format("#%06X", 0xFFFFFF and color.rgb)
+    fun toId(episode: Episode): String =
+        encodeSHA512("${episode.platform.getName()}${episode.anime}${episode.season}${episode.number}${episode.country}${episode.type}")
+
+    fun toId(episodeBuilder: EpisodeBuilder): String =
+        encodeSHA512("${episodeBuilder.platform.getName()}${episodeBuilder.anime}${episodeBuilder.number}${episodeBuilder.country}${episodeBuilder.type}")
 }
