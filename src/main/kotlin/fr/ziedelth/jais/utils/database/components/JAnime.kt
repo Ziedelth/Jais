@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.utils.database.components
 
 data class JAnime(

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.clients
 
 import fr.ziedelth.jais.commands.ClearCommand
@@ -261,9 +265,9 @@ class DiscordClient : Client {
             news.title,
             news.link,
             description = """
-            ** ${Const.substring(news.description, 450)}... **
+            ** ${Const.substring(news.description, 450)}${if (news.description.length < 450) "" else "..."} **
             
-            ${Const.substring(news.content, 1500)}...
+            ${Const.substring(news.content, 1500)}${if (news.content.length < 1500) "" else "..."}
             """.trimIndent(),
             color = news.p?.getColor(),
             timestamp = ISO8601.toCalendar(news.calendar).toInstant()

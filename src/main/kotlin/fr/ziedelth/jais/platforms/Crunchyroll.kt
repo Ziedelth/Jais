@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
@@ -63,7 +67,7 @@ class Crunchyroll : Platform {
                         Jsoup.parse(element.getElementsByTagName("content:encoded").item(0).textContent).text()
                     val link = element.getElementsByTagName("guid").item(0).textContent
 
-                    if (this.isSameDay(calendar, releaseDate)) {
+                    if (Const.isSameDay(calendar, releaseDate)) {
                         val news =
                             News(
                                 this.getName(),
@@ -136,7 +140,7 @@ class Crunchyroll : Platform {
                     val duration = element.getElementsByTagName("crunchyroll:duration").item(0)?.textContent ?: "1440"
 
                     if (spay.split(" ").contains(country.country) && subtitles.split(",")
-                            .contains(country.language) && this.isSameDay(calendar, releaseDate)
+                            .contains(country.language) && Const.isSameDay(calendar, releaseDate)
                     ) {
                         l.add(
                             Episode(
@@ -167,10 +171,5 @@ class Crunchyroll : Platform {
         val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
         calendar.time = date
         return calendar
-    }
-
-    private fun isSameDay(var0: Calendar, var1: Calendar): Boolean {
-        val fmt = SimpleDateFormat("yyyyMMdd")
-        return fmt.format(var0.time) == fmt.format(var1.time)
     }
 }

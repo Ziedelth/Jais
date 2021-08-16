@@ -36,8 +36,8 @@ Toutes les dépendances sont gérés automatiquement par Maven.
     * [Site Web](http://www.slf4j.org/)
     * [GitHub](https://github.com/qos-ch/slf4j)
 * Apache Commons Logging
-    * Version : **1.2**
-    * [Site Web](https://commons.apache.org/proper/commons-logging/)
+  * Version : **1.2**
+  * [Site Web](https://commons.apache.org/proper/commons-logging/)
 * jsoup
   * Version : **1.14.1**
   * [Site Web](https://jsoup.org/)

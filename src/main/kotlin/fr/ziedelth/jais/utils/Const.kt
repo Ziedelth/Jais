@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.utils
 
 import com.google.common.hash.Hashing
@@ -15,6 +19,8 @@ import java.awt.Color
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.min
 
 object Const {
@@ -60,4 +66,9 @@ object Const {
 
     fun toId(episodeBuilder: EpisodeBuilder): String =
         encodeSHA512("${episodeBuilder.platform.getName()}${episodeBuilder.anime}${episodeBuilder.number}${episodeBuilder.country}${episodeBuilder.type}")
+
+    fun isSameDay(var0: Calendar, var1: Calendar): Boolean {
+        val fmt = SimpleDateFormat("yyyyMMdd")
+        return fmt.format(var0.time) == fmt.format(var1.time)
+    }
 }

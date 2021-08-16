@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.clients
 
 import fr.ziedelth.jais.utils.Const
@@ -140,7 +144,7 @@ class TwitterClient : Client {
         news.filter { it.country == Country.FRANCE }.forEach {
             try {
                 val statusMessage = StatusUpdate(
-                    "${Const.substring(it.title, 100)}...\n#${
+                    "${Const.substring(it.title, 100)}${if (it.title.length < 100) "" else "..."}\n#News #${
                         it.platform.replace(
                             " ",
                             ""

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.utils.commands
 
 import net.dv8tion.jda.api.interactions.commands.OptionType

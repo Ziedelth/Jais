@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.commands
 
 import fr.ziedelth.jais.utils.commands.Command

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.utils.clients
 
 data class JClient(val episodes: MutableList<JEpisode> = mutableListOf()) {

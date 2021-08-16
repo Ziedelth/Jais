@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2021. Ziedelth
+ */
+
 package fr.ziedelth.jais.platforms
 
 import com.google.gson.Gson
@@ -5,13 +9,18 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Request
-import fr.ziedelth.jais.utils.animes.Country
-import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.EpisodeType
-import fr.ziedelth.jais.utils.animes.Platform
+import fr.ziedelth.jais.utils.animes.*
+import org.jsoup.Jsoup
+import org.w3c.dom.Element
+import org.w3c.dom.Node
+import org.w3c.dom.NodeList
 import java.awt.Color
+import java.net.URL
+import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
 
 class AnimeDigitalNetwork : Platform {
     override fun getName(): String = "Anime Digital Network"
@@ -19,6 +28,65 @@ class AnimeDigitalNetwork : Platform {
     override fun getImage(): String = "https://ziedelth.fr/images/adn.png"
     override fun getColor(): Color = Color(0, 150, 255)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
+
+    private fun getItems(url: URLConnection): NodeList {
+        val dbf = DocumentBuilderFactory.newInstance()
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+        val db = dbf.newDocumentBuilder()
+        val doc = db.parse(url.getInputStream())
+        doc.documentElement.normalize()
+        return doc.getElementsByTagName("item")
+    }
+
+    override fun getLastNews(): Array<News> {
+        val calendar = Calendar.getInstance()
+        val l: MutableList<News> = mutableListOf()
+
+        this.getAllowedCountries().forEach { country ->
+            val url: URLConnection
+            val list: NodeList
+
+            try {
+                url =
+                    URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.country}").openConnection()
+                list = getItems(url)
+            } catch (exception: Exception) {
+                return l.toTypedArray()
+            }
+
+            for (i in 0 until list.length) {
+                val node = list.item(i)
+
+                if (node.nodeType == Node.ELEMENT_NODE) {
+                    val element = node as Element
+
+                    val date = element.getElementsByTagName("pubDate").item(0).textContent
+                    val releaseDate = toCalendar(date)
+                    val title = element.getElementsByTagName("title").item(0).textContent
+                    val description =
+                        Jsoup.parse(element.getElementsByTagName("description").item(0).textContent).text()
+                    val link = element.getElementsByTagName("guid").item(0).textContent
+
+                    if (Const.isSameDay(calendar, releaseDate)) {
+                        val news =
+                            News(
+                                this.getName(),
+                                ISO8601.fromCalendar(releaseDate),
+                                title,
+                                description,
+                                "",
+                                link,
+                                country
+                            )
+                        news.p = this
+                        l.add(news)
+                    }
+                }
+            }
+        }
+
+        return l.toTypedArray()
+    }
 
     override fun getLastEpisodes(): Array<Episode> {
         val calendar = Calendar.getInstance()
@@ -45,7 +113,11 @@ class AnimeDigitalNetwork : Platform {
                 val showObject = jObject.getAsJsonObject("show")
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
 
-                val season = Const.toInt(jObject["season"]?.asString, "${country.season} 1", country.season)
+                val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
+                    jObject["season"]?.asString,
+                    "${country.season} 1",
+                    country.season
+                ) else "${country.season} 1"
                 val anime =
                     if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
                         "title"
@@ -92,5 +164,12 @@ class AnimeDigitalNetwork : Platform {
 
     private fun date(calendar: Calendar): String {
         return SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
+    }
+
+    private fun toCalendar(s: String): Calendar {
+        val calendar = Calendar.getInstance()
+        val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
+        calendar.time = date
+        return calendar
     }
 }
