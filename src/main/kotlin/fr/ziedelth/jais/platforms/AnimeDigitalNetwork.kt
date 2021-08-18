@@ -115,9 +115,8 @@ class AnimeDigitalNetwork : Platform {
 
                 val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
                     jObject["season"]?.asString,
-                    "${country.season} 1",
-                    country.season
-                ) else "${country.season} 1"
+                    "1"
+                ) else "1"
                 val anime =
                     if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
                         "title"

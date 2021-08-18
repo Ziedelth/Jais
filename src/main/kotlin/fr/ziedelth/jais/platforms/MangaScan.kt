@@ -80,7 +80,7 @@ class MangaScan : Platform {
                                 number = number,
                                 country = country,
                                 type = EpisodeType.DUBBED,
-                                season = "Saison 1",
+                                season = "1",
                                 episodeId = 0,
                                 title = null,
                                 image = "https://ziedelth.fr/images/sololeveling.jpg",

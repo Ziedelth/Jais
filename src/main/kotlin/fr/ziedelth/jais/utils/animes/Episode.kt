@@ -11,7 +11,7 @@ data class Episode(
     val number: String,
     val country: Country,
     val type: EpisodeType = EpisodeType.SUBTITLED,
-    val season: String,
+    var season: String,
 
     val episodeId: Long,
     val title: String?,
@@ -19,6 +19,10 @@ data class Episode(
     val url: String?,
     val duration: Long = 1440
 ) {
+    init {
+        this.season = this.season.replace(" ", "")
+    }
+
     override fun toString(): String {
         return "Episode(platform=$platform, calendar='$calendar', anime='$anime', number='$number', country=$country, type=$type, season='$season', episodeId=$episodeId, title=$title, image=$image, url=$url, duration=$duration)"
     }

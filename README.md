@@ -10,18 +10,29 @@ _Version de développement, pas encore accès au public_
 
 1. [Réseaux sociaux](#réseaux-sociaux)
 2. [Plateformes d'animes prises en charges](#plateformes-danimes-prises-en-charges)
-3. [Dépendances](#dépendances)
+3. [Mises à jours](#mises-à-jours-(dd/mm/yyyy))
+4. [Dépendances](#dépendances)
 
 ## Réseaux sociaux
 
-- [x] Discord
-- [x] Twitter
+- [x] [Discord](https://discord.com/)
+- [x] [Twitter](https://twitter.com/)
+- [ ] Instagram
+- [ ] Reddit
 
 ## Plateformes d'animes prises en charges
 
-- [x] Anime Digital Network
-- [x] Crunchyroll
-- [x] Wakanim
+- [x] [Anime Digital Network](https://animedigitalnetwork.fr/)
+- [x] [Crunchyroll](https://www.crunchyroll.com/)
+- [x] [MangaScan](https://mangascan.cc/)
+- [x] [Wakanim](https://www.wakanim.tv/)
+
+## Mises à jours (dd/mm/yyyy)
+
+- 18/08/2021
+  - Correction de l'enregistrement des saisons dans la base de données
+  - Correction de l'affichage du temps de l'épisode pour Discord & Twitter
+  - Passage de la version de _**jsoup**_ de **1.14.1** vers **1.14.2**
 
 ## Dépendances
 
@@ -29,17 +40,17 @@ Ce projet nécessite **Java 11+**.<br>
 Toutes les dépendances sont gérés automatiquement par Maven.
 
 * JDA
-    * Version : **4.3.0_304**
-    * [GitHub](https://github.com/DV8FromTheWorld/JDA)
+  * Version : **4.3.0_304**
+  * [GitHub](https://github.com/DV8FromTheWorld/JDA)
 * slf4j-simple
-    * Version : **1.7.32**
-    * [Site Web](http://www.slf4j.org/)
-    * [GitHub](https://github.com/qos-ch/slf4j)
+  * Version : **1.7.32**
+  * [Site Web](http://www.slf4j.org/)
+  * [GitHub](https://github.com/qos-ch/slf4j)
 * Apache Commons Logging
   * Version : **1.2**
   * [Site Web](https://commons.apache.org/proper/commons-logging/)
 * jsoup
-  * Version : **1.14.1**
+  * Version : **1.14.2**
   * [Site Web](https://jsoup.org/)
   * [GitHub](https://github.com/jhy/jsoup/)
 * Gson

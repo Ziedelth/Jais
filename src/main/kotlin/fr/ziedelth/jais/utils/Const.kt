@@ -21,6 +21,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.floor
 import kotlin.math.min
 
 object Const {
@@ -70,5 +71,25 @@ object Const {
     fun isSameDay(var0: Calendar, var1: Calendar): Boolean {
         val fmt = SimpleDateFormat("yyyyMMdd")
         return fmt.format(var0.time) == fmt.format(var1.time)
+    }
+
+    fun String.toHHMMSS(): String {
+        val sec_num = this.toInt(10)
+        val hours = floor(sec_num / 3600.0)
+        val minutes = floor((sec_num - (hours * 3600.0)) / 60.0)
+        val seconds = sec_num - (hours * 3600.0) - (minutes * 60.0)
+        var h: String = hours.toString()
+        var m: String = minutes.toString()
+        var s: String = seconds.toString()
+
+        if (hours < 10) h = "0$hours"
+        if (minutes < 10) m = "0$minutes"
+        if (seconds < 10) s = "0$seconds"
+
+        return "${(if (hours >= 1) "$h:" else "")}$m:$s"
+    }
+
+    fun Long.toHHMMSS(): String {
+        return this.toString().toHHMMSS()
     }
 }

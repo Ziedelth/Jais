@@ -165,8 +165,8 @@ class Wakanim : Platform {
                                                 )[0].text
                                                 it.season = if (season.contains(country.season, true)) {
                                                     val splitted = season.split(" ")
-                                                    "${country.season} ${splitted[splitted.indexOf(country.season) + 1]}"
-                                                } else "${country.season} 1"
+                                                    "${splitted[splitted.indexOf(country.season) + 1]}"
+                                                } else "1"
                                                 val time = driverWait.until(
                                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                                         webElement,
@@ -217,8 +217,8 @@ class Wakanim : Platform {
                                                 )[0].text
                                                 it.season = if (season.contains(country.season, true)) {
                                                     val splitted = season.split(" ")
-                                                    "${country.season} ${splitted[splitted.indexOf(country.season) + 1]}"
-                                                } else "${country.season} 1"
+                                                    "${splitted[splitted.indexOf(country.season) + 1]}"
+                                                } else "1"
                                                 val time = driverWait.until(
                                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                                         webElement,

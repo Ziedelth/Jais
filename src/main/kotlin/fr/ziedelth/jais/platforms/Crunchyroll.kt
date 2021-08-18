@@ -115,9 +115,9 @@ class Crunchyroll : Platform {
                     val s: String? = element.getElementsByTagName("crunchyroll:season")?.item(0)?.textContent
 
                     val season: String = if (s.isNullOrEmpty() || s.equals("null", true)) {
-                        "${country.season} 1"
+                        "1"
                     } else {
-                        Const.toInt(s, "${country.season} 1", country.season)
+                        Const.toInt(s, "1")
                     }
 
                     val anime = element.getElementsByTagName("crunchyroll:seriesTitle").item(0).textContent

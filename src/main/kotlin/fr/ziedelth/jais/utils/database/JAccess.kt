@@ -21,7 +21,7 @@ object JAccess {
     private const val GET_PLATFORM = "SELECT * FROM jais.platforms WHERE LOWER(name) = LOWER(?) LIMIT 1"
     private const val GET_COUNTRY = "SELECT * FROM jais.countries WHERE LOWER(country) = LOWER(?) LIMIT 1"
     private const val GET_ANIME = "SELECT * FROM jais.animes WHERE countryId = ? AND LOWER(name) = LOWER(?) LIMIT 1"
-    private const val GET_SEASON = "SELECT * FROM jais.seasons WHERE animeId = ? AND LOWER(name) = LOWER(?) LIMIT 1"
+    private const val GET_SEASON = "SELECT * FROM jais.seasons WHERE animeId = ? AND LOWER(value) = LOWER(?) LIMIT 1"
     private const val GET_NUMBER = "SELECT * FROM jais.numbers WHERE seasonId = ? AND LOWER(value) = LOWER(?) LIMIT 1"
     private const val GET_EPISODE =
         "SELECT * FROM jais.episodes WHERE platformId = ? AND numberId = ? AND LOWER(type) = LOWER(?) LIMIT 1"
@@ -199,7 +199,7 @@ object JAccess {
                     resultSet.getInt("id"),
                     resultSet.getString("timestamp"),
                     resultSet.getInt("animeId"),
-                    resultSet.getString("name")
+                    resultSet.getString("value")
                 )
             } else null
         } else null
@@ -211,7 +211,7 @@ object JAccess {
 
             return if (jSeason == null) {
                 val preparedStatement =
-                    connection.prepareStatement("INSERT INTO jais.seasons (timestamp, animeId, name) VALUES (?, ?, ?)")
+                    connection.prepareStatement("INSERT INTO jais.seasons (timestamp, animeId, value) VALUES (?, ?, ?)")
                 preparedStatement.setString(1, timestamp)
                 preparedStatement.setInt(2, jAnime.id)
                 preparedStatement.setString(3, string)
@@ -324,7 +324,7 @@ object JAccess {
                         "AND jais.countries.country = ? " +
                         "AND jais.platforms.name = ? " +
                         "AND jais.animes.name = ? " +
-                        "AND jais.seasons.name = ? " +
+                        "AND jais.seasons.value = ? " +
                         "AND jais.numbers.value = ? " +
                         "AND jais.episodes.type = ? " +
                         "LIMIT 1"

@@ -5,6 +5,7 @@
 package fr.ziedelth.jais.clients
 
 import fr.ziedelth.jais.utils.Const
+import fr.ziedelth.jais.utils.Const.toHHMMSS
 import fr.ziedelth.jais.utils.Emoji
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Country
@@ -21,7 +22,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
-import java.text.SimpleDateFormat
 import javax.imageio.ImageIO
 
 class TwitterClient : Client {
@@ -102,18 +102,11 @@ class TwitterClient : Client {
 
                 val statusMessage = StatusUpdate(
                     "🔜 ${episode.anime}\n${if (episode.title != null) "${episode.title}\n" else ""}" +
-                            "${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
-                            "${Emoji.CLAP} ${
-                                SimpleDateFormat(
-                                    "mm:ss"
-                                ).format(episode.duration * 1000)
-                            }\n" +
-                            "#Anime #${
-                                episode.platform.getName().replace(
-                                    " ",
-                                    ""
-                                )
-                            }\n\n${episode.url}"
+                            "${episode.country.season} ${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
+                            "${Emoji.CLAP} ${episode.duration.toHHMMSS()}\n" +
+                            "#Anime #${episode.platform.getName().replace(" ", "")}\n" +
+                            "\n" +
+                            "${episode.url}"
                 )
                 statusMessage.setMediaIds(uploadMedia.mediaId)
                 statusMessage.location = this.location

@@ -9,6 +9,7 @@ import fr.ziedelth.jais.commands.ConfigCommand
 import fr.ziedelth.jais.commands.PlatformsCommand
 import fr.ziedelth.jais.listeners.*
 import fr.ziedelth.jais.utils.*
+import fr.ziedelth.jais.utils.Const.toHHMMSS
 import fr.ziedelth.jais.utils.Emoji.CLAP
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
@@ -29,7 +30,6 @@ import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
 import java.awt.Color
 import java.io.File
 import java.nio.file.Files
-import java.text.SimpleDateFormat
 import java.time.temporal.TemporalAccessor
 import java.util.concurrent.CompletableFuture
 
@@ -247,8 +247,8 @@ class DiscordClient : Client {
             episode.url,
             description = """
                 ${if (episode.title != null) "** ${episode.title} **" else ""}
-                ${episode.season} • ${episode.country.episode} ${episode.number}
-                ${if (episode.duration > 0) "$CLAP ${SimpleDateFormat("mm:ss").format(episode.duration * 1000)}" else ""}
+                ${episode.country.season} ${episode.season} • ${episode.country.episode} ${episode.number}
+                ${if (episode.duration > 0) "$CLAP ${episode.duration.toHHMMSS()}" else ""}
             """.trimIndent(),
             color = episode.platform.getColor(),
             image = episode.image,
