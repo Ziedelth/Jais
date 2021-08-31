@@ -8,9 +8,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 object ISO8601 {
+    private val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+
     fun fromCalendar(calendar: Calendar): String {
         val date = calendar.time
-        val formatted = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(date)
+        val formatted = this.sdf.format(date)
         return "${formatted.substring(0, 22)}:${formatted.substring(22)}"
     }
 
@@ -20,7 +22,7 @@ object ISO8601 {
         val calendar = GregorianCalendar.getInstance()
         var s = iso8601string.replace("Z", "+00:00")
         s = "${s.substring(0, 22)}${s.substring(23)}"
-        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(s)
+        val date = this.sdf.parse(s)
         calendar.time = date
         return calendar
     }

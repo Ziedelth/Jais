@@ -11,7 +11,7 @@ data class Channel(
     var news: Boolean = true,
     var countries: MutableList<Country> = mutableListOf()
 ) {
-    fun addCountry(country: Country) {
+    private fun addCountry(country: Country) {
         if (!this.countries.contains(country)) this.countries.add(country)
     }
 

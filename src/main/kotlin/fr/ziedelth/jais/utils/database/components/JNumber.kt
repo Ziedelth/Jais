@@ -9,4 +9,8 @@ data class JNumber(
     val timestamp: String,
     val seasonId: Int,
     val value: String
-)
+) {
+    override fun toString(): String {
+        return "JNumber(id=$id, timestamp='$timestamp', seasonId=$seasonId, value='$value')"
+    }
+}

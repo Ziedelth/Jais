@@ -10,4 +10,8 @@ data class JPlatform(
     val url: String,
     val image: String,
     val color: String
-)
+) {
+    override fun toString(): String {
+        return "JPlatform(id=$id, name='$name', url='$url', image='$image', color='$color')"
+    }
+}

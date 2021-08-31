@@ -15,17 +15,16 @@ class PlatformsCommand : Command(
 ) {
     override fun execute(event: SlashCommandEvent) {
         val embed = EmbedBuilder()
-        val platformsBuilder = StringBuilder()
-
-        Const.PLATFORMS.forEach { platform ->
-            val flagBuilder = StringBuilder()
-            platform.getAllowedCountries().forEach { flagBuilder.append(it.flag).append(" ") }
-            platformsBuilder.append("• $flagBuilder [${platform.getName()}](${platform.getURL()})").append("\n")
-        }
+        val platformsBuilder = Const.PLATFORMS.map { platform ->
+            "• ${
+                platform.getAllowedCountries().map { "${it.flag} " }
+            } [${platform.getName()}](${platform.getURL()})\n"
+        }.toString()
 
         embed.setDescription(
             """** Social networks **
             • Discord (Here)
+            • [Instagram](https://www.instagram.com/jais_zie/)
             • [Twitter](https://twitter.com/Jaiss_B_)
             • [GitHub](https://github.com/Ziedelth/Jais)
             

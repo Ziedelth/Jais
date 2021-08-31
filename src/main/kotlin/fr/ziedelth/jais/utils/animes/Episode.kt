@@ -4,10 +4,15 @@
 
 package fr.ziedelth.jais.utils.animes
 
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.net.URL
+import javax.imageio.ImageIO
+
 data class Episode(
     val platform: Platform,
     val calendar: String,
-    val anime: String,
+    var anime: String,
     val number: String,
     val country: Country,
     val type: EpisodeType = EpisodeType.SUBTITLED,
@@ -19,8 +24,17 @@ data class Episode(
     val url: String?,
     val duration: Long = 1440
 ) {
+    @Transient
+    val downloadedImage: ByteArrayInputStream
+
     init {
+        this.anime = this.anime.replace("’", "'")
         this.season = this.season.replace(" ", "")
+
+        val bufferedImage = ImageIO.read(URL(this.image))
+        val baos = ByteArrayOutputStream()
+        ImageIO.write(bufferedImage, "jpg", baos)
+        this.downloadedImage = ByteArrayInputStream(baos.toByteArray())
     }
 
     override fun toString(): String {

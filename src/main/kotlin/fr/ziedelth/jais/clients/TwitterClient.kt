@@ -5,72 +5,42 @@
 package fr.ziedelth.jais.clients
 
 import fr.ziedelth.jais.utils.Const
-import fr.ziedelth.jais.utils.Const.toHHMMSS
-import fr.ziedelth.jais.utils.Emoji
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.clients.Client
-import fr.ziedelth.jais.utils.clients.JClient
 import fr.ziedelth.jais.utils.tokens.TwitterToken
-import twitter4j.*
+import twitter4j.StatusUpdate
+import twitter4j.Twitter
+import twitter4j.TwitterException
+import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.net.URL
-import java.nio.file.Files
-import javax.imageio.ImageIO
+import java.util.*
+import java.util.logging.Level
+import kotlin.math.min
 
 class TwitterClient : Client {
-    private val file = File("twitter.json")
-    private val location = GeoLocation(45.764043, 4.835659)
-    private val tokenFile = File(Const.TOKENS_FOLDER, "twitter.json")
-    private val init: Boolean
     private var twitter: Twitter? = null
 
     init {
-        if (!this.tokenFile.exists()) {
-            this.init = false
-            JLogger.warning("Twitter token not exists!")
-            Files.writeString(this.tokenFile.toPath(), Const.GSON.toJson(TwitterToken()), Const.DEFAULT_CHARSET)
-        } else {
-            val twitterToken = Const.GSON.fromJson(
-                Files.readString(
-                    this.tokenFile.toPath(),
-                    Const.DEFAULT_CHARSET
-                ), TwitterToken::class.java
-            )
+        val token = Const.getToken("twitter.json", TwitterToken::class.java) as TwitterToken?
 
-            if (twitterToken.OAuthConsumerKey.isEmpty() || twitterToken.OAuthConsumerSecret.isEmpty() || twitterToken.OAuthAccessToken.isEmpty() || twitterToken.OAuthAccessTokenSecret.isEmpty()) {
-                this.init = false
-                JLogger.warning("Twitter token is empty!")
-            } else {
-                this.init = true
+        if (token != null) {
+            try {
                 val configurationBuilder = ConfigurationBuilder()
-                configurationBuilder.setDebugEnabled(true).setOAuthConsumerKey(twitterToken.OAuthConsumerKey)
-                    .setOAuthConsumerSecret(twitterToken.OAuthConsumerSecret)
-                    .setOAuthAccessToken(twitterToken.OAuthAccessToken)
-                    .setOAuthAccessTokenSecret(twitterToken.OAuthAccessTokenSecret)
+                configurationBuilder.setDebugEnabled(true).setOAuthConsumerKey(token.OAuthConsumerKey)
+                    .setOAuthConsumerSecret(token.OAuthConsumerSecret)
+                    .setOAuthAccessToken(token.OAuthAccessToken)
+                    .setOAuthAccessTokenSecret(token.OAuthAccessTokenSecret)
                 val twitterFactory = TwitterFactory(configurationBuilder.build())
 
                 this.twitter = twitterFactory.instance
                 this.update()
+            } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not load ${this.javaClass.simpleName} client", exception)
             }
         }
-    }
-
-    override fun getJClient(): JClient {
-        return if (this.file.exists()) Const.GSON.fromJson(
-            Files.readString(this.file.toPath(), Const.DEFAULT_CHARSET),
-            JClient::class.java
-        ) else JClient()
-    }
-
-    override fun saveJClient(jClient: JClient) {
-        Files.writeString(this.file.toPath(), Const.GSON.toJson(jClient), Const.DEFAULT_CHARSET)
     }
 
     override fun update() {
@@ -88,52 +58,55 @@ class TwitterClient : Client {
         )
     }
 
-    override fun sendNewEpisodes(episodes: Array<Episode>) {
-        if (!this.init || episodes.isEmpty()) return
-        val jClient = this.getJClient()
-        val countryEpisodes = episodes.filter { it.country == Country.FRANCE }
+    override fun sendEpisodes(episodes: Array<Episode>) {
+        episodes.map { it.platform }.distinct().forEach { platform ->
+            val cl = episodes.filter { it.country == Country.FRANCE && it.platform == platform }
 
-        countryEpisodes.forEach { episode ->
-            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
+            // SPAM
+            if (cl.size >= 10) {
+                val animes: Array<String> = cl.map { it.anime }.distinct().toTypedArray()
+                val stringBuilder = animes.map { "• $it\n" }.distinct().toString()
 
-            try {
-                val uploadMedia =
-                    this.twitter!!.uploadMedia("${Const.toId(episode)}.jpg", downloadImageEpisode(episode))
+                try {
+                    val statusMessage = StatusUpdate(stringBuilder)
+                    statusMessage.setMediaIds()
+                    statusMessage.setMediaIds(*animes.slice(0..min(animes.size, 5))
+                        .mapNotNull { anime -> cl.firstOrNull { episode -> episode.anime.equals(anime, true) } }
+                        .map { episode ->
+                            this.twitter!!.uploadMedia(
+                                "${
+                                    UUID.randomUUID().toString().replace("-", "")
+                                }.jpg", episode.downloadedImage
+                            ).mediaId
+                        }.toLongArray()
+                    )
 
-                val statusMessage = StatusUpdate(
-                    "🔜 ${episode.anime}\n${if (episode.title != null) "${episode.title}\n" else ""}" +
-                            "${episode.country.season} ${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
-                            "${Emoji.CLAP} ${episode.duration.toHHMMSS()}\n" +
-                            "#Anime #${episode.platform.getName().replace(" ", "")}\n" +
-                            "\n" +
-                            "${episode.url}"
-                )
-                statusMessage.setMediaIds(uploadMedia.mediaId)
-                statusMessage.location = this.location
+                    this.twitter!!.updateStatus(statusMessage)
+                } catch (exception: Exception) {
+                    JLogger.warning("Can not tweet episodes: ${exception.message ?: "Nothing..."}")
+                }
+            } else {
+                cl.forEach { episode ->
+                    try {
+                        val statusMessage = StatusUpdate(Const.getEpisodeMessage(episode))
+                        statusMessage.setMediaIds(
+                            this.twitter!!.uploadMedia(
+                                "${
+                                    UUID.randomUUID().toString().replace("-", "")
+                                }.jpg", episode.downloadedImage
+                            ).mediaId
+                        )
 
-                val tweet = this.twitter!!.updateStatus(statusMessage)
-                jEpisode.messages.add(tweet.id)
-                jClient.addEpisode(jEpisode)
-            } catch (exception: Exception) {
-                JLogger.warning("Can not tweet episodes: ${exception.message ?: "Nothing..."}")
+                        this.twitter!!.updateStatus(statusMessage)
+                    } catch (exception: Exception) {
+                        JLogger.warning("Can not tweet episodes: ${exception.message ?: "Nothing..."}")
+                    }
+                }
             }
         }
-
-        this.saveJClient(jClient)
-    }
-
-    override fun sendEditEpisodes(episodes: Array<Episode>) {}
-
-    private fun downloadImageEpisode(episode: Episode): ByteArrayInputStream {
-        val bufferedImage = ImageIO.read(URL(episode.image))
-        val baos = ByteArrayOutputStream()
-        ImageIO.write(bufferedImage, "jpg", baos)
-        return ByteArrayInputStream(baos.toByteArray())
     }
 
     override fun sendNews(news: Array<News>) {
-        if (!this.init) return
-
         news.filter { it.country == Country.FRANCE }.forEach {
             try {
                 val statusMessage = StatusUpdate(
@@ -144,7 +117,6 @@ class TwitterClient : Client {
                         )
                     }\n\nLire l'actualité :\n${it.link}"
                 )
-                statusMessage.location = this.location
 
                 this.twitter!!.updateStatus(statusMessage)
             } catch (twitterException: TwitterException) {

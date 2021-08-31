@@ -10,4 +10,8 @@ data class JAnime(
     val countryId: Int,
     val name: String,
     val image: String?
-)
+) {
+    override fun toString(): String {
+        return "JAnime(id=$id, timestamp='$timestamp', countryId=$countryId, name='$name', image=$image)"
+    }
+}

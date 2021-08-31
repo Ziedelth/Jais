@@ -12,10 +12,18 @@ object JTime {
         if (!message.isNullOrEmpty()) JLogger.info("[S/$id] $message")
     }
 
-    fun end(id: String, message: String? = null): Long {
+    fun end(id: String, message: String? = null, subtracted: Long = 0): Long {
         val delta = System.currentTimeMillis() - this.map.getOrDefault(id, System.currentTimeMillis())
         this.map.remove(id)
-        if (!message.isNullOrEmpty()) JLogger.info("[E/$id] ${message.replace("%", delta.toString())}")
+        if (!message.isNullOrEmpty()) JLogger.info(
+            "[E/$id] ${
+                message
+                    .replace("%{ms}", delta.toString())
+                    .replace("%{s}", (delta / 1000.0).toString())
+                    .replace("%{dms}", (subtracted - delta).toString())
+                    .replace("%{ds}", ((subtracted - delta) / 1000.0).toString())
+            }"
+        )
         return delta
     }
 }

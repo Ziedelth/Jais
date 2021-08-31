@@ -11,7 +11,7 @@ class EpisodeBuilder(var platform: Platform, var country: Country) {
     var anime: String? = null
     var number: String? = null
     var type: EpisodeType? = null
-    var season: String? = null
+    var season: String? = "1"
     var episodeId: Long = 0
     var title: String? = null
     var image: String? = null

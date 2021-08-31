@@ -19,11 +19,8 @@ class ClearCommand : Command(
         if (event.member!!.hasPermission(Permission.ADMINISTRATOR)) {
             event.reply("Editing...").setEphemeral(true).queue { message ->
                 textChannel.history.retrievePast(100).queue {
-                    CompletableFuture.allOf(*textChannel.purgeMessages(it).toTypedArray()).whenComplete { _, _ ->
-                        run {
-                            message.editOriginal("Finished!").queue()
-                        }
-                    }
+                    CompletableFuture.allOf(*textChannel.purgeMessages(it).toTypedArray())
+                        .whenComplete { _, _ -> message.editOriginal("Finished!").queue() }
                 }
             }
         } else event.reply("You've not permission to use this command!").setEphemeral(true).queue()

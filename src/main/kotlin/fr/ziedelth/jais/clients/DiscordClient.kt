@@ -15,7 +15,6 @@ import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.clients.Client
-import fr.ziedelth.jais.utils.clients.JClient
 import fr.ziedelth.jais.utils.commands.Command
 import fr.ziedelth.jais.utils.tokens.DiscordToken
 import net.dv8tion.jda.api.EmbedBuilder
@@ -23,92 +22,52 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
-import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
+import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import java.awt.Color
-import java.io.File
-import java.nio.file.Files
 import java.time.temporal.TemporalAccessor
-import java.util.concurrent.CompletableFuture
+import java.util.*
+import java.util.logging.Level
 
 class DiscordClient : Client {
-    private val file = File("discord.json")
-    private val tokenFile = File(Const.TOKENS_FOLDER, "discord.json")
-    private val init: Boolean
     private var jda: JDA? = null
     private var master: User? = null
     private var image: String? = null
     private val commands: Array<Command> = arrayOf(PlatformsCommand(), ClearCommand(), ConfigCommand())
 
     init {
-        if (!this.tokenFile.exists()) {
-            this.init = false
-            JLogger.warning("Discord token not exists!")
-            Files.writeString(this.tokenFile.toPath(), Const.GSON.toJson(DiscordToken()), Const.DEFAULT_CHARSET)
-        } else {
-            val discordToken = Const.GSON.fromJson(
-                Files.readString(
-                    this.tokenFile.toPath(),
-                    Const.DEFAULT_CHARSET
-                ), DiscordToken::class.java
-            )
+        val token = Const.getToken("discord.json", DiscordToken::class.java) as DiscordToken?
 
-            if (discordToken.token.isEmpty()) {
-                this.init = false
-                JLogger.warning("Discord token is empty!")
-            } else {
-                this.init = true
-                this.jda = JDABuilder.createDefault(discordToken.token).build()
+        if (token != null) {
+            try {
+                this.jda = JDABuilder.createDefault(token.token).build()
                 this.jda!!.presence.setPresence(OnlineStatus.IDLE, true)
                 this.jda!!.awaitReady()
+                val cl = this.commands.map { command ->
+                    CommandData(
+                        command.name,
+                        command.description
+                    ).addOptions(command.options.map { option ->
+                        OptionData(
+                            option.type,
+                            option.name,
+                            option.description,
+                            option.required
+                        )
+                    })
+                }
 
-                this.jda!!.guilds.forEach {
-                    it.getJGuild()
+                this.jda!!.guilds.forEach { guild ->
+                    guild.getJGuild()
 
-                    if (!Const.PUBLIC) {
-                        val clua = it.updateCommands()
-
-                        this.commands.forEach { command ->
-                            run {
-                                val commandData = CommandData(command.name, command.description)
-                                command.options.forEach { option ->
-                                    commandData.addOption(
-                                        option.type,
-                                        option.name,
-                                        option.description,
-                                        option.required
-                                    )
-                                }
-
-                                clua.addCommands(commandData)
-                            }
-                        }
-
-                        clua.submit()
-                    } else it.updateCommands().submit()
+                    if (!Const.PUBLIC) guild.updateCommands().addCommands(cl).submit()
+                    else guild.updateCommands().submit()
                 }
 
                 if (Const.PUBLIC) {
-                    val commandUpdateAction: CommandListUpdateAction = this.jda!!.updateCommands()
-
-                    this.commands.forEach { command ->
-                        run {
-                            val commandData = CommandData(command.name, command.description)
-                            command.options.forEach { option ->
-                                commandData.addOption(
-                                    option.type,
-                                    option.name,
-                                    option.description,
-                                    option.required
-                                )
-                            }
-                            commandUpdateAction.addCommands(commandData)
-                        }
-                    }
-
-                    commandUpdateAction.submit()
+                    if (!Const.PUBLIC) this.jda!!.updateCommands().addCommands(cl).submit()
+                    else this.jda!!.updateCommands().submit()
                 }
 
                 this.jda!!.addEventListener(
@@ -120,19 +79,10 @@ class DiscordClient : Client {
                     GuildLeave()
                 )
                 this.update()
+            } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not load ${this.javaClass.simpleName} client", exception)
             }
         }
-    }
-
-    override fun getJClient(): JClient {
-        return if (this.file.exists()) Const.GSON.fromJson(
-            Files.readString(this.file.toPath(), Const.DEFAULT_CHARSET),
-            JClient::class.java
-        ) else JClient()
-    }
-
-    override fun saveJClient(jClient: JClient) {
-        Files.writeString(this.file.toPath(), Const.GSON.toJson(jClient), Const.DEFAULT_CHARSET)
     }
 
     override fun update() {
@@ -143,51 +93,33 @@ class DiscordClient : Client {
         this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
     }
 
-    override fun sendNewEpisodes(episodes: Array<Episode>) {
-        if (!this.init || episodes.isEmpty()) return
-        val jClient = this.getJClient()
-        val list: MutableList<CompletableFuture<Message>> = mutableListOf()
+    override fun sendEpisodes(episodes: Array<Episode>) {
+        episodes.map { it.platform }.distinct().forEach { platform ->
+            val l = episodes.filter { it.platform == platform }
 
-        episodes.forEach { episode ->
-            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
-            val embed = getEpisodeEmbed(episode).build()
+            l.map { it.country }.distinct().forEach { country ->
+                val cl = l.filter { it.country == country }
 
-            guilds.values.forEach { ziedGuild ->
-                ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(episode.country) }
-                    .forEach { (textChannelId, _) ->
-                        val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                        if (textChannel != null) list.add(
-                            textChannel.sendMessageEmbeds(embed).submit().whenComplete { message, _ ->
-                                jEpisode.messages.add(message.idLong); jClient.addEpisode(jEpisode)
-                            })
-                    }
-            }
-        }
+                // SPAM
+                if (cl.size >= 10) {
+                    val animes: Array<String> = cl.map { it.anime }.distinct().toTypedArray()
+                    val stringBuilder = animes.map { "• $it\n" }.distinct().toString()
 
-        CompletableFuture.allOf(*list.toTypedArray()).whenComplete { _, _ ->
-            JLogger.info("Saving ${list.size} messages for ${episodes.size} episodes...")
-            this.saveJClient(jClient)
-        }
-    }
+                    val embed = setEmbed(
+                        author = platform.getName(),
+                        authorUrl = platform.getURL(),
+                        authorIcon = platform.getImage(),
+                        title = "${cl.size} ${country.episode}s",
+                        description = stringBuilder,
+                        color = platform.getColor(),
+                        image = cl.first().image
+                    ).build()
 
-    override fun sendEditEpisodes(episodes: Array<Episode>) {
-        if (!this.init || episodes.isEmpty()) return
-        val jClient = this.getJClient()
-
-        episodes.forEach { episode ->
-            val jEpisode = jClient.getEpisodeById(Const.toId(episode))
-            val embed = getEpisodeEmbed(episode).build()
-
-            if (jClient.hasEpisode(Const.toId(episode))) {
-                jEpisode.messages.forEach { messageId ->
-                    guilds.forEach { (_, ziedGuild) ->
-                        ziedGuild.guild.textChannels.forEach { textChannel ->
-                            textChannel.retrieveMessageById(messageId).queue({ message ->
-                                run {
-                                    message.editMessageEmbeds(embed).queue()
-                                }
-                            }, { })
-                        }
+                    sendAnimeMessage(country, embed)
+                } else {
+                    cl.forEach { episode ->
+                        val embed = getEpisodeEmbed(episode).build()
+                        sendAnimeMessage(country, embed)
                     }
                 }
             }
@@ -195,18 +127,9 @@ class DiscordClient : Client {
     }
 
     override fun sendNews(news: Array<News>) {
-        if (!this.init || news.isEmpty()) return
-
         news.forEach {
             val embed = getNewsEmbed(it).build()
-
-            guilds.forEach { (_, ziedGuild) ->
-                ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(it.country) }
-                    .forEach { (textChannelId, _) ->
-                        val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                        textChannel?.sendMessageEmbeds(embed)?.queue()
-                    }
-            }
+            sendAnimeMessage(it.country, embed)
         }
     }
 
@@ -218,10 +141,10 @@ class DiscordClient : Client {
         titleUrl: String? = null,
         thumbnail: String? = null,
         description: String? = null,
-        color: Color? = null,
+        color: Color? = Const.MAIN_COLOR,
         image: String? = null,
         footer: String? = null,
-        timestamp: TemporalAccessor? = null
+        timestamp: TemporalAccessor? = Calendar.getInstance().toInstant()
     ): EmbedBuilder {
         val embedBuilder = EmbedBuilder()
         embedBuilder.setAuthor(author, authorUrl, authorIcon)

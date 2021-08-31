@@ -5,7 +5,6 @@
 package fr.ziedelth.jais.threads
 
 import fr.ziedelth.jais.utils.Const
-import fr.ziedelth.jais.utils.DriverBuilder
 import fr.ziedelth.jais.utils.removeAllDeprecatedConfigurations
 import fr.ziedelth.jais.utils.removeAllDeprecatedReactions
 
@@ -23,7 +22,6 @@ class UpdateThread : Runnable {
             Const.CLIENTS.forEach { it.update() }
             removeAllDeprecatedReactions()
             removeAllDeprecatedConfigurations()
-            DriverBuilder.removeAllDeprecatedDrivers()
         }
     }
 }

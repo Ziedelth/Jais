@@ -6,6 +6,7 @@ package fr.ziedelth.jais.utils.database
 
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.Platform
 import fr.ziedelth.jais.utils.database.components.*
 import fr.ziedelth.jais.utils.tokens.DatabaseToken
@@ -303,6 +304,16 @@ object JAccess {
         } else return null
     }
 
+    fun isExists(connection: Connection?, episode: Episode): Boolean = getJEpisode(
+        connection,
+        episode.platform.getName(),
+        episode.country.country,
+        episode.anime,
+        episode.season,
+        episode.number,
+        episode.type.name
+    ) != null
+
     fun getJEpisode(
         connection: Connection?,
         platform: String,
@@ -380,6 +391,28 @@ object JAccess {
                 )
             } else null
         } else return null
+    }
+
+    fun insertEpisodes(connection: Connection?, episodes: Array<Episode>) {
+        episodes.forEach { episode ->
+            val jPlatform = insertPlatform(connection, episode.platform) ?: return@forEach
+            val jCountry = insertCountry(connection, episode.country.country) ?: return@forEach
+            val jAnime = insertAnime(connection, episode.calendar, jCountry, episode.anime, null) ?: return@forEach
+            val jSeason = insertSeason(connection, episode.calendar, jAnime, episode.season) ?: return@forEach
+            val jNumber = insertNumber(connection, episode.calendar, jSeason, episode.number) ?: return@forEach
+            insertEpisode(
+                connection,
+                episode.calendar,
+                jPlatform,
+                jNumber,
+                episode.type.name,
+                episode.episodeId,
+                episode.title,
+                episode.image,
+                episode.url,
+                episode.duration
+            )
+        }
     }
 
     fun insertEpisode(

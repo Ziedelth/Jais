@@ -5,7 +5,9 @@
 package fr.ziedelth.jais.utils
 
 import com.google.gson.JsonObject
+import fr.ziedelth.jais.utils.animes.Country
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.MessageEmbed
 import java.io.File
 import java.nio.file.Files
 
@@ -19,6 +21,26 @@ private fun get(guild: Guild): JGuild {
         val ziedGuild = JGuild(guild)
         guilds[guild.idLong] = ziedGuild
         ziedGuild
+    }
+}
+
+fun sendAnimeMessage(country: Country, message: MessageEmbed) {
+    guilds.values.forEach { ziedGuild ->
+        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
+            .forEach { (textChannelId, _) ->
+                val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
+                textChannel?.sendMessageEmbeds(message)?.submit()
+            }
+    }
+}
+
+fun sendAnimeMessage(country: Country, message: String) {
+    guilds.values.forEach { ziedGuild ->
+        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
+            .forEach { (textChannelId, _) ->
+                val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
+                textChannel?.sendMessage(message)?.submit()
+            }
     }
 }
 

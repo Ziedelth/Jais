@@ -10,14 +10,14 @@ _Version de développement, pas encore accès au public_
 
 1. [Réseaux sociaux](#réseaux-sociaux)
 2. [Plateformes d'animes prises en charges](#plateformes-danimes-prises-en-charges)
-3. [Mises à jours](#mises-à-jours-(dd/mm/yyyy))
+3. [Mises à jours](#mises-à-jours-ddmmyyyy)
 4. [Dépendances](#dépendances)
 
 ## Réseaux sociaux
 
 - [x] [Discord](https://discord.com/)
 - [x] [Twitter](https://twitter.com/)
-- [ ] Instagram
+- [x] Instagram
 - [ ] Reddit
 
 ## Plateformes d'animes prises en charges
@@ -29,6 +29,13 @@ _Version de développement, pas encore accès au public_
 
 ## Mises à jours (dd/mm/yyyy)
 
+- 31/08/2021
+  - Optimisation de la détection des épisodes
+  - Optimisation des ressources
+  - Suppression des méthodes non utilisées
+  - Ajout d'Instagram
+  - Ajout de la détection de spam
+  - Migration vers les nouvelles versions des dépendances
 - 18/08/2021
   - Correction de l'enregistrement des saisons dans la base de données
   - Correction de l'affichage du temps de l'épisode pour Discord & Twitter
@@ -39,35 +46,39 @@ _Version de développement, pas encore accès au public_
 Ce projet nécessite **Java 11+**.<br>
 Toutes les dépendances sont gérés automatiquement par Maven.
 
-* JDA
-  * Version : **4.3.0_304**
-  * [GitHub](https://github.com/DV8FromTheWorld/JDA)
-* slf4j-simple
-  * Version : **1.7.32**
-  * [Site Web](http://www.slf4j.org/)
-  * [GitHub](https://github.com/qos-ch/slf4j)
 * Apache Commons Logging
   * Version : **1.2**
   * [Site Web](https://commons.apache.org/proper/commons-logging/)
-* jsoup
+* Gson
+  * Version : **2.8.8**
+  * [GitHub](https://github.com/google/gson)
+* JDA
+  * Version : **4.3.0_304**
+  * [GitHub](https://github.com/DV8FromTheWorld/JDA)
+* SLF4J Simple Binding
+  * Version : **1.7.32**
+  * [Site Web](http://www.slf4j.org/)
+  * [GitHub](https://github.com/qos-ch/slf4j)
+* instagram4j
+  * Version : **2.0.5**
+  * [GitHub](https://github.com/instagram4j/instagram4j)
+* jsoup Java HTML Parser
   * Version : **1.14.2**
   * [Site Web](https://jsoup.org/)
   * [GitHub](https://github.com/jhy/jsoup/)
-* Gson
-  * Version : **2.8.7**
-  * [GitHub](https://github.com/google/gson)
+* mariadb-java-client
+  * Version : **2.7.3**
+  * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
+  * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)
+* okhttp & okhttp-urlconnection
+  * Version : **4.9.1**
+  * [Site Web](https://square.github.io/okhttp/)
+  * [GitHub](https://github.com/square/okhttp)
 * Selenium
   * Version : **3.141.59**
   * [Site Web](https://www.selenium.dev/)
   * [GitHub](https://github.com/SeleniumHQ/selenium)
-* Twitter4J
+* twitter4j-core
   * Version : **4.0.7**
   * [Site Web](https://twitter4j.org/)
   * [GitHub](https://github.com/Twitter4J/Twitter4J)
-* Guava
-  * Version : **30.1.1-jre**
-  * [GitHub](https://github.com/google/guava)
-* MariaDB Java Connector
-  * Version : **2.7.3**
-  * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
-  * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)

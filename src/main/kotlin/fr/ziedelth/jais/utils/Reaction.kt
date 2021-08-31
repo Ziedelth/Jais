@@ -9,15 +9,14 @@ import net.dv8tion.jda.api.entities.Message
 val reactions: MutableMap<String, Reaction> = mutableMapOf()
 
 fun removeAllReactionsFrom(message: Message) {
-    val ids: MutableList<String> = mutableListOf()
-    reactions.filter { (_, reaction) -> reaction.message.idLong == message.idLong }.forEach { (id, _) -> ids.add(id) }
+    val ids = reactions.filter { (_, reaction) -> reaction.message.idLong == message.idLong }.map { (id, _) -> id }
     ids.forEach { reactions.remove(it) }
 }
 
 fun removeAllDeprecatedReactions() {
-    val ids: MutableList<String> = mutableListOf()
-    reactions.filter { (_, reaction) -> reaction.deprecatedWithTime && (System.currentTimeMillis() - reaction.timestamp) >= 3600000L }
-        .forEach { (id, _) -> ids.add(id) }
+    val ids =
+        reactions.filter { (_, reaction) -> reaction.deprecatedWithTime && (System.currentTimeMillis() - reaction.timestamp) >= 3600000L }
+            .map { (id, _) -> id }
     ids.forEach { reactions.remove(it) }
 }
 
@@ -28,7 +27,7 @@ class Reaction(
     val unicode: String,
     val onClick: ClickRunnable
 ) {
-    val id = Const.encodeMD5("${this.message.idLong}${this.unicode}")
+    val id = "${this.message.idLong}${this.unicode}"
 
     fun add(action: Runnable? = null) {
         if (!reactions.containsKey(this.id)) {

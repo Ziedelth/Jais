@@ -4,7 +4,6 @@
 
 package fr.ziedelth.jais.utils
 
-import com.google.common.hash.Hashing
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import fr.ziedelth.jais.platforms.AnimeDigitalNetwork
@@ -12,25 +11,38 @@ import fr.ziedelth.jais.platforms.Crunchyroll
 import fr.ziedelth.jais.platforms.MangaScan
 import fr.ziedelth.jais.platforms.Wakanim
 import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.EpisodeBuilder
+import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Platform
 import fr.ziedelth.jais.utils.clients.Client
+import fr.ziedelth.jais.utils.tokens.Token
+import org.w3c.dom.NodeList
 import java.awt.Color
 import java.io.File
+import java.net.URLConnection
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.math.floor
 import kotlin.math.min
 
 object Const {
-    val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
+    private val fmt = SimpleDateFormat("yyyyMMdd")
+
+    const val DELAY_BETWEEN_REQUEST = 1L
+    const val SEND_MESSAGES = true
+    const val PUBLIC = true
+    const val DISPLAY = 5
+
     val CLIENTS: MutableList<Client> = mutableListOf()
     val PLATFORMS: Array<Platform> = arrayOf(AnimeDigitalNetwork(), Crunchyroll(), MangaScan(), Wakanim())
-    const val DELAY_BETWEEN_REQUEST = 2L
-    const val SEND_MESSAGES = true
+    val GSON: Gson = GsonBuilder().setPrettyPrinting().create()
     val DEFAULT_CHARSET: Charset = StandardCharsets.UTF_8
+    val MAIN_COLOR: Color = Color.YELLOW
+
     val GUILDS_FOLDER = File("guilds")
         get() {
             if (!field.exists()) field.mkdirs()
@@ -41,12 +53,6 @@ object Const {
             if (!field.exists()) field.mkdirs()
             return field
         }
-    val MAIN_COLOR: Color = Color.YELLOW
-    const val PUBLIC: Boolean = true
-    const val DISPLAY = 5
-
-    private fun encodeSHA512(string: String) = Hashing.sha512().hashString(string, DEFAULT_CHARSET).toString()
-    fun encodeMD5(string: String) = Hashing.md5().hashString(string, DEFAULT_CHARSET).toString()
 
     fun toInt(string: String): String = try {
         "${string.toInt()}"
@@ -62,34 +68,64 @@ object Const {
 
     fun substring(string: String, int: Int) = string.substring(0, min(string.length, int))
     fun toHexString(color: Color): String = String.format("#%06X", 0xFFFFFF and color.rgb)
-    fun toId(episode: Episode): String =
-        encodeSHA512("${episode.platform.getName()}${episode.anime}${episode.season}${episode.number}${episode.country}${episode.type}")
-
-    fun toId(episodeBuilder: EpisodeBuilder): String =
-        encodeSHA512("${episodeBuilder.platform.getName()}${episodeBuilder.anime}${episodeBuilder.number}${episodeBuilder.country}${episodeBuilder.type}")
-
-    fun isSameDay(var0: Calendar, var1: Calendar): Boolean {
-        val fmt = SimpleDateFormat("yyyyMMdd")
-        return fmt.format(var0.time) == fmt.format(var1.time)
-    }
+    fun isSameDay(var0: Calendar, var1: Calendar): Boolean = this.fmt.format(var0.time) == this.fmt.format(var1.time)
 
     fun String.toHHMMSS(): String {
-        val sec_num = this.toInt(10)
-        val hours = floor(sec_num / 3600.0)
-        val minutes = floor((sec_num - (hours * 3600.0)) / 60.0)
-        val seconds = sec_num - (hours * 3600.0) - (minutes * 60.0)
-        var h: String = hours.toString()
-        var m: String = minutes.toString()
-        var s: String = seconds.toString()
+        val secNum = this.toInt(10)
+        val hours = floor(secNum / 3600.0)
+        val minutes = floor((secNum - (hours * 3600.0)) / 60.0)
+        val seconds = secNum - (hours * 3600.0) - (minutes * 60.0)
+        var h: String = hours.toInt().toString()
+        var m: String = minutes.toInt().toString()
+        var s: String = seconds.toInt().toString()
 
-        if (hours < 10) h = "0$hours"
-        if (minutes < 10) m = "0$minutes"
-        if (seconds < 10) s = "0$seconds"
+        if (hours < 10) h = "0${hours.toInt()}"
+        if (minutes < 10) m = "0${minutes.toInt()}"
+        if (seconds < 10) s = "0${seconds.toInt()}"
 
         return "${(if (hours >= 1) "$h:" else "")}$m:$s"
     }
 
-    fun Long.toHHMMSS(): String {
-        return this.toString().toHHMMSS()
+    fun Long.toHHMMSS(): String = this.toString().toHHMMSS()
+
+    fun getEpisodeMessage(episode: Episode): String =
+        "🔜 ${episode.anime}\n${if (episode.title != null) "${episode.title}\n" else ""}" +
+                "${episode.country.season} ${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
+                "${Emoji.CLAP} ${episode.duration.toHHMMSS()}\n" +
+                "#Anime #${episode.platform.getName().replace(" ", "")}\n" +
+                "\n" +
+                "${episode.url}"
+
+    fun getItems(url: URLConnection, key: String): NodeList {
+        val dbf = DocumentBuilderFactory.newInstance()
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+        val db = dbf.newDocumentBuilder()
+        val doc = db.parse(url.getInputStream())
+        doc.documentElement.normalize()
+        return doc.getElementsByTagName(key)
+    }
+
+    fun getToken(string: String, token: Class<out Token>): Token? {
+        val tokenFile = File(TOKENS_FOLDER, string)
+
+        if (!tokenFile.exists()) {
+            JLogger.warning("Token file $string not exists!")
+            Files.writeString(tokenFile.toPath(), GSON.toJson(token), DEFAULT_CHARSET)
+            return null
+        }
+
+        val tToken = GSON.fromJson(
+            Files.readString(
+                tokenFile.toPath(),
+                DEFAULT_CHARSET
+            ), token
+        )
+
+        if (tToken == null || tToken.isEmpty()) {
+            JLogger.warning("Token file $string is empty!")
+            return null
+        }
+
+        return tToken
     }
 }
