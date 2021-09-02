@@ -5,13 +5,15 @@
 package fr.ziedelth.jais
 
 import fr.ziedelth.jais.threads.AnimeThread
-import fr.ziedelth.jais.threads.UpdateThread
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.database.JAccess
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
+import org.pf4j.DefaultPluginManager
+import org.pf4j.PluginManager
+import java.io.File
 import java.util.logging.Level
 import kotlin.system.exitProcess
 
@@ -51,9 +53,11 @@ object Jais {
 
         JLogger.info("Activating client(s)...")
         // SWITCH TO PLUGINS
+        val pluginManager: PluginManager = DefaultPluginManager(File("plugins").toPath())
+        pluginManager.loadPlugins()
+        pluginManager.startPlugins()
 
         JLogger.info("Enable all threads...")
-        UpdateThread()
         AnimeThread()
 
         JLogger.info("Running...")
