@@ -8,6 +8,7 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.animes.Country
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.TextChannel
 import java.io.File
 import java.nio.file.Files
 
@@ -24,24 +25,21 @@ private fun get(guild: Guild): JGuild {
     }
 }
 
+private fun getAnimeChannels(country: Country): Array<TextChannel?> = guilds.values.map { ziedGuild ->
+    ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
+        .map { (textChannelId, _) -> ziedGuild.guild.getTextChannelById(textChannelId) }
+}.flatten().toTypedArray()
+
 fun sendAnimeMessage(country: Country, message: MessageEmbed) {
-    guilds.values.forEach { ziedGuild ->
-        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
-            .forEach { (textChannelId, _) ->
-                val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                textChannel?.sendMessageEmbeds(message)?.submit()
-            }
-    }
+    getAnimeChannels(country).forEach { it?.sendMessageEmbeds(message)?.submit() }
 }
 
 fun sendAnimeMessage(country: Country, message: String) {
-    guilds.values.forEach { ziedGuild ->
-        ziedGuild.animeChannels.filter { (_, channel) -> channel.countries.contains(country) }
-            .forEach { (textChannelId, _) ->
-                val textChannel = ziedGuild.guild.getTextChannelById(textChannelId)
-                textChannel?.sendMessage(message)?.submit()
-            }
-    }
+    getAnimeChannels(country).forEach { it?.sendMessage(message)?.submit() }
+}
+
+fun sendAnimeMessage(country: Country, data: ByteArray, name: String) {
+    getAnimeChannels(country).forEach { it?.sendFile(data, name)?.submit() }
 }
 
 class JGuild(val guild: Guild) {

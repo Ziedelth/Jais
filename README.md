@@ -16,8 +16,8 @@ _Version de développement, pas encore accès au public_
 ## Réseaux sociaux
 
 - [x] [Discord](https://discord.com/)
-- [x] [Twitter](https://twitter.com/)
-- [x] Instagram
+- [x] [Twitter](https://twitter.com/Jaiss_B_)
+- [x] [Instagram](https://www.instagram.com/jais_zie/)
 - [ ] Reddit
 
 ## Plateformes d'animes prises en charges

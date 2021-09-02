@@ -9,6 +9,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.Request
 import fr.ziedelth.jais.utils.animes.*
 import org.jsoup.Jsoup
@@ -20,7 +21,7 @@ import java.net.URL
 import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.stream.Collectors
+import java.util.logging.Level
 
 class AnimeDigitalNetwork : Platform {
     private val calendars: MutableMap<Country, MutableList<String>> = mutableMapOf()
@@ -38,10 +39,11 @@ class AnimeDigitalNetwork : Platform {
         try {
             response = Request.get(
                 "https://gw.api.animedigitalnetwork.${country.country}/video/calendar?date=${
-                    getDate(calendar)
+                    getUniversalDate(calendar)
                 }"
             )
         } catch (exception: Exception) {
+            JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
             return JsonArray()
         }
 
@@ -62,6 +64,7 @@ class AnimeDigitalNetwork : Platform {
                     URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.country}").openConnection()
                 list = Const.getItems(url, "item")
             } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -105,7 +108,7 @@ class AnimeDigitalNetwork : Platform {
 
     override fun getLastEpisodes(): Array<Episode> {
         val calendar = Calendar.getInstance()
-        val date = getDate(calendar)
+        val date = getFrenchDate(calendar)
         val l: MutableList<Episode> = mutableListOf()
 
         if (this.lastDate != date) {
@@ -113,56 +116,55 @@ class AnimeDigitalNetwork : Platform {
 
             this.getAllowedCountries().forEach { country ->
                 this.calendars[country] = getVideos(country, calendar).filter { it.isJsonObject }.map {
-                    val jObject = it.asJsonObject
-                    ISO8601.fromCalendar(ISO8601.toCalendar(jObject.get("releaseDate").asString))
-                }.stream().distinct().collect(Collectors.toList()).toMutableList()
+                    ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))
+                }.distinct().toMutableList()
+
+                if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] First episode on ${this.getName()} will available at : ${this.calendars[country]!!.first()}")
+                else JLogger.warning("[${country.country.uppercase()}] No episode today on ${this.getName()}")
             }
 
             this.lastDate = date
         }
 
-        this.getAllowedCountries().filter { country ->
-            val fc = this.calendars.getOrDefault(country, mutableListOf()).firstOrNull()
-            !fc.isNullOrEmpty() && calendar.after(ISO8601.toCalendar(fc))
-        }.forEach { country ->
-            val f = this.calendars.getOrDefault(country, mutableListOf())
-            f.removeFirst()
+        this.calendars.forEach { (country, calendars) ->
+            val filter = calendars.filter { calendar.after(ISO8601.toCalendar(it)) }
+            if (filter.isEmpty()) return@forEach
 
-            getVideos(country, calendar).filter { it.isJsonObject }.forEachIndexed { _, jsonVideoElement ->
-                val jObject = jsonVideoElement.asJsonObject
-                val showObject = jObject.getAsJsonObject("show")
-                val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
-                if (calendar.before(releaseDate)) return@forEachIndexed
+            getVideos(
+                country,
+                calendar
+            ).filter { it.isJsonObject && filter.contains(ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))) }
+                .forEach { jsonVideoElement ->
+                    val jObject = jsonVideoElement.asJsonObject
+                    val showObject = jObject.getAsJsonObject("show")
+                    val releaseDate = ISO8601.fromCalendar(ISO8601.toCalendar(jObject.get("releaseDate").asString))
+                    val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
+                        jObject["season"]?.asString,
+                        "1"
+                    ) else "1"
+                    val anime =
+                        if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
+                            "title"
+                        ).asString
+                    val title: String? =
+                        if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
+                    val image = jObject.get("image2x").asString.replace(" ", "%20")
+                    val link = jObject.get("url").asString.replace(" ", "%20")
+                    val number = Const.toInt(jObject.get("shortNumber").asString)
+                    val languages = jObject.get("languages").asJsonArray
+                    val type = if (languages.any { jsonElement ->
+                            jsonElement.asString.equals(
+                                country.dubbed,
+                                true
+                            )
+                        }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
+                    val id = jObject.get("id").asLong
+                    val duration = jObject["duration"].asLong
 
-                val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
-                    jObject["season"]?.asString,
-                    "1"
-                ) else "1"
-                val anime =
-                    if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
-                        "title"
-                    ).asString
-
-                val title: String? =
-                    if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
-                val image = jObject.get("image2x").asString.replace(" ", "%20")
-                val link = jObject.get("url").asString.replace(" ", "%20")
-                val number = Const.toInt(jObject.get("shortNumber").asString)
-                val languages = jObject.get("languages").asJsonArray
-                val type = if (languages.any { jsonElement ->
-                        jsonElement.asString.equals(
-                            country.dubbed,
-                            true
-                        )
-                    }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
-                val id = jObject.get("id").asLong
-                val duration = jObject["duration"].asLong
-
-                if (calendar.after(releaseDate)) {
                     l.add(
                         Episode(
                             platform = this,
-                            calendar = ISO8601.fromCalendar(releaseDate),
+                            calendar = releaseDate,
                             anime = anime,
                             number = number,
                             country = country,
@@ -176,7 +178,11 @@ class AnimeDigitalNetwork : Platform {
                         )
                     )
                 }
-            }
+
+            val lr = ArrayList(calendars)
+            lr.removeAll(filter)
+
+            this.calendars.replace(country, lr)
         }
 
         return l.toTypedArray()

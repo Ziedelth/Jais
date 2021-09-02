@@ -12,9 +12,11 @@ import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.animes.getNews
 import fr.ziedelth.jais.utils.animes.saveNews
 import fr.ziedelth.jais.utils.database.JAccess
+import java.util.concurrent.Executors
 import kotlin.math.max
 
 class AnimeThread : Runnable {
+    private val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private val thread = Thread(this, "AnimeThread")
 
     init {
@@ -30,11 +32,12 @@ class AnimeThread : Runnable {
             // NEWS
             val news: Array<News> =
                 Const.PLATFORMS.map { it.getLastNews().toList() }.flatten().filter { !this.contains(newsList, it) }
+                    .sortedBy { ISO8601.toCalendar(it.calendar) }
                     .toTypedArray()
 
             if (news.isNotEmpty()) {
                 news.forEach { newsList.add(it) }
-                if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendNews(news) }
+                if (Const.SEND_MESSAGES) this.pool.submit { Const.CLIENTS.forEach { it.sendNews(news) } }
                 saveNews(newsList)
             }
 
@@ -47,9 +50,9 @@ class AnimeThread : Runnable {
             if (episodes.isNotEmpty()) {
                 JTime.start("JT-Saving", "Saving all episodes")
                 JAccess.insertEpisodes(connection, episodes)
-                JTime.end("JT-Saving", "All episodes are saved. Takes %ms.")
+                JTime.end("JT-Saving", "All episodes are saved. Takes %{ms}ms.")
 
-                if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendEpisodes(episodes) }
+                if (Const.SEND_MESSAGES) this.pool.submit { Const.CLIENTS.forEach { it.sendEpisodes(episodes) } }
             }
 
             connection?.close()

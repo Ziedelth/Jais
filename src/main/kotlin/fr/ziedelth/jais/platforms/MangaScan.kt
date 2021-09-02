@@ -6,6 +6,7 @@ package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Country
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
@@ -17,6 +18,7 @@ import java.awt.Color
 import java.net.URL
 import java.net.URLConnection
 import java.util.*
+import java.util.logging.Level
 
 class MangaScan : Platform {
     override fun getName(): String = "MangaScan"
@@ -37,6 +39,7 @@ class MangaScan : Platform {
                 url = URL("${this.getURL()}feed").openConnection()
                 list = Const.getItems(url, "entry")
             } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 

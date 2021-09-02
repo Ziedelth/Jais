@@ -25,12 +25,14 @@ import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
+import org.pf4j.PluginWrapper
 import java.awt.Color
 import java.time.temporal.TemporalAccessor
 import java.util.*
 import java.util.logging.Level
+import kotlin.math.min
 
-class DiscordClient : Client {
+class DiscordClient(wrapper: PluginWrapper?) : Client(wrapper) {
     private var jda: JDA? = null
     private var master: User? = null
     private var image: String? = null
@@ -78,19 +80,16 @@ class DiscordClient : Client {
                     GuildJoin(this.commands),
                     GuildLeave()
                 )
-                this.update()
+
+                JLogger.info("[${this.javaClass.simpleName}] Connected to ${this.jda!!.guilds.size} guild(s)!")
+                this.image = this.jda!!.selfUser.avatarUrl
+                this.jda!!.retrieveUserById(132903783792377856L).queue { user -> master = user }
+                this.jda!!.presence.activity = Activity.playing("bugged with master")
+                this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
             } catch (exception: Exception) {
                 JLogger.log(Level.WARNING, "Can not load ${this.javaClass.simpleName} client", exception)
             }
         }
-    }
-
-    override fun update() {
-        JLogger.info("[${this.javaClass.simpleName}] Connected to ${this.jda!!.guilds.size} guild(s)!")
-        this.image = this.jda!!.selfUser.avatarUrl
-        this.jda!!.retrieveUserById(132903783792377856L).queue { user -> master = user }
-        this.jda!!.presence.activity = Activity.playing("bugged with master")
-        this.jda!!.presence.setPresence(OnlineStatus.ONLINE, false)
     }
 
     override fun sendEpisodes(episodes: Array<Episode>) {
@@ -98,24 +97,28 @@ class DiscordClient : Client {
             val l = episodes.filter { it.platform == platform }
 
             l.map { it.country }.distinct().forEach { country ->
-                val cl = l.filter { it.country == country }
+                val cl = l.filter { it.country == country }.toTypedArray()
 
                 // SPAM
                 if (cl.size >= 10) {
-                    val animes: Array<String> = cl.map { it.anime }.distinct().toTypedArray()
-                    val stringBuilder = animes.map { "• $it\n" }.distinct().toString()
+                    val animes = Const.getAnimes(cl)
+                    val images = Const.getImages(animes, cl)
 
                     val embed = setEmbed(
                         author = platform.getName(),
                         authorUrl = platform.getURL(),
                         authorIcon = platform.getImage(),
                         title = "${cl.size} ${country.episode}s",
-                        description = stringBuilder,
+                        description = Const.getAnimesMessage(animes),
                         color = platform.getColor(),
-                        image = cl.first().image
+                        image = cl.firstOrNull()?.image
                     ).build()
 
                     sendAnimeMessage(country, embed)
+
+                    // TEST MULTIPLE IMAGES
+                    images.take(min(4, images.size))
+                        .forEach { sendAnimeMessage(country, it.readAllBytes(), "${UUID.randomUUID()}.jpg") }
                 } else {
                     cl.forEach { episode ->
                         val embed = getEpisodeEmbed(episode).build()

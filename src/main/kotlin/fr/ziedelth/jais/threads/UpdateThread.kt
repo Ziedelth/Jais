@@ -4,7 +4,6 @@
 
 package fr.ziedelth.jais.threads
 
-import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.removeAllDeprecatedConfigurations
 import fr.ziedelth.jais.utils.removeAllDeprecatedReactions
 
@@ -19,7 +18,6 @@ class UpdateThread : Runnable {
     override fun run() {
         while (!this.thread.isInterrupted) {
             this.thread.join(3600000L)
-            Const.CLIENTS.forEach { it.update() }
             removeAllDeprecatedReactions()
             removeAllDeprecatedConfigurations()
         }

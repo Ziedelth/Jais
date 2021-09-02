@@ -17,6 +17,7 @@ import fr.ziedelth.jais.utils.clients.Client
 import fr.ziedelth.jais.utils.tokens.Token
 import org.w3c.dom.NodeList
 import java.awt.Color
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URLConnection
 import java.nio.charset.Charset
@@ -30,7 +31,8 @@ import kotlin.math.floor
 import kotlin.math.min
 
 object Const {
-    private val fmt = SimpleDateFormat("yyyyMMdd")
+    private val fmt: SimpleDateFormat = SimpleDateFormat("yyyyMMdd")
+    private val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
     const val DELAY_BETWEEN_REQUEST = 1L
     const val SEND_MESSAGES = true
@@ -105,6 +107,11 @@ object Const {
         return doc.getElementsByTagName(key)
     }
 
+    fun generateToken(length: Long): String = (1..length)
+        .map { kotlin.random.Random.nextInt(0, this.charPool.size) }
+        .map(this.charPool::get)
+        .joinToString("")
+
     fun getToken(string: String, token: Class<out Token>): Token? {
         val tokenFile = File(TOKENS_FOLDER, string)
 
@@ -127,5 +134,16 @@ object Const {
         }
 
         return tToken
+    }
+
+    fun getAnimes(episodes: Array<Episode>): Array<String> = episodes.map { it.anime }.distinct().toTypedArray()
+    fun getImages(animes: Array<String>, episodes: Array<Episode>): Array<ByteArrayInputStream> =
+        animes.mapNotNull { anime -> episodes.firstOrNull { episode -> episode.anime.equals(anime, true) } }
+            .mapNotNull { it.downloadedImage }.toTypedArray()
+
+    fun getAnimesMessage(animes: Array<String>): String {
+        val stringBuilder = StringBuilder()
+        animes.forEach { stringBuilder.append("• $it\n") }
+        return stringBuilder.toString()
     }
 }

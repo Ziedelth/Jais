@@ -6,6 +6,7 @@ package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.*
 import org.jsoup.Jsoup
 import org.w3c.dom.Element
@@ -16,6 +17,7 @@ import java.net.URL
 import java.net.URLConnection
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.logging.Level
 
 class Crunchyroll : Platform {
     override fun getName(): String = "Crunchyroll"
@@ -36,6 +38,7 @@ class Crunchyroll : Platform {
                 url = URL("${this.getURL()}newsrss?lang=${country.lang}").openConnection()
                 list = Const.getItems(url, "item")
             } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -87,6 +90,7 @@ class Crunchyroll : Platform {
                 url = URL("${this.getURL()}rss/anime?lang=${country.lang}").openConnection()
                 list = Const.getItems(url, "item")
             } catch (exception: Exception) {
+                JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 

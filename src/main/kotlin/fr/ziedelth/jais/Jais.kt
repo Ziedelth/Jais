@@ -4,9 +4,6 @@
 
 package fr.ziedelth.jais
 
-import fr.ziedelth.jais.clients.DiscordClient
-import fr.ziedelth.jais.clients.InstagramClient
-import fr.ziedelth.jais.clients.TwitterClient
 import fr.ziedelth.jais.threads.AnimeThread
 import fr.ziedelth.jais.threads.UpdateThread
 import fr.ziedelth.jais.utils.Const
@@ -53,8 +50,7 @@ object Jais {
         JLogger.info("Request per day: ${(60L / Const.DELAY_BETWEEN_REQUEST) * 24L}")
 
         JLogger.info("Activating client(s)...")
-        Const.CLIENTS.add(DiscordClient())
-        if (Const.PUBLIC) Const.CLIENTS.addAll(arrayOf(InstagramClient(), TwitterClient()))
+        // SWITCH TO PLUGINS
 
         JLogger.info("Enable all threads...")
         UpdateThread()
