@@ -126,7 +126,7 @@ class Wakanim : Platform {
                                 webElement,
                                 By.className("Calendar-epNumber")
                             )
-                        )[0].text
+                        )[0].text.toInt()
                         list.add("${ISO8601.fromCalendar(timeReleaseCalendar)}|$link|$tempNumber")
                     }
 
@@ -134,7 +134,7 @@ class Wakanim : Platform {
                     val split = stocked.split("|")
                     val timeRelease = split[0]
                     val linkL = split[1]
-                    val tempNumber = split[2]
+                    val tempNumber = split[2].toInt()
                     driver.get(linkL)
 
                     val wakanimType = linkL.split("/")[6]
@@ -159,7 +159,7 @@ class Wakanim : Platform {
                             webElementEpisode,
                             By.className("slider_item_number")
                         )
-                    )[0].text.replace(" ", "")
+                    )[0].text.replace(" ", "").toInt()
 
                     if (number == tempNumber) {
                         val anime = driverWait.until(
@@ -214,18 +214,18 @@ class Wakanim : Platform {
 
                         l.add(
                             Episode(
-                                this,
-                                timeRelease,
-                                anime,
-                                number,
-                                country,
-                                type,
-                                season,
-                                episodeId.toLong(),
-                                null,
-                                image,
-                                link,
-                                duration
+                                platform = this,
+                                calendar = timeRelease,
+                                anime = anime,
+                                number = "$number",
+                                country = country,
+                                type = type,
+                                season = season,
+                                episodeId = episodeId.toLong(),
+                                title = null,
+                                image = image,
+                                url = link,
+                                duration = duration
                             )
                         )
                     }

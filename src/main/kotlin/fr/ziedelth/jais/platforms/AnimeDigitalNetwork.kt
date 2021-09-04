@@ -19,7 +19,6 @@ import org.w3c.dom.NodeList
 import java.awt.Color
 import java.net.URL
 import java.net.URLConnection
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.logging.Level
 
@@ -75,7 +74,7 @@ class AnimeDigitalNetwork : Platform {
                     val element = node as Element
 
                     val date = element.getElementsByTagName("pubDate").item(0).textContent
-                    val releaseDate = toCalendar(date)
+                    val releaseDate = Const.toCalendar(date)
                     if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
 
                     val title = element.getElementsByTagName("title").item(0).textContent
@@ -186,12 +185,5 @@ class AnimeDigitalNetwork : Platform {
         }
 
         return l.toTypedArray()
-    }
-
-    private fun toCalendar(s: String): Calendar {
-        val calendar = Calendar.getInstance()
-        val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
-        calendar.time = date
-        return calendar
     }
 }

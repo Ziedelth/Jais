@@ -7,6 +7,7 @@ package fr.ziedelth.jais
 import fr.ziedelth.jais.threads.AnimeThread
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.clients.Client
 import fr.ziedelth.jais.utils.database.JAccess
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -37,7 +38,7 @@ object Jais {
         try {
             val driver =
                 ChromeDriver(ChromeDriverService.Builder().withSilent(true).build(), ChromeOptions().setHeadless(true))
-            driver.get("https://ziedelth.fr/")
+            driver.get("https://google.com/")
             driver.quit()
             JLogger.info("Selenium work!")
         } catch (exception: Exception) {
@@ -56,6 +57,7 @@ object Jais {
         val pluginManager: PluginManager = DefaultPluginManager(File("plugins").toPath())
         pluginManager.loadPlugins()
         pluginManager.startPlugins()
+        pluginManager.plugins.filter { it.plugin is Client }.forEach { Const.CLIENTS.add(it.plugin as Client) }
 
         JLogger.info("Enable all threads...")
         AnimeThread()

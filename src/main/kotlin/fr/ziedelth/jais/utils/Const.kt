@@ -146,4 +146,11 @@ object Const {
         animes.forEach { stringBuilder.append("• $it\n") }
         return stringBuilder.toString()
     }
+
+    fun toCalendar(s: String): Calendar {
+        val calendar = Calendar.getInstance()
+        val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
+        calendar.time = date
+        return calendar
+    }
 }

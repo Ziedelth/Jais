@@ -29,6 +29,9 @@ data class Episode(
     @Transient
     var downloadedImage: ByteArrayInputStream? = null
 
+    @Transient
+    var downloadedImageBytes: ByteArray? = null
+
     init {
         this.anime = this.anime.replace("’", "'")
         this.season = this.season.replace(" ", "")
@@ -38,6 +41,7 @@ data class Episode(
             val baos = ByteArrayOutputStream()
             ImageIO.write(bufferedImage, "jpg", baos)
             this.downloadedImage = ByteArrayInputStream(baos.toByteArray())
+            this.downloadedImageBytes = this.downloadedImage?.readAllBytes()
         } catch (exception: Exception) {
             JLogger.log(Level.WARNING, "Can not download image", exception)
         }
