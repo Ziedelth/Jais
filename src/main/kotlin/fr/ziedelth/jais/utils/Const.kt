@@ -17,7 +17,7 @@ import fr.ziedelth.jais.utils.clients.Client
 import fr.ziedelth.jais.utils.tokens.Token
 import org.w3c.dom.NodeList
 import java.awt.Color
-import java.io.ByteArrayInputStream
+import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URLConnection
 import java.nio.charset.Charset
@@ -137,7 +137,7 @@ object Const {
     }
 
     fun getAnimes(episodes: Array<Episode>): Array<String> = episodes.map { it.anime }.distinct().toTypedArray()
-    fun getImages(animes: Array<String>, episodes: Array<Episode>): Array<ByteArrayInputStream> =
+    fun getImages(animes: Array<String>, episodes: Array<Episode>): Array<BufferedImage> =
         animes.mapNotNull { anime -> episodes.firstOrNull { episode -> episode.anime.equals(anime, true) } }
             .mapNotNull { it.downloadedImage }.toTypedArray()
 
