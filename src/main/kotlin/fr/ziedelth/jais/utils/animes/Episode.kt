@@ -5,8 +5,7 @@
 package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.utils.JLogger
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.awt.image.BufferedImage
 import java.net.URL
 import java.util.logging.Level
 import javax.imageio.ImageIO
@@ -27,21 +26,14 @@ data class Episode(
     val duration: Long = 1440
 ) {
     @Transient
-    var downloadedImage: ByteArrayInputStream? = null
-
-    @Transient
-    var downloadedImageBytes: ByteArray? = null
+    var downloadedImage: BufferedImage? = null
 
     init {
         this.anime = this.anime.replace("’", "'")
         this.season = this.season.replace(" ", "")
 
         try {
-            val bufferedImage = ImageIO.read(URL(this.image))
-            val baos = ByteArrayOutputStream()
-            ImageIO.write(bufferedImage, "jpg", baos)
-            this.downloadedImage = ByteArrayInputStream(baos.toByteArray())
-            this.downloadedImageBytes = this.downloadedImage?.readAllBytes()
+            this.downloadedImage = ImageIO.read(URL(this.image))
         } catch (exception: Exception) {
             JLogger.log(Level.WARNING, "Can not download image", exception)
         }
