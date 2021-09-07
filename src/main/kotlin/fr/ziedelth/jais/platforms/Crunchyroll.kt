@@ -49,7 +49,7 @@ class Crunchyroll : Platform {
 
                     val releaseDate = Const.toCalendar(element.getElementsByTagName("pubDate").item(0).textContent)
 
-                    if (Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate)) continue
+                    if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
 
                     val title = element.getElementsByTagName("title").item(0).textContent
                     val description =

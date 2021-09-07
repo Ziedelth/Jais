@@ -79,7 +79,7 @@ class Wakanim : Platform {
                         }.stream().distinct().collect(Collectors.toList()).toMutableList()
                     }
 
-                    if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] First episode on ${this.getName()} will available at : ${this.calendars[country]!!.first()}")
+                    if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] Episodes on ${this.getName()} will available at : ${this.calendars[country]!!}")
                     else JLogger.warning("[${country.country.uppercase()}] No episode today on ${this.getName()}")
                 }
 
@@ -92,9 +92,9 @@ class Wakanim : Platform {
         }
 
         this.calendars.forEach { (country, calendars) ->
-            val filter = calendars.filter { calendar.after(ISO8601.toCalendar(it)) }
-            if (filter.isEmpty()) return@forEach
+            if (calendars.isEmpty()) return@forEach
 
+            val fl: MutableList<String> = mutableListOf()
             val driverArray = setDriver()
             val driver = driverArray[0] as ChromeDriver
             val driverWait = driverArray[1] as WebDriverWait
@@ -114,7 +114,12 @@ class Wakanim : Platform {
                         )[0].text
                         val timeReleaseCalendar =
                             setDate(date, timeRelease.split(":")[0].toInt(), timeRelease.split(":")[1].toInt())
-                        if (!filter.contains(ISO8601.fromCalendar(timeReleaseCalendar))) return@forEachIndexed
+                        if (calendar.before(timeReleaseCalendar) || !calendars.contains(
+                                ISO8601.fromCalendar(
+                                    timeReleaseCalendar
+                                )
+                            )
+                        ) return@forEachIndexed
                         val link = driverWait.until(
                             ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                 webElement,
@@ -194,10 +199,10 @@ class Wakanim : Platform {
                                 By.tagName("img")
                             )
                         )[0].getAttribute("src")
-                        val link = driverWait.until(
+                        val url = driverWait.until(
                             ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                 webElementEpisode,
-                                By.className("slider_item_link")
+                                By.className("slider_item_star")
                             )
                         )[0].getAttribute("href")
                         val time = driverWait.until(
@@ -224,16 +229,18 @@ class Wakanim : Platform {
                                 episodeId = episodeId.toLong(),
                                 title = null,
                                 image = image,
-                                url = link,
+                                url = url,
                                 duration = duration
                             )
                         )
+
+                        if (!fl.contains(timeRelease)) fl.add(timeRelease)
                     }
                 }
             }
 
             val lr = ArrayList(calendars)
-            lr.removeAll(filter)
+            lr.removeAll(fl)
 
             this.calendars.replace(country, lr)
         }

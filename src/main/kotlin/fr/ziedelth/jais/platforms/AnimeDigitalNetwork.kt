@@ -118,7 +118,7 @@ class AnimeDigitalNetwork : Platform {
                     ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))
                 }.distinct().toMutableList()
 
-                if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] First episode on ${this.getName()} will available at : ${this.calendars[country]!!.first()}")
+                if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] Episodes on ${this.getName()} will available at : ${this.calendars[country]!!}")
                 else JLogger.warning("[${country.country.uppercase()}] No episode today on ${this.getName()}")
             }
 
@@ -126,60 +126,63 @@ class AnimeDigitalNetwork : Platform {
         }
 
         this.calendars.forEach { (country, calendars) ->
-            val filter = calendars.filter { calendar.after(ISO8601.toCalendar(it)) }
-            if (filter.isEmpty()) return@forEach
+            if (calendars.isEmpty()) return@forEach
+            val fl: MutableList<String> = mutableListOf()
 
             getVideos(
                 country,
                 calendar
-            ).filter { it.isJsonObject && filter.contains(ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))) }
-                .forEach { jsonVideoElement ->
-                    val jObject = jsonVideoElement.asJsonObject
-                    val showObject = jObject.getAsJsonObject("show")
-                    val releaseDate = ISO8601.fromCalendar(ISO8601.toCalendar(jObject.get("releaseDate").asString))
-                    val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
-                        jObject["season"]?.asString,
-                        "1"
-                    ) else "1"
-                    val anime =
-                        if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
-                            "title"
-                        ).asString
-                    val title: String? =
-                        if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
-                    val image = jObject.get("image2x").asString.replace(" ", "%20")
-                    val link = jObject.get("url").asString.replace(" ", "%20")
-                    val number = Const.toInt(jObject.get("shortNumber").asString)
-                    val languages = jObject.get("languages").asJsonArray
-                    val type = if (languages.any { jsonElement ->
-                            jsonElement.asString.equals(
-                                country.dubbed,
-                                true
-                            )
-                        }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
-                    val id = jObject.get("id").asLong
-                    val duration = jObject["duration"].asLong
-
-                    l.add(
-                        Episode(
-                            platform = this,
-                            calendar = releaseDate,
-                            anime = anime,
-                            number = number,
-                            country = country,
-                            type = type,
-                            season = season,
-                            episodeId = id,
-                            title = title,
-                            image = image,
-                            url = link,
-                            duration = duration
+            ).filter { it.isJsonObject }.forEachIndexed { _, jsonVideoElement ->
+                val jObject = jsonVideoElement.asJsonObject
+                val showObject = jObject.getAsJsonObject("show")
+                val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
+                if (calendar.before(releaseDate) || !calendars.contains(ISO8601.fromCalendar(releaseDate))) return@forEachIndexed
+                val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
+                    jObject["season"]?.asString,
+                    "1"
+                ) else "1"
+                val anime =
+                    if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
+                        "title"
+                    ).asString
+                val title: String? =
+                    if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
+                val image = jObject.get("image2x").asString.replace(" ", "%20")
+                val link = jObject.get("url").asString.replace(" ", "%20")
+                val number = Const.toInt(jObject.get("shortNumber").asString)
+                val languages = jObject.get("languages").asJsonArray
+                val type = if (languages.any { jsonElement ->
+                        jsonElement.asString.equals(
+                            country.dubbed,
+                            true
                         )
+                    }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
+                val id = jObject.get("id").asLong
+                val duration = jObject["duration"].asLong
+                val rd = ISO8601.fromCalendar(releaseDate)
+
+                l.add(
+                    Episode(
+                        platform = this,
+                        calendar = rd,
+                        anime = anime,
+                        number = number,
+                        country = country,
+                        type = type,
+                        season = season,
+                        episodeId = id,
+                        title = title,
+                        image = image,
+                        url = link,
+                        duration = duration
                     )
-                }
+                )
+
+                if (!fl.contains(rd)) fl.add(rd)
+            }
 
             val lr = ArrayList(calendars)
-            lr.removeAll(filter)
+            lr.removeAll(fl)
 
             this.calendars.replace(country, lr)
         }

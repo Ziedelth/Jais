@@ -93,7 +93,7 @@ object Const {
     fun getEpisodeMessage(episode: Episode): String =
         "🔜 ${episode.anime}\n${if (episode.title != null) "${episode.title}\n" else ""}" +
                 "${episode.country.season} ${episode.season} • ${episode.country.episode} ${episode.number} ${if (episode.type == EpisodeType.SUBTITLED) episode.country.subtitled else episode.country.dubbed}\n" +
-                "${Emoji.CLAP} ${episode.duration.toHHMMSS()}\n" +
+                (if (episode.duration > 0) "${Emoji.CLAP} ${episode.duration.toHHMMSS()}\n" else "") +
                 "#Anime #${episode.platform.getName().replace(" ", "")}\n" +
                 "\n" +
                 "${episode.url}"

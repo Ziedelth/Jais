@@ -54,12 +54,30 @@ class MangaScan : Platform {
                     val releaseDate = ISO8601.toCalendar(updated)
 
                     if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
-
                     val a = element.getElementsByTagName("title").item(0).textContent
-                    if (!a.contains("Solo Leveling", true)) continue
+                    var anime: String
+                    var image: String
+
+                    if (a.contains("Solo Leveling", true)) {
+                        anime = "Solo Leveling"
+                        image = "https://45secondes.fr/wp-content/uploads/2021/07/Solo-Leveling-Chapitre-157.jpg"
+                    } else if (a.contains("My Hero Academia", true)) {
+                        anime = "My Hero Academia"
+                        image = "https://i.ytimg.com/vi/3BmYAeZJnQU/maxresdefault.jpg"
+                    } else if (a.contains("One Piece", true)) {
+                        anime = "One Piece"
+                        image = "https://i.pinimg.com/originals/d1/00/92/d1009254c0370706696faad1800154aa.jpg"
+                    } else if (a.contains("Jujutsu Kaisen", true)) {
+                        anime = "Jujutsu Kaisen"
+                        image = "https://pbs.twimg.com/media/Ei7nh5_X0AAvuav.jpg"
+                    } else if (a.contains("Eden’s Zero", true)) {
+                        anime = "Eden’s Zero"
+                        image = "https://www.fun-academy.fr/wp-content/uploads/2021/06/edens-zero-manga.jpeg"
+                    } else continue
+
                     val link = (element.getElementsByTagName("link").item(0) as Element?)?.getAttribute("href")
-                    val number = Const.toInt(a.split("#").lastOrNull() ?: "")
-                    if (number.isEmpty()) continue
+                    val number = a.split("#").lastOrNull()?.replace(" ", "")
+                    if (number.isNullOrEmpty()) continue
                     val b = element.getElementsByTagName("summary").item(0).textContent
                     if (b.contains("(VA)", true)) continue
 
@@ -67,14 +85,14 @@ class MangaScan : Platform {
                         Episode(
                             platform = this,
                             calendar = ISO8601.fromCalendar(releaseDate),
-                            anime = "Solo Leveling",
+                            anime = anime,
                             number = number,
                             country = country,
                             type = EpisodeType.DUBBED,
                             season = "1",
                             episodeId = 0,
                             title = null,
-                            image = "https://ziedelth.fr/images/sololeveling.jpg",
+                            image = image,
                             url = link,
                             duration = 0
                         )
