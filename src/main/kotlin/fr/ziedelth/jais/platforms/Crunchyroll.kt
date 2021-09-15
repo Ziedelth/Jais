@@ -19,6 +19,9 @@ import java.util.*
 import java.util.logging.Level
 
 class Crunchyroll : Platform {
+    private val lastBuildNews: MutableMap<Country, String> = mutableMapOf()
+    private val lastBuildEpisodes: MutableMap<Country, String> = mutableMapOf()
+
     override fun getName(): String = "Crunchyroll"
     override fun getURL(): String = "https://www.crunchyroll.com/"
     override fun getImage(): String = "https://ziedelth.fr/images/crunchyroll.png"
@@ -35,9 +38,13 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("${this.getURL()}newsrss?lang=${country.lang}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildNews[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildNews[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
-                JLogger.log(Level.WARNING, "Can not get news on ${this.getName()}", exception)
+                JLogger.log(Level.SEVERE, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -87,9 +94,13 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("${this.getURL()}rss/anime?lang=${country.lang}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildEpisodes[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildEpisodes[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
-                JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
+                JLogger.log(Level.SEVERE, "Can not get episodes on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 

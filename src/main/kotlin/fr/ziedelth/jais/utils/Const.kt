@@ -15,7 +15,7 @@ import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Platform
 import fr.ziedelth.jais.utils.clients.Client
 import fr.ziedelth.jais.utils.tokens.Token
-import org.w3c.dom.NodeList
+import org.w3c.dom.Document
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
@@ -98,13 +98,13 @@ object Const {
                 "\n" +
                 "${episode.url}"
 
-    fun getItems(url: URLConnection, key: String): NodeList {
+    fun getRSSDocument(url: URLConnection): Document {
         val dbf = DocumentBuilderFactory.newInstance()
         dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
         val db = dbf.newDocumentBuilder()
         val doc = db.parse(url.getInputStream())
         doc.documentElement.normalize()
-        return doc.getElementsByTagName(key)
+        return doc
     }
 
     fun generateToken(length: Long): String = (1..length)

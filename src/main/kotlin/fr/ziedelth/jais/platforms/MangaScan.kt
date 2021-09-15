@@ -37,9 +37,9 @@ class MangaScan : Platform {
 
             try {
                 url = URL("${this.getURL()}feed").openConnection()
-                list = Const.getItems(url, "entry")
+                list = Const.getRSSDocument(url).getElementsByTagName("entry")
             } catch (exception: Exception) {
-                JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
+                JLogger.log(Level.SEVERE, "Can not get episodes on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 

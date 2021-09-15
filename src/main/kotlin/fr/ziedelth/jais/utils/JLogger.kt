@@ -4,7 +4,6 @@
 
 package fr.ziedelth.jais.utils
 
-import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -14,15 +13,13 @@ import java.util.logging.Formatter
 
 object JLogger : Logger("ZiedLogger", null) {
     init {
-        val folder = File("logs")
-        if (!folder.exists()) folder.mkdirs()
         val jFormatter = JFormatter()
 
         this.useParentHandlers = false
         val consoleHandler = ConsoleHandler()
         consoleHandler.formatter = jFormatter
         this.addHandler(consoleHandler)
-        val fileHandler = FileHandler("logs/jais-log-%g-%u.log", 5 * 1024 * 1024, 5)
+        val fileHandler = FileHandler("jais-log-%g.log", 5 * 1024 * 1024, 5)
         fileHandler.formatter = jFormatter
         this.addHandler(fileHandler)
     }

@@ -30,7 +30,7 @@ object Jais {
             JAccess.getConnection()?.close()
             JLogger.info("Connected with the database!")
         } catch (exception: Exception) {
-            JLogger.log(Level.WARNING, "Can not connect to database, please check config...", exception)
+            JLogger.log(Level.SEVERE, "Can not connect to database, please check config...", exception)
             exitProcess(1)
         }
 
@@ -43,7 +43,7 @@ object Jais {
             JLogger.info("Selenium work!")
         } catch (exception: Exception) {
             JLogger.log(
-                Level.WARNING,
+                Level.SEVERE,
                 "Can not find Chrome driver, please install it to work... (https://www.google.com/chrome/)",
                 exception
             )

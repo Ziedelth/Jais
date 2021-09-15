@@ -23,12 +23,13 @@ import java.util.*
 import java.util.logging.Level
 
 class AnimeDigitalNetwork : Platform {
-    private val calendars: MutableMap<Country, MutableList<String>> = mutableMapOf()
-    private var lastDate: String? = null
+    private val lastBuildNews: MutableMap<Country, String> = mutableMapOf()
+    private val calendars: MutableMap<Country, MutableList<Calendar>> = mutableMapOf()
+    private var lastCheck: Long = 0
 
     override fun getName(): String = "Anime Digital Network"
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
-    override fun getImage(): String = "https://ziedelth.fr/images/adn.png"
+    override fun getImage(): String = "https://ziedelth.fr/images/anime_digital_network.png"
     override fun getColor(): Color = Color(0, 150, 255)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
@@ -42,7 +43,7 @@ class AnimeDigitalNetwork : Platform {
                 }"
             )
         } catch (exception: Exception) {
-            JLogger.log(Level.WARNING, "Can not get episodes on ${this.getName()}", exception)
+            JLogger.log(Level.SEVERE, "Can not get episodes on ${this.getName()}", exception)
             return JsonArray()
         }
 
@@ -61,9 +62,13 @@ class AnimeDigitalNetwork : Platform {
             try {
                 url =
                     URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.country}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildNews[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildNews[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
-                JLogger.log(Level.WARNING, "Can not get news on ${this.getName()}", exception)
+                JLogger.log(Level.SEVERE, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -107,27 +112,36 @@ class AnimeDigitalNetwork : Platform {
 
     override fun getLastEpisodes(): Array<Episode> {
         val calendar = Calendar.getInstance()
-        val date = getFrenchDate(calendar)
         val l: MutableList<Episode> = mutableListOf()
 
-        if (this.lastDate != date) {
+        if ((System.currentTimeMillis() - this.lastCheck) >= 3600000) {
             this.calendars.clear()
 
             this.getAllowedCountries().forEach { country ->
                 this.calendars[country] = getVideos(country, calendar).filter { it.isJsonObject }.map {
                     ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))
-                }.distinct().toMutableList()
+                }.distinct().map { ISO8601.toCalendar(it) }.sortedBy { it }.toMutableList()
 
-                if (!this.calendars[country].isNullOrEmpty()) JLogger.warning("[${country.country.uppercase()}] Episodes on ${this.getName()} will available at : ${this.calendars[country]!!}")
+                if (!this.calendars[country].isNullOrEmpty()) JLogger.info(
+                    "[${country.country.uppercase()}] Episodes on ${this.getName()} will available at : ${
+                        this.calendars[country]!!.map {
+                            ISO8601.fromCalendar(
+                                it
+                            )
+                        }
+                    }"
+                )
                 else JLogger.warning("[${country.country.uppercase()}] No episode today on ${this.getName()}")
             }
 
-            this.lastDate = date
+            this.lastCheck = System.currentTimeMillis()
         }
 
         this.calendars.forEach { (country, calendars) ->
-            if (calendars.isEmpty()) return@forEach
-            val fl: MutableList<String> = mutableListOf()
+            val filters = calendars.filter { calendar.after(it) }
+            if (filters.isEmpty()) return@forEach
+            val fs = filters.map { ISO8601.fromCalendar(it) }
+            val lc: MutableList<Calendar> = mutableListOf()
 
             getVideos(
                 country,
@@ -136,7 +150,7 @@ class AnimeDigitalNetwork : Platform {
                 val jObject = jsonVideoElement.asJsonObject
                 val showObject = jObject.getAsJsonObject("show")
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
-                if (calendar.before(releaseDate) || !calendars.contains(ISO8601.fromCalendar(releaseDate))) return@forEachIndexed
+                if (!fs.contains(ISO8601.fromCalendar(releaseDate))) return@forEachIndexed
                 val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
                     jObject["season"]?.asString,
                     "1"
@@ -159,12 +173,11 @@ class AnimeDigitalNetwork : Platform {
                     }) EpisodeType.DUBBED else EpisodeType.SUBTITLED
                 val id = jObject.get("id").asLong
                 val duration = jObject["duration"].asLong
-                val rd = ISO8601.fromCalendar(releaseDate)
 
                 l.add(
                     Episode(
                         platform = this,
-                        calendar = rd,
+                        calendar = ISO8601.fromCalendar(releaseDate),
                         anime = anime,
                         number = number,
                         country = country,
@@ -178,13 +191,11 @@ class AnimeDigitalNetwork : Platform {
                     )
                 )
 
-                if (!fl.contains(rd)) fl.add(rd)
+                lc.add(releaseDate)
             }
 
-            val lr = ArrayList(calendars)
-            lr.removeAll(fl)
-
-            this.calendars.replace(country, lr)
+            calendars.removeAll(lc)
+            this.calendars.replace(country, calendars)
         }
 
         return l.toTypedArray()
