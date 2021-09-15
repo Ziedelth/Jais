@@ -17,7 +17,11 @@ interface Platform {
     fun getLastNews(): Array<News> = arrayOf()
     fun getLastEpisodes(): Array<Episode> = arrayOf()
 
-    fun getDate(calendar: Calendar = Calendar.getInstance()): String {
+    fun getFrenchDate(calendar: Calendar = Calendar.getInstance()): String {
         return SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
+    }
+
+    fun getUniversalDate(calendar: Calendar = Calendar.getInstance()): String {
+        return SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
     }
 }

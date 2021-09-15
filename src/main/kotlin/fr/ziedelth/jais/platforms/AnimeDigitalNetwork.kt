@@ -9,6 +9,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.Request
 import fr.ziedelth.jais.utils.animes.*
 import org.jsoup.Jsoup
@@ -18,17 +19,17 @@ import org.w3c.dom.NodeList
 import java.awt.Color
 import java.net.URL
 import java.net.URLConnection
-import java.text.SimpleDateFormat
 import java.util.*
-import java.util.stream.Collectors
+import java.util.logging.Level
 
 class AnimeDigitalNetwork : Platform {
-    private val calendars: MutableMap<Country, MutableList<String>> = mutableMapOf()
-    private var lastDate: String? = null
+    private val lastBuildNews: MutableMap<Country, String> = mutableMapOf()
+    private val calendars: MutableMap<Country, MutableList<Calendar>> = mutableMapOf()
+    private var lastCheck: Long = 0
 
     override fun getName(): String = "Anime Digital Network"
     override fun getURL(): String = "https://animedigitalnetwork.fr/"
-    override fun getImage(): String = "https://ziedelth.fr/images/adn.png"
+    override fun getImage(): String = "https://ziedelth.fr/images/anime_digital_network.png"
     override fun getColor(): Color = Color(0, 150, 255)
     override fun getAllowedCountries(): Array<Country> = arrayOf(Country.FRANCE)
 
@@ -38,10 +39,11 @@ class AnimeDigitalNetwork : Platform {
         try {
             response = Request.get(
                 "https://gw.api.animedigitalnetwork.${country.country}/video/calendar?date=${
-                    getDate(calendar)
+                    getUniversalDate(calendar)
                 }"
             )
         } catch (exception: Exception) {
+            JLogger.log(Level.SEVERE, "Can not get episodes on ${this.getName()}", exception)
             return JsonArray()
         }
 
@@ -60,8 +62,13 @@ class AnimeDigitalNetwork : Platform {
             try {
                 url =
                     URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.country}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildNews[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildNews[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
+                JLogger.log(Level.SEVERE, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -72,7 +79,7 @@ class AnimeDigitalNetwork : Platform {
                     val element = node as Element
 
                     val date = element.getElementsByTagName("pubDate").item(0).textContent
-                    val releaseDate = toCalendar(date)
+                    val releaseDate = Const.toCalendar(date)
                     if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
 
                     val title = element.getElementsByTagName("title").item(0).textContent
@@ -105,35 +112,45 @@ class AnimeDigitalNetwork : Platform {
 
     override fun getLastEpisodes(): Array<Episode> {
         val calendar = Calendar.getInstance()
-        val date = getDate(calendar)
         val l: MutableList<Episode> = mutableListOf()
 
-        if (this.lastDate != date) {
+        if ((System.currentTimeMillis() - this.lastCheck) >= 3600000) {
             this.calendars.clear()
 
             this.getAllowedCountries().forEach { country ->
                 this.calendars[country] = getVideos(country, calendar).filter { it.isJsonObject }.map {
-                    val jObject = it.asJsonObject
-                    ISO8601.fromCalendar(ISO8601.toCalendar(jObject.get("releaseDate").asString))
-                }.stream().distinct().collect(Collectors.toList()).toMutableList()
+                    ISO8601.fromCalendar(ISO8601.toCalendar(it.asJsonObject.get("releaseDate").asString))
+                }.distinct().map { ISO8601.toCalendar(it) }.sortedBy { it }.toMutableList()
+
+                if (!this.calendars[country].isNullOrEmpty()) JLogger.info(
+                    "[${country.country.uppercase()}] Episodes on ${this.getName()} will available at : ${
+                        this.calendars[country]!!.map {
+                            ISO8601.fromCalendar(
+                                it
+                            )
+                        }
+                    }"
+                )
+                else JLogger.warning("[${country.country.uppercase()}] No episode today on ${this.getName()}")
             }
 
-            this.lastDate = date
+            this.lastCheck = System.currentTimeMillis()
         }
 
-        this.getAllowedCountries().filter { country ->
-            val fc = this.calendars.getOrDefault(country, mutableListOf()).firstOrNull()
-            !fc.isNullOrEmpty() && calendar.after(ISO8601.toCalendar(fc))
-        }.forEach { country ->
-            val f = this.calendars.getOrDefault(country, mutableListOf())
-            f.removeFirst()
+        this.calendars.forEach { (country, calendars) ->
+            val filters = calendars.filter { calendar.after(it) }
+            if (filters.isEmpty()) return@forEach
+            val fs = filters.map { ISO8601.fromCalendar(it) }
+            val lc: MutableList<Calendar> = mutableListOf()
 
-            getVideos(country, calendar).filter { it.isJsonObject }.forEachIndexed { _, jsonVideoElement ->
+            getVideos(
+                country,
+                calendar
+            ).filter { it.isJsonObject }.forEachIndexed { _, jsonVideoElement ->
                 val jObject = jsonVideoElement.asJsonObject
                 val showObject = jObject.getAsJsonObject("show")
                 val releaseDate = ISO8601.toCalendar(jObject.get("releaseDate").asString)
-                if (calendar.before(releaseDate)) return@forEachIndexed
-
+                if (!fs.contains(ISO8601.fromCalendar(releaseDate))) return@forEachIndexed
                 val season = if (jObject.has("season") && !jObject["season"].isJsonNull) Const.toInt(
                     jObject["season"]?.asString,
                     "1"
@@ -142,7 +159,6 @@ class AnimeDigitalNetwork : Platform {
                     if (showObject.has("originalTitle") && !showObject["originalTitle"].isJsonNull) showObject.get("originalTitle").asString else showObject.get(
                         "title"
                     ).asString
-
                 val title: String? =
                     if (jObject.has("name") && !jObject.get("name").isJsonNull) jObject.get("name").asString else null
                 val image = jObject.get("image2x").asString.replace(" ", "%20")
@@ -158,34 +174,30 @@ class AnimeDigitalNetwork : Platform {
                 val id = jObject.get("id").asLong
                 val duration = jObject["duration"].asLong
 
-                if (calendar.after(releaseDate)) {
-                    l.add(
-                        Episode(
-                            platform = this,
-                            calendar = ISO8601.fromCalendar(releaseDate),
-                            anime = anime,
-                            number = number,
-                            country = country,
-                            type = type,
-                            season = season,
-                            episodeId = id,
-                            title = title,
-                            image = image,
-                            url = link,
-                            duration = duration
-                        )
+                l.add(
+                    Episode(
+                        platform = this,
+                        calendar = ISO8601.fromCalendar(releaseDate),
+                        anime = anime,
+                        number = number,
+                        country = country,
+                        type = type,
+                        season = season,
+                        episodeId = id,
+                        title = title,
+                        image = image,
+                        url = link,
+                        duration = duration
                     )
-                }
+                )
+
+                lc.add(releaseDate)
             }
+
+            calendars.removeAll(lc)
+            this.calendars.replace(country, calendars)
         }
 
         return l.toTypedArray()
-    }
-
-    private fun toCalendar(s: String): Calendar {
-        val calendar = Calendar.getInstance()
-        val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
-        calendar.time = date
-        return calendar
     }
 }

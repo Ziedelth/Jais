@@ -4,9 +4,10 @@
 
 package fr.ziedelth.jais.utils.animes
 
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import fr.ziedelth.jais.utils.JLogger
+import java.awt.image.BufferedImage
 import java.net.URL
+import java.util.logging.Level
 import javax.imageio.ImageIO
 
 data class Episode(
@@ -25,16 +26,17 @@ data class Episode(
     val duration: Long = 1440
 ) {
     @Transient
-    val downloadedImage: ByteArrayInputStream
+    var downloadedImage: BufferedImage? = null
 
     init {
         this.anime = this.anime.replace("’", "'")
         this.season = this.season.replace(" ", "")
 
-        val bufferedImage = ImageIO.read(URL(this.image))
-        val baos = ByteArrayOutputStream()
-        ImageIO.write(bufferedImage, "jpg", baos)
-        this.downloadedImage = ByteArrayInputStream(baos.toByteArray())
+        try {
+            this.downloadedImage = ImageIO.read(URL(this.image))
+        } catch (exception: Exception) {
+            JLogger.log(Level.WARNING, "Can not download image", exception)
+        }
     }
 
     override fun toString(): String {

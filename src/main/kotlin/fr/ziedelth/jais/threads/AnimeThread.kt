@@ -12,9 +12,14 @@ import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.animes.getNews
 import fr.ziedelth.jais.utils.animes.saveNews
 import fr.ziedelth.jais.utils.database.JAccess
+import java.io.File
+import java.util.*
+import java.util.concurrent.Executors
+import javax.imageio.ImageIO
 import kotlin.math.max
 
 class AnimeThread : Runnable {
+    private val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private val thread = Thread(this, "AnimeThread")
 
     init {
@@ -30,26 +35,42 @@ class AnimeThread : Runnable {
             // NEWS
             val news: Array<News> =
                 Const.PLATFORMS.map { it.getLastNews().toList() }.flatten().filter { !this.contains(newsList, it) }
+                    .sortedBy { ISO8601.toCalendar(it.calendar) }
                     .toTypedArray()
 
             if (news.isNotEmpty()) {
                 news.forEach { newsList.add(it) }
-                if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendNews(news) }
+                if (Const.SEND_MESSAGES) this.pool.submit { Const.CLIENTS.forEach { it.sendNews(news) } }
                 saveNews(newsList)
             }
 
             // EPISODES
             val connection = JAccess.getConnection()
-            val episodes: Array<Episode> = Const.PLATFORMS.map { it.getLastEpisodes().toList() }.flatten()
+            val episodes: Array<Episode> = Const.PLATFORMS.map {
+                JTime.start("PlatformDetection", "Starting detection of " + it.getName() + "...")
+                val list = it.getLastEpisodes().toList()
+                JTime.end("PlatformDetection", "End detection of " + it.getName() + " in %{ms}ms")
+                list
+            }.flatten()
                 .filter { !JAccess.isExists(connection, it) }.sortedBy { ISO8601.toCalendar(it.calendar) }
                 .toTypedArray()
 
             if (episodes.isNotEmpty()) {
                 JTime.start("JT-Saving", "Saving all episodes")
                 JAccess.insertEpisodes(connection, episodes)
-                JTime.end("JT-Saving", "All episodes are saved. Takes %ms.")
+                JTime.end("JT-Saving", "All episodes are saved. Takes %{ms}ms.")
 
-                if (Const.SEND_MESSAGES) Const.CLIENTS.forEach { it.sendEpisodes(episodes) }
+                if (Const.SEND_MESSAGES) this.pool.submit { Const.CLIENTS.forEach { it.sendEpisodes(episodes) } }
+
+                JTime.start("JT-Saving", "Saving all episodes images...")
+
+                episodes.forEach {
+                    val folder = File("episodes")
+                    if (!folder.exists()) folder.mkdirs()
+                    ImageIO.write(it.downloadedImage, "jpg", File(folder, "${UUID.randomUUID()}.jpg"))
+                }
+
+                JTime.end("JT-Saving", "All episodes images are saved. Takes %{ms}ms.")
             }
 
             connection?.close()

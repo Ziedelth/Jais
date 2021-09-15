@@ -8,17 +8,20 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.logging.ConsoleHandler
+import java.util.logging.*
 import java.util.logging.Formatter
-import java.util.logging.LogRecord
-import java.util.logging.Logger
 
 object JLogger : Logger("ZiedLogger", null) {
     init {
+        val jFormatter = JFormatter()
+
         this.useParentHandlers = false
         val consoleHandler = ConsoleHandler()
-        consoleHandler.formatter = JFormatter()
+        consoleHandler.formatter = jFormatter
         this.addHandler(consoleHandler)
+        val fileHandler = FileHandler("jais-log-%g.log", 5 * 1024 * 1024, 5)
+        fileHandler.formatter = jFormatter
+        this.addHandler(fileHandler)
     }
 }
 

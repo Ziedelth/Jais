@@ -6,6 +6,7 @@ package fr.ziedelth.jais.platforms
 
 import fr.ziedelth.jais.utils.Const
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.*
 import org.jsoup.Jsoup
 import org.w3c.dom.Element
@@ -14,10 +15,13 @@ import org.w3c.dom.NodeList
 import java.awt.Color
 import java.net.URL
 import java.net.URLConnection
-import java.text.SimpleDateFormat
 import java.util.*
+import java.util.logging.Level
 
 class Crunchyroll : Platform {
+    private val lastBuildNews: MutableMap<Country, String> = mutableMapOf()
+    private val lastBuildEpisodes: MutableMap<Country, String> = mutableMapOf()
+
     override fun getName(): String = "Crunchyroll"
     override fun getURL(): String = "https://www.crunchyroll.com/"
     override fun getImage(): String = "https://ziedelth.fr/images/crunchyroll.png"
@@ -34,8 +38,13 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("${this.getURL()}newsrss?lang=${country.lang}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildNews[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildNews[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
+                JLogger.log(Level.SEVERE, "Can not get news on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -45,9 +54,9 @@ class Crunchyroll : Platform {
                 if (node.nodeType == Node.ELEMENT_NODE) {
                     val element = node as Element
 
-                    val releaseDate = toCalendar(element.getElementsByTagName("pubDate").item(0).textContent)
+                    val releaseDate = Const.toCalendar(element.getElementsByTagName("pubDate").item(0).textContent)
 
-                    if (Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate)) continue
+                    if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
 
                     val title = element.getElementsByTagName("title").item(0).textContent
                     val description =
@@ -85,8 +94,13 @@ class Crunchyroll : Platform {
 
             try {
                 url = URL("${this.getURL()}rss/anime?lang=${country.lang}").openConnection()
-                list = Const.getItems(url, "item")
+                val document = Const.getRSSDocument(url)
+                val lastBuild = document.getElementsByTagName("lastBuildDate").item(0).textContent
+                if (this.lastBuildEpisodes[country]?.equals(lastBuild, true) == true) return@forEach
+                this.lastBuildEpisodes[country] = lastBuild
+                list = document.getElementsByTagName("item")
             } catch (exception: Exception) {
+                JLogger.log(Level.SEVERE, "Can not get episodes on ${this.getName()}", exception)
                 return l.toTypedArray()
             }
 
@@ -98,7 +112,7 @@ class Crunchyroll : Platform {
 
                     val date = element.getElementsByTagName("pubDate").item(0)?.textContent
                     if (date.isNullOrEmpty()) continue
-                    val releaseDate = toCalendar(date)
+                    val releaseDate = Const.toCalendar(date)
                     if (!(Const.isSameDay(calendar, releaseDate) && calendar.after(releaseDate))) continue
 
                     val spay = element.getElementsByTagName("media:restriction").item(0).textContent
@@ -154,12 +168,5 @@ class Crunchyroll : Platform {
         }
 
         return l.toTypedArray()
-    }
-
-    private fun toCalendar(s: String): Calendar {
-        val calendar = Calendar.getInstance()
-        val date = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(s)
-        calendar.time = date
-        return calendar
     }
 }
