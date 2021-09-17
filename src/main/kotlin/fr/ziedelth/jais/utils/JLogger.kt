@@ -18,10 +18,13 @@ object JLogger : Logger("ZiedLogger", null) {
         this.useParentHandlers = false
         val consoleHandler = ConsoleHandler()
         consoleHandler.formatter = jFormatter
+        consoleHandler.level = Level.ALL
         this.addHandler(consoleHandler)
-        val fileHandler = FileHandler("jais-log-%g.log", 5 * 1024 * 1024, 5)
+        val fileHandler = FileHandler("jais-log-%g-%u.log", 1 * 1024 * 1024, 1)
         fileHandler.formatter = jFormatter
+        fileHandler.level = Level.ALL
         this.addHandler(fileHandler)
+        this.level = Level.ALL
     }
 }
 
