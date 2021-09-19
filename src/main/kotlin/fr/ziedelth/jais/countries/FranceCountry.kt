@@ -6,6 +6,7 @@ package fr.ziedelth.jais.countries
 
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
+import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.Platform
@@ -23,6 +24,7 @@ class FranceCountry : Country {
         return when (platform::class.java) {
             AnimeDigitalNetworkPlatform::class.java -> "fr"
             CrunchyrollPlatform::class.java -> "frFR"
+            WakanimPlatform::class.java -> "fr"
             else -> null
         }
     }

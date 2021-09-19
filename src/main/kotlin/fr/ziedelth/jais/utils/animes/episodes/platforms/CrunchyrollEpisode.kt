@@ -2,25 +2,29 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes
+package fr.ziedelth.jais.utils.animes.episodes.platforms
 
 import com.google.gson.JsonObject
+import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
+import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 data class CrunchyrollEpisode(
-    val mediaId: String?,
+    val pubDate: String?,
     val seriesTitle: String?,
-    val episodeNumber: String?,
     val season: String?,
+    val episodeNumber: String?,
+    val restriction: JsonObject?,
+    val subtitleLanguages: String?,
+
+    val mediaId: String?,
     val episodeTitle: String?,
     val thumbnail: Array<Thumbnail>?,
-    val pubDate: String?,
     val duration: String?,
     val link: String?,
-    val restriction: JsonObject?,
-    val subtitleLanguages: String?
 ) {
     var platform: Platform? = null
     var country: Country? = null
@@ -37,9 +41,9 @@ data class CrunchyrollEpisode(
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
-            platform = this.platform!!,
-            country = this.country!!,
-            releaseDate = ISO8601.toCalendar2(this.pubDate!!)!!,
+            platform = Jais.getPlatformInformation(this.platform)!!.platformHandler.name,
+            country = Jais.getCountryInformation(this.country)!!.countryHandler.name,
+            releaseDate = ISO8601.fromCalendar2(this.pubDate)!!,
             anime = this.seriesTitle!!,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber!!,

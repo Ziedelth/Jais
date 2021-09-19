@@ -10,14 +10,15 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
-import fr.ziedelth.jais.utils.animes.episodes.AnimeDigitalNetworkEpisode
 import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.episodes.platforms.AnimeDigitalNetworkEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import java.io.InputStreamReader
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.logging.Level
 
 @PlatformHandler(
     name = "Anime Digital Network",
@@ -60,7 +61,7 @@ class AnimeDigitalNetworkPlatform : Platform() {
 
                 JLogger.config("${episodesList?.size ?: 0}")
                 JLogger.config(
-                    episodesList?.mapNotNull { ISO8601.fromCalendar(it.releaseDate) }?.distinct()?.toTypedArray()
+                    episodesList?.mapNotNull { ISO8601.fromCalendar1(it.releaseDate) }?.distinct()?.toTypedArray()
                         ?.contentToString()
                 )
                 JLogger.config("$episodesList")
@@ -68,7 +69,11 @@ class AnimeDigitalNetworkPlatform : Platform() {
 
                 episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }
             } catch (exception: Exception) {
-                JLogger.severe("Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}")
+                JLogger.log(
+                    Level.SEVERE,
+                    "Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}",
+                    exception
+                )
             }
         }
 

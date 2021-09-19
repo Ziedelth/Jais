@@ -20,9 +20,16 @@ object ISO8601 {
         return "${formatted.substring(0, 22)}:${formatted.substring(22)}"
     }
 
-    fun fromCalendar(iso8601string: String?): String? {
+    fun fromCalendar1(iso8601string: String?): String? {
         if (iso8601string.isNullOrBlank()) return null
         val date = toCalendar1(iso8601string)?.time
+        val formatted = this.sdf1.format(date)
+        return "${formatted.substring(0, 22)}:${formatted.substring(22)}"
+    }
+
+    fun fromCalendar2(iso8601string: String?): String? {
+        if (iso8601string.isNullOrBlank()) return null
+        val date = toCalendar2(iso8601string)?.time
         val formatted = this.sdf1.format(date)
         return "${formatted.substring(0, 22)}:${formatted.substring(22)}"
     }

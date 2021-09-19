@@ -2,23 +2,27 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes
+package fr.ziedelth.jais.utils.animes.episodes.platforms
 
+import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
+import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 data class AnimeDigitalNetworkEpisode(
+    val releaseDate: String?,
+    val show: Show?,
+    val season: String?,
+    val shortNumber: String?,
+    val languages: Array<String>?,
+
     val id: Long?,
     val name: String?,
-    val shortNumber: String?,
-    val season: String?,
     val image: String?,
-    val releaseDate: String?,
     val duration: Long?,
     val url: String?,
-    val languages: Array<String>?,
-    val show: Show?,
 ) {
     var platform: Platform? = null
     var country: Country? = null
@@ -27,19 +31,18 @@ data class AnimeDigitalNetworkEpisode(
             this.country != null &&
             !this.releaseDate.isNullOrBlank() &&
             this.show != null && (!this.show.title.isNullOrBlank() || !this.show.originalTitle.isNullOrBlank()) &&
-            this.season != null &&
-            this.shortNumber != null &&
-            this.languages != null
+            !this.shortNumber.isNullOrBlank() &&
+            this.languages != null && EpisodeType.getEpisodeType(this.languages.lastOrNull()) != null
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
-            platform = this.platform!!,
-            country = this.country!!,
-            releaseDate = ISO8601.toCalendar1(this.releaseDate!!)!!,
+            platform = Jais.getPlatformInformation(this.platform)!!.platformHandler.name,
+            country = Jais.getCountryInformation(this.country)!!.countryHandler.name,
+            releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = if (!this.show!!.originalTitle.isNullOrBlank()) this.show.originalTitle!! else this.show.title!!,
-            season = this.season!!.toLongOrNull() ?: 1,
+            season = this.season?.toLongOrNull() ?: 1,
             number = this.shortNumber!!,
-            episodeType = if (this.languages!!.contains(this.country!!.dubbedEpisodes(this.platform!!))) EpisodeType.VOICE else EpisodeType.SUBTITLES
+            episodeType = EpisodeType.getEpisodeType(this.languages!!.lastOrNull())!!
         ) else null
     }
 

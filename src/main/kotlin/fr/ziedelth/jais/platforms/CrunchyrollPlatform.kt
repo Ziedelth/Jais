@@ -11,19 +11,20 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
-import fr.ziedelth.jais.utils.animes.episodes.CrunchyrollEpisode
 import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.episodes.platforms.CrunchyrollEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
+import java.util.logging.Level
 
 @PlatformHandler(
     name = "Crunchyroll",
     url = "https://www.crunchyroll.com/",
     image = "https://ziedelth.fr/images/crunchyroll.png",
-    color = 0x0096FF,
+    color = 0xFF6C00,
     countries = [FranceCountry::class]
 )
 class CrunchyrollPlatform : Platform() {
@@ -62,14 +63,18 @@ class CrunchyrollPlatform : Platform() {
                 }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }
 
                 JLogger.config("${episodesList?.size ?: 0}")
-                JLogger.config(episodesList?.mapNotNull { ISO8601.fromCalendar(ISO8601.toCalendar2(it.pubDate)) }
+                JLogger.config(episodesList?.mapNotNull { ISO8601.fromCalendar2(it.pubDate) }
                     ?.distinct()?.toTypedArray()?.contentToString())
                 JLogger.config("$episodesList")
                 JLogger.config("Fetch in ${System.currentTimeMillis() - start}ms")
 
                 episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }
             } catch (exception: Exception) {
-                JLogger.severe("Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}")
+                JLogger.log(
+                    Level.SEVERE,
+                    "Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}",
+                    exception
+                )
             }
         }
 

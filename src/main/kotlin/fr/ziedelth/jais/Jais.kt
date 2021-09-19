@@ -7,6 +7,7 @@ package fr.ziedelth.jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
+import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
@@ -14,6 +15,7 @@ import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
+import kotlin.reflect.KClass
 
 object Jais {
     private var isRunning = true
@@ -33,6 +35,8 @@ object Jais {
             JLogger.warning("Failed to add AnimeDigitalNetwork platform")
         if (!this.addPlatform(CrunchyrollPlatform::class.java))
             JLogger.warning("Failed to add Crunchyroll platform")
+        if (!this.addPlatform(WakanimPlatform::class.java))
+            JLogger.warning("Failed to add Wakanim platform")
 
         this.platforms.forEach { JLogger.config(it.platform.checkLastEpisodes().contentToString()) }
 
@@ -67,8 +71,27 @@ object Jais {
         return false
     }
 
-    fun getAllowedCountries(platform: Platform): Array<Country> {
-        return this.platforms.firstOrNull { it.platform::class.java == platform::class.java }?.platformHandler?.countries?.mapNotNull { platformCountry -> this.countries.firstOrNull { countryImpl -> countryImpl.country::class.java == platformCountry.java } }
-            ?.map { it.country }?.toTypedArray() ?: arrayOf()
+    fun getCountriesInformation(): Array<CountryImpl> {
+        return this.countries.toTypedArray()
+    }
+
+    fun getCountryInformation(country: Country?): CountryImpl? {
+        return if (country != null) this.countries.firstOrNull { it.country::class.java == country::class.java } else null
+    }
+
+    fun getCountryInformation(country: KClass<out Country>?): CountryImpl? {
+        return this.countries.firstOrNull { it.country::class.java == country?.java }
+    }
+
+    fun getPlatformInformation(platform: Platform?): PlatformImpl? {
+        return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
+    }
+
+    fun getAllowedCountries(platform: Platform?): Array<Country> {
+        return this.getPlatformInformation(platform)?.platformHandler?.countries?.mapNotNull { platformCountry ->
+            this.getCountryInformation(
+                platformCountry
+            )
+        }?.map { it.country }?.toTypedArray() ?: arrayOf()
     }
 }
