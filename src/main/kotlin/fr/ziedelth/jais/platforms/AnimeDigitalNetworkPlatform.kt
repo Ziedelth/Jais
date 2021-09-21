@@ -32,13 +32,9 @@ class AnimeDigitalNetworkPlatform : Platform() {
         TODO("Not yet implemented")
     }
 
-    override fun checkLastEpisodes(): Array<Episode> {
+    override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
-        val calendar = Calendar.getInstance()
         val gson = Gson()
-
-        JLogger.info("Fetch ${this.javaClass.simpleName} episode(s)")
-        val start = System.currentTimeMillis()
 
         this.getAllowedCountries().forEach { country ->
             try {
@@ -58,14 +54,6 @@ class AnimeDigitalNetworkPlatform : Platform() {
                         ISO8601.toCalendar1(it.releaseDate)
                     ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
                 }?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }
-
-                JLogger.config("${episodesList?.size ?: 0}")
-                JLogger.config(
-                    episodesList?.mapNotNull { ISO8601.fromCalendar1(it.releaseDate) }?.distinct()?.toTypedArray()
-                        ?.contentToString()
-                )
-                JLogger.config("$episodesList")
-                JLogger.config("Fetch in ${System.currentTimeMillis() - start}ms")
 
                 episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }
             } catch (exception: Exception) {

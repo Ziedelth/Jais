@@ -37,7 +37,9 @@ data class CrunchyrollEpisode(
             this.restriction != null && this.restriction.get("").asString.split(" ")
         .contains(this.country!!.restrictionEpisodes(this.platform!!)) &&
             !this.subtitleLanguages.isNullOrBlank() && this.subtitleLanguages.split(",")
-        .contains(this.country!!.subtitlesEpisodes(this.platform!!))
+        .contains(this.country!!.subtitlesEpisodes(this.platform!!)) &&
+            !this.mediaId.isNullOrBlank() &&
+            !this.duration.isNullOrBlank() && this.duration.toLongOrNull() != null
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -47,7 +49,13 @@ data class CrunchyrollEpisode(
             anime = this.seriesTitle!!,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber!!,
-            episodeType = if (this.subtitleLanguages!! == this.country!!.subtitlesEpisodes(this.platform!!)) EpisodeType.VOICE else EpisodeType.SUBTITLES
+            type = if (this.subtitleLanguages!! == this.country!!.subtitlesEpisodes(this.platform!!)) EpisodeType.VOICE else EpisodeType.SUBTITLES,
+
+            eId = this.mediaId!!,
+            title = this.episodeTitle,
+            url = this.link,
+            image = this.thumbnail?.firstOrNull()?.url,
+            duration = this.duration!!.toLong(),
         ) else null
     }
 

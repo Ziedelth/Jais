@@ -30,7 +30,9 @@ data class WakanimEpisode(
             !this.releaseDate.isNullOrBlank() &&
             !this.anime.isNullOrBlank() &&
             !this.number.isNullOrBlank() &&
-            this.episodeType != null
+            this.episodeType != null &&
+            this.episodeId != null &&
+            this.duration != null
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -40,7 +42,13 @@ data class WakanimEpisode(
             anime = this.anime!!,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.number!!,
-            episodeType = this.episodeType!!
+            type = this.episodeType!!,
+
+            eId = this.episodeId!!.toString(),
+            title = null,
+            url = this.url,
+            image = this.image,
+            duration = this.duration!!,
         ) else null
     }
 

@@ -32,7 +32,9 @@ data class AnimeDigitalNetworkEpisode(
             !this.releaseDate.isNullOrBlank() &&
             this.show != null && (!this.show.title.isNullOrBlank() || !this.show.originalTitle.isNullOrBlank()) &&
             !this.shortNumber.isNullOrBlank() &&
-            this.languages != null && EpisodeType.getEpisodeType(this.languages.lastOrNull()) != null
+            this.languages != null && EpisodeType.getEpisodeType(this.languages.lastOrNull()) != null &&
+            this.id != null &&
+            this.duration != null
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -42,7 +44,13 @@ data class AnimeDigitalNetworkEpisode(
             anime = if (!this.show!!.originalTitle.isNullOrBlank()) this.show.originalTitle!! else this.show.title!!,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.shortNumber!!,
-            episodeType = EpisodeType.getEpisodeType(this.languages!!.lastOrNull())!!
+            type = EpisodeType.getEpisodeType(this.languages!!.lastOrNull())!!,
+
+            eId = this.id!!.toString(),
+            title = this.name,
+            url = this.url,
+            image = this.image,
+            duration = this.duration!!,
         ) else null
     }
 

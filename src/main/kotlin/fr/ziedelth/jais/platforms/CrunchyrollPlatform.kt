@@ -6,7 +6,7 @@ package fr.ziedelth.jais.platforms
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.google.gson.GsonBuilder
+import com.google.gson.Gson
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
@@ -32,15 +32,11 @@ class CrunchyrollPlatform : Platform() {
         TODO("Not yet implemented")
     }
 
-    override fun checkLastEpisodes(): Array<Episode> {
+    override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
-        val calendar = Calendar.getInstance()
-        val gson = GsonBuilder().setPrettyPrinting().create()
+        val gson = Gson()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
-
-        JLogger.info("Fetch ${this.javaClass.simpleName} episode(s)")
-        val start = System.currentTimeMillis()
 
         this.getAllowedCountries().forEach { country ->
             try {
@@ -61,12 +57,6 @@ class CrunchyrollPlatform : Platform() {
                         ISO8601.toCalendar2(it.pubDate)
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }
-
-                JLogger.config("${episodesList?.size ?: 0}")
-                JLogger.config(episodesList?.mapNotNull { ISO8601.fromCalendar2(it.pubDate) }
-                    ?.distinct()?.toTypedArray()?.contentToString())
-                JLogger.config("$episodesList")
-                JLogger.config("Fetch in ${System.currentTimeMillis() - start}ms")
 
                 episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }
             } catch (exception: Exception) {

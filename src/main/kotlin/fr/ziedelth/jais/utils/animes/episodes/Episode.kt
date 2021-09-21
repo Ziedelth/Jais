@@ -13,8 +13,21 @@ data class Episode(
     val anime: String,
     val season: Long,
     val number: String,
-    val episodeType: EpisodeType
-)
+    val type: EpisodeType,
+
+    var eId: String,
+    val title: String?,
+    val url: String?,
+    val image: String?,
+    val duration: Long
+) {
+    init {
+        val countryHandler = Jais.getCountryInformation(this.country)!!.countryHandler
+        this.eId = "${
+            this.platform.uppercase().substring(0 until 4)
+        }-${this.eId}-${if (this.type == EpisodeType.SUBTITLES) countryHandler.subtitles else countryHandler.dubbed}"
+    }
+}
 
 enum class EpisodeType {
     SUBTITLES,

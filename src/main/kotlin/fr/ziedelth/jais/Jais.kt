@@ -15,12 +15,14 @@ import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
+import fr.ziedelth.jais.utils.sql.SQL
+import java.util.*
 import kotlin.reflect.KClass
 
 object Jais {
     private var isRunning = true
-    private val countries: MutableList<CountryImpl> = mutableListOf()
-    private val platforms: MutableList<PlatformImpl> = mutableListOf()
+    private val countries = mutableListOf<CountryImpl>()
+    private val platforms = mutableListOf<PlatformImpl>()
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -38,11 +40,60 @@ object Jais {
         if (!this.addPlatform(WakanimPlatform::class.java))
             JLogger.warning("Failed to add Wakanim platform")
 
-        this.platforms.forEach { JLogger.config(it.platform.checkLastEpisodes().contentToString()) }
+        this.checkEpisodes()
 
         JLogger.info("Running...")
         while (this.isRunning)
             Thread.sleep(25)
+    }
+
+    private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
+        val connection = SQL.getConnection()
+
+        this.platforms.forEach { platformImpl ->
+            val platformSQL = SQL.psui(connection, platformImpl.platformHandler)
+
+            platformImpl.platform.checkEpisodes(calendar).forEach { episode ->
+                val countryImpl = this.getCountryInformation(episode.country)!!
+                val countrySQL = SQL.csui(connection, countryImpl.countryHandler)
+                val animeSQL = SQL.asi(connection, episode.anime, episode.releaseDate)
+
+                if (platformSQL != null && countrySQL != null && animeSQL != null) {
+                    var episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+
+                    if (episodeSQL == null) {
+                        if (!SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode))
+                            JLogger.warning("Failed to insert episode in database")
+                        else {
+                            episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+
+                            JLogger.info("New episode in database")
+                            JLogger.config("ID: ${episodeSQL?.id}")
+                            JLogger.config("EID: ${episodeSQL?.eId}")
+                            JLogger.config("Anime: ${episode.anime}")
+                            JLogger.config("Title: ${episodeSQL?.title}")
+                        }
+                    } else {
+                        if (episode.title != episodeSQL.title || episode.url != episodeSQL.url || episode.image != episodeSQL.image || episode.duration != episodeSQL.duration) {
+                            if (!SQL.updateEpisodeInDatabase(
+                                    connection,
+                                    episode
+                                )
+                            ) JLogger.warning("Failed to update episode in database")
+                            else {
+                                JLogger.info("Update in database")
+                                JLogger.config("ID: ${episodeSQL.id}")
+                                JLogger.config("EID: ${episodeSQL.eId}")
+                                JLogger.config("Anime: ${episode.anime}")
+                                JLogger.config("Title: ${episodeSQL.title}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        connection?.close()
     }
 
     private fun addCountry(country: Class<out Country>): Boolean {
@@ -75,12 +126,30 @@ object Jais {
         return this.countries.toTypedArray()
     }
 
+    fun getCountryInformation(country: String?): CountryImpl? {
+        return if (!country.isNullOrBlank()) this.countries.firstOrNull {
+            it.countryHandler.name.equals(
+                country,
+                true
+            )
+        } else null
+    }
+
     fun getCountryInformation(country: Country?): CountryImpl? {
         return if (country != null) this.countries.firstOrNull { it.country::class.java == country::class.java } else null
     }
 
-    fun getCountryInformation(country: KClass<out Country>?): CountryImpl? {
+    private fun getCountryInformation(country: KClass<out Country>?): CountryImpl? {
         return this.countries.firstOrNull { it.country::class.java == country?.java }
+    }
+
+    fun getPlatformInformation(platform: String?): PlatformImpl? {
+        return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
+            it.platformHandler.name.equals(
+                platform,
+                true
+            )
+        } else null
     }
 
     fun getPlatformInformation(platform: Platform?): PlatformImpl? {
