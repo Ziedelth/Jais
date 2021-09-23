@@ -81,11 +81,13 @@ object Jais {
                                 )
                             ) JLogger.warning("Failed to update episode in database")
                             else {
+                                episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+
                                 JLogger.info("Update in database")
-                                JLogger.config("ID: ${episodeSQL.id}")
-                                JLogger.config("EID: ${episodeSQL.eId}")
+                                JLogger.config("ID: ${episodeSQL?.id}")
+                                JLogger.config("EID: ${episodeSQL?.eId}")
                                 JLogger.config("Anime: ${episode.anime}")
-                                JLogger.config("Title: ${episodeSQL.title}")
+                                JLogger.config("Title: ${episodeSQL?.title}")
                             }
                         }
                     }
