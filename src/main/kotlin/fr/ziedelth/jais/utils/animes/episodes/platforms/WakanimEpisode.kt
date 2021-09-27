@@ -9,6 +9,7 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 data class WakanimEpisode(
@@ -16,9 +17,10 @@ data class WakanimEpisode(
     var country: Country? = null,
     val releaseDate: String?,
     val anime: String?,
-    val season: String?,
-    val number: String?,
+    val season: Long?,
+    val number: Long?,
     val episodeType: EpisodeType?,
+    val langType: LangType?,
 
     val episodeId: Long?,
     val image: String?,
@@ -29,8 +31,9 @@ data class WakanimEpisode(
             this.country != null &&
             !this.releaseDate.isNullOrBlank() &&
             !this.anime.isNullOrBlank() &&
-            !this.number.isNullOrBlank() &&
+            this.number != null &&
             this.episodeType != null &&
+            this.langType != null &&
             this.episodeId != null &&
             this.duration != null
 
@@ -40,9 +43,10 @@ data class WakanimEpisode(
             country = Jais.getCountryInformation(this.country)!!.countryHandler.name,
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = this.anime!!,
-            season = this.season?.toLongOrNull() ?: 1,
-            number = this.number!!,
-            type = this.episodeType!!,
+            season = this.season ?: 1,
+            number = this.number ?: 1,
+            episodeType = this.episodeType!!,
+            langType = this.langType!!,
 
             eId = this.episodeId!!.toString(),
             title = null,
@@ -64,7 +68,7 @@ data class WakanimEpisode(
         if (anime != other.anime) return false
         if (season != other.season) return false
         if (number != other.number) return false
-        if (episodeType != other.episodeType) return false
+        if (langType != other.langType) return false
         if (episodeId != other.episodeId) return false
         if (image != other.image) return false
         if (duration != other.duration) return false
@@ -80,7 +84,7 @@ data class WakanimEpisode(
         result = 31 * result + (anime?.hashCode() ?: 0)
         result = 31 * result + season.hashCode()
         result = 31 * result + (number?.hashCode() ?: 0)
-        result = 31 * result + (episodeType?.hashCode() ?: 0)
+        result = 31 * result + (langType?.hashCode() ?: 0)
         result = 31 * result + (episodeId?.hashCode() ?: 0)
         result = 31 * result + (image?.hashCode() ?: 0)
         result = 31 * result + (duration?.hashCode() ?: 0)
@@ -89,6 +93,6 @@ data class WakanimEpisode(
     }
 
     override fun toString(): String {
-        return "WakanimEpisode(platform=$platform, country=$country, releaseDate=$releaseDate, anime=$anime, season='$season', number=$number, episodeType=$episodeType, episodeId=$episodeId, image=$image, duration=$duration, url=$url)"
+        return "WakanimEpisode(platform=$platform, country=$country, releaseDate=$releaseDate, anime=$anime, season='$season', number=$number, episodeType=$langType, episodeId=$episodeId, image=$image, duration=$duration, url=$url)"
     }
 }

@@ -9,6 +9,7 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 data class AnimeDigitalNetworkEpisode(
@@ -31,8 +32,8 @@ data class AnimeDigitalNetworkEpisode(
             this.country != null &&
             !this.releaseDate.isNullOrBlank() &&
             this.show != null && (!this.show.title.isNullOrBlank() || !this.show.originalTitle.isNullOrBlank()) &&
-            !this.shortNumber.isNullOrBlank() &&
-            this.languages != null && EpisodeType.getEpisodeType(this.languages.lastOrNull()) != null &&
+            !this.shortNumber.isNullOrBlank() && this.shortNumber.toLongOrNull() != null &&
+            this.languages != null && LangType.getLangType(this.languages.lastOrNull()) != null &&
             this.id != null &&
             this.duration != null
 
@@ -43,8 +44,9 @@ data class AnimeDigitalNetworkEpisode(
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = if (!this.show!!.originalTitle.isNullOrBlank()) this.show.originalTitle!! else this.show.title!!,
             season = this.season?.toLongOrNull() ?: 1,
-            number = this.shortNumber!!,
-            type = EpisodeType.getEpisodeType(this.languages!!.lastOrNull())!!,
+            number = this.shortNumber?.toLongOrNull() ?: 1,
+            episodeType = EpisodeType.EPISODE,
+            langType = LangType.getLangType(this.languages!!.lastOrNull())!!,
 
             eId = this.id!!.toString(),
             title = this.name,

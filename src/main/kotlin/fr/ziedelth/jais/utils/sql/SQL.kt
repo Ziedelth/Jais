@@ -8,6 +8,7 @@ import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.sql.components.AnimeSQL
 import fr.ziedelth.jais.utils.sql.components.CountrySQL
@@ -18,7 +19,7 @@ import java.sql.DriverManager
 
 object SQL {
     fun getConnection(): Connection? {
-        return DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+        return DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "")
     }
 
     /*
@@ -97,6 +98,7 @@ object SQL {
             flag = rs.getString("flag"),
             season = rs.getString("season"),
             episode = rs.getString("episode"),
+            film = rs.getString("film"),
             subtitles = rs.getString("subtitles"),
             dubbed = rs.getString("dubbed"),
         )
@@ -105,25 +107,27 @@ object SQL {
 
     fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
-            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?)")
+            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?)")
         ps?.setString(1, countryHandler.name)
         ps?.setString(2, countryHandler.flag)
         ps?.setString(3, countryHandler.season)
         ps?.setString(4, countryHandler.episode)
-        ps?.setString(5, countryHandler.subtitles)
-        ps?.setString(6, countryHandler.dubbed)
+        ps?.setString(5, countryHandler.film)
+        ps?.setString(6, countryHandler.subtitles)
+        ps?.setString(7, countryHandler.dubbed)
         return ps?.executeUpdate() == 1
     }
 
     fun updateCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
-            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
+            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
         ps?.setString(1, countryHandler.flag)
         ps?.setString(2, countryHandler.season)
         ps?.setString(3, countryHandler.episode)
-        ps?.setString(4, countryHandler.subtitles)
-        ps?.setString(5, countryHandler.dubbed)
-        ps?.setString(6, countryHandler.name)
+        ps?.setString(4, countryHandler.film)
+        ps?.setString(5, countryHandler.subtitles)
+        ps?.setString(6, countryHandler.dubbed)
+        ps?.setString(7, countryHandler.name)
         return ps?.executeUpdate() == 1
     }
 
@@ -134,6 +138,7 @@ object SQL {
             if (countryHandler.flag != countrySQL.flag ||
                 countryHandler.season != countrySQL.season ||
                 countryHandler.episode != countrySQL.episode ||
+                countryHandler.film != countrySQL.film ||
                 countryHandler.subtitles != countrySQL.subtitles ||
                 countryHandler.dubbed != countrySQL.dubbed
             )
@@ -206,8 +211,9 @@ object SQL {
             animeId = rs.getInt("animeId"),
             releaseDate = rs.getString("releaseDate"),
             season = rs.getInt("season"),
-            number = rs.getString("number"),
-            type = EpisodeType.valueOf(rs.getString("type")),
+            number = rs.getInt("number"),
+            episodeType = EpisodeType.valueOf(rs.getString("episodeType")),
+            langType = LangType.valueOf(rs.getString("langType")),
             eId = rs.getString("eId"),
             title = rs.getString("title"),
             url = rs.getString("url"),
@@ -225,19 +231,20 @@ object SQL {
         episode: Episode
     ): Boolean {
         val ps =
-            connection?.prepareStatement("INSERT INTO episodes (platformId, countryId, animeId, releaseDate, season, number, type, eId, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            connection?.prepareStatement("INSERT INTO episodes (platformId, countryId, animeId, releaseDate, season, number, episodeType, langType, eId, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         ps?.setInt(1, platformSQL.id)
         ps?.setInt(2, countrySQL.id)
         ps?.setInt(3, animeSQL.id)
         ps?.setString(4, episode.releaseDate)
         ps?.setLong(5, episode.season)
-        ps?.setString(6, episode.number)
-        ps?.setString(7, episode.type.name)
-        ps?.setString(8, episode.eId)
-        ps?.setString(9, episode.title)
-        ps?.setString(10, episode.url)
-        ps?.setString(11, episode.image)
-        ps?.setLong(12, episode.duration)
+        ps?.setLong(6, episode.number)
+        ps?.setString(7, episode.episodeType.name)
+        ps?.setString(8, episode.langType.name)
+        ps?.setString(9, episode.eId)
+        ps?.setString(10, episode.title)
+        ps?.setString(11, episode.url)
+        ps?.setString(12, episode.image)
+        ps?.setLong(13, episode.duration)
         return ps?.executeUpdate() == 1
     }
 

@@ -40,6 +40,8 @@ object Jais {
         if (!this.addPlatform(WakanimPlatform::class.java))
             JLogger.warning("Failed to add Wakanim platform")
 
+        // this.platforms.forEach { it.platform.checkLastNews() }
+        // this.platforms.forEach { it.platform.checkEpisodes() }
         this.checkEpisodes()
 
         JLogger.info("Running...")
@@ -68,10 +70,7 @@ object Jais {
                             episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
 
                             JLogger.info("New episode in database")
-                            JLogger.config("ID: ${episodeSQL?.id}")
-                            JLogger.config("EID: ${episodeSQL?.eId}")
-                            JLogger.config("Anime: ${episode.anime}")
-                            JLogger.config("Title: ${episodeSQL?.title}")
+                            JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
                         }
                     } else {
                         if (episode.title != episodeSQL.title || episode.url != episodeSQL.url || episode.image != episodeSQL.image || episode.duration != episodeSQL.duration) {
@@ -84,10 +83,7 @@ object Jais {
                                 episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
 
                                 JLogger.info("Update in database")
-                                JLogger.config("ID: ${episodeSQL?.id}")
-                                JLogger.config("EID: ${episodeSQL?.eId}")
-                                JLogger.config("Anime: ${episode.anime}")
-                                JLogger.config("Title: ${episodeSQL?.title}")
+                                JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
                             }
                         }
                     }

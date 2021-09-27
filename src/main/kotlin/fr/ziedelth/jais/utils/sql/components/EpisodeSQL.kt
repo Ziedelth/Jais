@@ -5,6 +5,7 @@
 package fr.ziedelth.jais.utils.sql.components
 
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.LangType
 
 data class EpisodeSQL(
     val id: Int,
@@ -13,8 +14,9 @@ data class EpisodeSQL(
     val animeId: Int,
     val releaseDate: String,
     val season: Int,
-    val number: String,
-    val type: EpisodeType,
+    val number: Int,
+    val episodeType: EpisodeType,
+    val langType: LangType,
     val eId: String,
     val title: String?,
     val url: String?,

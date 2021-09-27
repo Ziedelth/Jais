@@ -11,6 +11,7 @@ annotation class CountryHandler(
     val flag: String,
     val season: String,
     val episode: String,
+    val film: String,
     val subtitles: String,
     val dubbed: String
 )

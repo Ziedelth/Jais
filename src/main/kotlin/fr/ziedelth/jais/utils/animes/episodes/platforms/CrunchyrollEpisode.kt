@@ -10,6 +10,7 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 data class CrunchyrollEpisode(
@@ -33,7 +34,7 @@ data class CrunchyrollEpisode(
             this.country != null &&
             !this.pubDate.isNullOrBlank() &&
             !this.seriesTitle.isNullOrBlank() &&
-            !this.episodeNumber.isNullOrBlank() &&
+            !this.episodeNumber.isNullOrBlank() && this.episodeNumber.toLongOrNull() != null &&
             this.restriction != null && this.restriction.get("").asString.split(" ")
         .contains(this.country!!.restrictionEpisodes(this.platform!!)) &&
             !this.subtitleLanguages.isNullOrBlank() && this.subtitleLanguages.split(",")
@@ -48,8 +49,9 @@ data class CrunchyrollEpisode(
             releaseDate = ISO8601.fromCalendar2(this.pubDate)!!,
             anime = this.seriesTitle!!,
             season = this.season?.toLongOrNull() ?: 1,
-            number = this.episodeNumber!!,
-            type = if (this.subtitleLanguages!! == this.country!!.subtitlesEpisodes(this.platform!!)) EpisodeType.VOICE else EpisodeType.SUBTITLES,
+            number = this.episodeNumber?.toLongOrNull() ?: 1,
+            episodeType = EpisodeType.EPISODE,
+            langType = if (this.subtitleLanguages!! == this.country!!.subtitlesEpisodes(this.platform!!)) LangType.VOICE else LangType.SUBTITLES,
 
             eId = this.mediaId!!,
             title = this.episodeTitle,

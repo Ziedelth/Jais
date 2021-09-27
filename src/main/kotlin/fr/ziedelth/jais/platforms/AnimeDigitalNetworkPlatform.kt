@@ -4,7 +4,10 @@
 
 package fr.ziedelth.jais.platforms
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
@@ -23,13 +26,34 @@ import java.util.logging.Level
 @PlatformHandler(
     name = "Anime Digital Network",
     url = "https://animedigitalnetwork.fr/",
-    image = "https://ziedelth.fr/images/anime_digital_network.png",
+    image = "images/anime_digital_network.png",
     color = 0x0096FF,
     countries = [FranceCountry::class]
 )
 class AnimeDigitalNetworkPlatform : Platform() {
     override fun checkLastNews() {
-        TODO("Not yet implemented")
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val xmlMapper = XmlMapper()
+        val objectMapper = ObjectMapper()
+
+        this.getAllowedCountries().forEach { country ->
+            try {
+                val inputStream =
+                    URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.checkOnNewsURL(this)}").openStream()
+                val jsonObject: JsonObject? = gson.fromJson(
+                    objectMapper.writeValueAsString(xmlMapper.readTree(InputStreamReader(inputStream))),
+                    JsonObject::class.java
+                )
+
+                JLogger.config(gson.toJson(jsonObject))
+            } catch (exception: Exception) {
+                JLogger.log(
+                    Level.SEVERE,
+                    "Failed to get ${this.javaClass.simpleName} news : ${exception.message}",
+                    exception
+                )
+            }
+        }
     }
 
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {

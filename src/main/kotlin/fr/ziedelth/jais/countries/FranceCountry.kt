@@ -16,10 +16,18 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
     flag = "\uD83C\uDDEB\uD83C\uDDF7",
     season = "Saison",
     episode = "Épisode",
+    film = "Film",
     subtitles = "VOSTFR",
     dubbed = "VF"
 )
 class FranceCountry : Country {
+    override fun checkOnNewsURL(platform: Platform): String? {
+        return when (platform::class.java) {
+            AnimeDigitalNetworkPlatform::class.java -> "frFR"
+            else -> null
+        }
+    }
+
     override fun checkOnEpisodesURL(platform: Platform): String? {
         return when (platform::class.java) {
             AnimeDigitalNetworkPlatform::class.java -> "fr"
