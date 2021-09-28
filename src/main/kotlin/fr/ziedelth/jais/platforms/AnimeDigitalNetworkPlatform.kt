@@ -73,10 +73,7 @@ class AnimeDigitalNetworkPlatform : Platform() {
                     ?.mapNotNull { gson.fromJson(it, AnimeDigitalNetworkEpisode::class.java) }
                 episodesList?.forEach { it.platform = this; it.country = country }
                 episodesList = episodesList?.filter {
-                    it.isValid() && ISO8601.isSameDayUsingInstant(
-                        calendar,
-                        ISO8601.toCalendar1(it.releaseDate)
-                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
+                    it.isValid() && calendar.after(ISO8601.toCalendar1(it.releaseDate))
                 }?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }
 
                 episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }

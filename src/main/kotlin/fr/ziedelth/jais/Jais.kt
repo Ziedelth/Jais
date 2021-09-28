@@ -56,6 +56,8 @@ object Jais {
             val platformSQL = SQL.psui(connection, platformImpl.platformHandler)
 
             platformImpl.platform.checkEpisodes(calendar).forEach { episode ->
+                JLogger.config(episode.toString())
+
                 val countryImpl = this.getCountryInformation(episode.country)!!
                 val countrySQL = SQL.csui(connection, countryImpl.countryHandler)
                 val animeSQL = SQL.asi(connection, episode.anime, episode.releaseDate)
