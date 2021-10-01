@@ -13,7 +13,7 @@ object ISO8601 {
     private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
     private val sdf2 = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH)
 
-    fun fromCalendar(calendar: Calendar?): String? {
+    private fun fromCalendar(calendar: Calendar?): String? {
         if (calendar == null) return null
         val date = calendar.time
         val formatted = this.sdf1.format(date)

@@ -47,15 +47,13 @@ class CrunchyrollPlatform : Platform() {
                     JsonObject::class.java
                 )
                 inputStream.close()
-                var episodesList =
+                val episodesList =
                     (jsonObject?.get("channel") as JsonObject?)?.get("item")?.asJsonArray?.filter { it != null && it.isJsonObject }
                         ?.mapNotNull { gson.fromJson(it, CrunchyrollEpisode::class.java) }
                 episodesList?.forEach { it.platform = this; it.country = country }
-                episodesList = episodesList?.filter {
-                    it.isValid() && calendar.after(ISO8601.toCalendar2(it.pubDate))
-                }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }
-
-                episodesList?.mapNotNull { it.toEpisode() }?.let { list.addAll(it) }
+                episodesList?.filter { it.isValid() && calendar.after(ISO8601.toCalendar2(it.pubDate)) }
+                    ?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.mapNotNull { it.toEpisode() }
+                    ?.let { list.addAll(it) }
             } catch (exception: Exception) {
                 JLogger.log(
                     Level.SEVERE,

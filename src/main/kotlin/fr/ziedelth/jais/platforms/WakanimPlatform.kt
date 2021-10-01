@@ -24,6 +24,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.math.max
@@ -54,6 +55,8 @@ class WakanimPlatform : Platform() {
             try {
                 Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
                 driver = ChromeDriver(this.service, this.options)
+                driver.manage().timeouts().pageLoadTimeout(20L, TimeUnit.SECONDS)
+                driver.manage().timeouts().setScriptTimeout(20L, TimeUnit.SECONDS)
                 val wait = WebDriverWait(driver, 10L)
 
                 driver.get("https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false")
@@ -62,7 +65,7 @@ class WakanimPlatform : Platform() {
                     wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("body")))?.text?.split("\n")
                         ?.toMutableList()
                 bodyText?.removeAt(0)
-                var episodesList = mutableListOf<WakanimEpisode>()
+                val episodesList = mutableListOf<WakanimEpisode>()
 
                 if (!bodyText.isNullOrEmpty()) {
                     if (bodyText[0] == "Pas de nouveaux épisodes !") return@forEach
@@ -168,8 +171,6 @@ class WakanimPlatform : Platform() {
 
                                 episodesList.add(
                                     WakanimEpisode(
-                                        platform = this,
-                                        country = country,
                                         releaseDate = time,
                                         anime = anime,
                                         season = season,
@@ -187,11 +188,10 @@ class WakanimPlatform : Platform() {
                     }
                 }
 
-                episodesList = episodesList.filter {
-                    it.isValid() && calendar.after(ISO8601.toCalendar1(it.releaseDate))
-                }.sortedBy { ISO8601.toCalendar1(it.releaseDate) }.toMutableList()
-
-                episodesList.mapNotNull { it.toEpisode() }.let { list.addAll(it) }
+                episodesList.forEach { it.platform = this; it.country = country }
+                episodesList.filter { it.isValid() && calendar.after(ISO8601.toCalendar1(it.releaseDate)) }
+                    .sortedBy { ISO8601.toCalendar1(it.releaseDate) }.mapNotNull { it.toEpisode() }
+                    .let { list.addAll(it) }
             } catch (exception: Exception) {
                 JLogger.log(
                     Level.SEVERE,

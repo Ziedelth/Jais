@@ -26,7 +26,7 @@ object SQL {
     PLATFORMS
      */
 
-    fun getPlatformIsInDatabase(connection: Connection?, platformHandler: PlatformHandler): PlatformSQL? {
+    private fun getPlatformIsInDatabase(connection: Connection?, platformHandler: PlatformHandler): PlatformSQL? {
         val ps = connection?.prepareStatement("SELECT * FROM platforms WHERE name = ? LIMIT 1;")
         ps?.setString(1, platformHandler.name)
         val rs = ps?.executeQuery()
@@ -41,7 +41,7 @@ object SQL {
         return null
     }
 
-    fun insertPlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
+    private fun insertPlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
         val ps = connection?.prepareStatement("INSERT INTO platforms (name, url, image, color) VALUES (?, ?, ?, ?)")
         ps?.setString(1, platformHandler.name)
         ps?.setString(2, platformHandler.url)
@@ -50,7 +50,7 @@ object SQL {
         return ps?.executeUpdate() == 1
     }
 
-    fun updatePlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
+    private fun updatePlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
         val ps =
             connection?.prepareStatement("UPDATE platforms SET url = ?, image = ?, color = ? WHERE name = ? LIMIT 1;")
         ps?.setString(1, platformHandler.url)
@@ -87,7 +87,7 @@ object SQL {
     COUNTRIES
      */
 
-    fun getCountryIsInDatabase(connection: Connection?, countryHandler: CountryHandler): CountrySQL? {
+    private fun getCountryIsInDatabase(connection: Connection?, countryHandler: CountryHandler): CountrySQL? {
         val ps = connection?.prepareStatement("SELECT * FROM countries WHERE name = ? LIMIT 1;")
         ps?.setString(1, countryHandler.name)
         val rs = ps?.executeQuery()
@@ -106,7 +106,7 @@ object SQL {
         return null
     }
 
-    fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
+    private fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
             connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, special, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         ps?.setString(1, countryHandler.name)
@@ -120,7 +120,7 @@ object SQL {
         return ps?.executeUpdate() == 1
     }
 
-    fun updateCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
+    private fun updateCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
             connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, special = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
         ps?.setString(1, countryHandler.flag)
@@ -165,7 +165,7 @@ object SQL {
     ANIMES
      */
 
-    fun getAnimeIsInDatabase(connection: Connection?, name: String): AnimeSQL? {
+    private fun getAnimeIsInDatabase(connection: Connection?, name: String): AnimeSQL? {
         val ps = connection?.prepareStatement("SELECT * FROM animes WHERE name = ? LIMIT 1;")
         ps?.setString(1, name)
         val rs = ps?.executeQuery()
@@ -179,7 +179,7 @@ object SQL {
         return null
     }
 
-    fun insertAnimeInDatabase(connection: Connection?, name: String, releaseDate: String): Boolean {
+    private fun insertAnimeInDatabase(connection: Connection?, name: String, releaseDate: String): Boolean {
         val ps = connection?.prepareStatement("INSERT INTO animes (name, releaseDate, image) VALUES (?, ?, NULL)")
         ps?.setString(1, name)
         ps?.setString(2, releaseDate)
@@ -267,14 +267,16 @@ object SQL {
         connection: Connection?,
         platformSQL: PlatformSQL,
         countrySQL: CountrySQL,
-        animeSQL: AnimeSQL
+        animeSQL: AnimeSQL,
+        season: Long
     ): Long {
         val ps =
-            connection?.prepareStatement("SELECT number FROM episodes WHERE platformId = ? AND countryId = ? AND animeId = ? AND episodeType = ? ORDER BY releaseDate DESC LIMIT 1;")
+            connection?.prepareStatement("SELECT number FROM episodes WHERE platformId = ? AND countryId = ? AND animeId = ? AND season = ? AND episodeType = ? ORDER BY releaseDate DESC LIMIT 1;")
         ps?.setInt(1, platformSQL.id)
         ps?.setInt(2, countrySQL.id)
         ps?.setInt(3, animeSQL.id)
-        ps?.setString(4, EpisodeType.SPECIAL.name)
+        ps?.setLong(4, season)
+        ps?.setString(5, EpisodeType.SPECIAL.name)
         val rs = ps?.executeQuery()
 
         if (rs?.next() == true) return rs.getLong("number")

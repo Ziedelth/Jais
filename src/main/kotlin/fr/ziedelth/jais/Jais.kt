@@ -68,7 +68,7 @@ object Jais {
 
                     if (episodeSQL == null) {
                         if (episode.episodeType == EpisodeType.SPECIAL && episode.number == -1L) episode.number =
-                            SQL.lastSpecialEpisode(connection, platformSQL, countrySQL, animeSQL) + 1
+                            SQL.lastSpecialEpisode(connection, platformSQL, countrySQL, animeSQL, episode.season) + 1
 
                         if (!SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode))
                             JLogger.warning("Failed to insert episode in database")
