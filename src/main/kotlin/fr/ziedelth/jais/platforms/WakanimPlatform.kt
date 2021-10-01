@@ -15,6 +15,7 @@ import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import org.openqa.selenium.By
+import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
@@ -31,7 +32,7 @@ import kotlin.math.pow
 @PlatformHandler(
     name = "Wakanim",
     url = "https://wakanim.tv/",
-    image = "images/wakanim.png",
+    image = "images/wakanim.jpg",
     color = 0xE3474B,
     countries = [FranceCountry::class]
 )
@@ -89,22 +90,36 @@ class WakanimPlatform : Platform() {
 
                             driver.get(url)
 
-                            val cardEpisodeElement = if (wakanimType.equals(
-                                    "episode",
-                                    true
-                                )
-                            ) wait.until(
-                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                    By.className("slider_list"),
-                                    By.className("currentEp")
-                                )
-                            ).firstOrNull() else wait.until(
-                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                    By.className(
-                                        "list-episodes-container"
-                                    ), By.className("slider_item")
-                                )
-                            ).lastOrNull()
+                            try {
+                                driver.findElementByClassName("css-1fxzzmg")?.click()
+                            } catch (exception: Exception) {
+                            }
+
+                            val cardEpisodeElement: WebElement? = if (wakanimType.equals("episode", true)) {
+                                // IN EPISODES
+                                wait.until(
+                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                        By.className("slider_list"),
+                                        By.className("currentEp")
+                                    )
+                                ).firstOrNull()
+                            } else {
+                                try {
+                                    val noEpisodes = driver.findElementByClassName("NoEpisodes")
+                                    if (noEpisodes != null) continue
+                                } catch (exception: Exception) {
+                                }
+
+                                wait.until(
+                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                        By.className("list-episodes-container"),
+                                        By.className("slider_item")
+                                    )
+                                ).lastOrNull()
+                            }
+
+                            if (cardEpisodeElement == null) continue
+
                             val cardNumber = wait.until(
                                 ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                     cardEpisodeElement,

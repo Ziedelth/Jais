@@ -60,7 +60,7 @@ object SQL {
         return ps?.executeUpdate() == 1
     }
 
-    fun psui(connection: Connection?, platformHandler: PlatformHandler): PlatformSQL? {
+    fun insertOrUpdatePlatform(connection: Connection?, platformHandler: PlatformHandler): PlatformSQL? {
         val platformSQL = getPlatformIsInDatabase(connection, platformHandler)
 
         if (platformSQL != null) {
@@ -99,6 +99,7 @@ object SQL {
             season = rs.getString("season"),
             episode = rs.getString("episode"),
             film = rs.getString("film"),
+            special = rs.getString("special"),
             subtitles = rs.getString("subtitles"),
             dubbed = rs.getString("dubbed"),
         )
@@ -107,31 +108,33 @@ object SQL {
 
     fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
-            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, special, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         ps?.setString(1, countryHandler.name)
         ps?.setString(2, countryHandler.flag)
         ps?.setString(3, countryHandler.season)
         ps?.setString(4, countryHandler.episode)
         ps?.setString(5, countryHandler.film)
-        ps?.setString(6, countryHandler.subtitles)
-        ps?.setString(7, countryHandler.dubbed)
+        ps?.setString(6, countryHandler.special)
+        ps?.setString(7, countryHandler.subtitles)
+        ps?.setString(8, countryHandler.dubbed)
         return ps?.executeUpdate() == 1
     }
 
     fun updateCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
-            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
+            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, special = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
         ps?.setString(1, countryHandler.flag)
         ps?.setString(2, countryHandler.season)
         ps?.setString(3, countryHandler.episode)
         ps?.setString(4, countryHandler.film)
-        ps?.setString(5, countryHandler.subtitles)
-        ps?.setString(6, countryHandler.dubbed)
-        ps?.setString(7, countryHandler.name)
+        ps?.setString(5, countryHandler.special)
+        ps?.setString(6, countryHandler.subtitles)
+        ps?.setString(7, countryHandler.dubbed)
+        ps?.setString(8, countryHandler.name)
         return ps?.executeUpdate() == 1
     }
 
-    fun csui(connection: Connection?, countryHandler: CountryHandler): CountrySQL? {
+    fun insertOrUpdateCountry(connection: Connection?, countryHandler: CountryHandler): CountrySQL? {
         val countrySQL = getCountryIsInDatabase(connection, countryHandler)
 
         if (countrySQL != null) {
@@ -139,6 +142,7 @@ object SQL {
                 countryHandler.season != countrySQL.season ||
                 countryHandler.episode != countrySQL.episode ||
                 countryHandler.film != countrySQL.film ||
+                countryHandler.special != countrySQL.special ||
                 countryHandler.subtitles != countrySQL.subtitles ||
                 countryHandler.dubbed != countrySQL.dubbed
             )
@@ -182,7 +186,7 @@ object SQL {
         return ps?.executeUpdate() == 1
     }
 
-    fun asi(connection: Connection?, name: String, releaseDate: String): AnimeSQL? {
+    fun insertOrUpdateAnime(connection: Connection?, name: String, releaseDate: String): AnimeSQL? {
         val animeSQL = getAnimeIsInDatabase(connection, name)
 
         if (animeSQL == null) {
@@ -257,5 +261,23 @@ object SQL {
         ps?.setLong(4, episode.duration)
         ps?.setString(5, episode.eId)
         return ps?.executeUpdate() == 1
+    }
+
+    fun lastSpecialEpisode(
+        connection: Connection?,
+        platformSQL: PlatformSQL,
+        countrySQL: CountrySQL,
+        animeSQL: AnimeSQL
+    ): Long {
+        val ps =
+            connection?.prepareStatement("SELECT number FROM episodes WHERE platformId = ? AND countryId = ? AND animeId = ? AND episodeType = ? ORDER BY releaseDate DESC LIMIT 1;")
+        ps?.setInt(1, platformSQL.id)
+        ps?.setInt(2, countrySQL.id)
+        ps?.setInt(3, animeSQL.id)
+        ps?.setString(4, EpisodeType.SPECIAL.name)
+        val rs = ps?.executeQuery()
+
+        if (rs?.next() == true) return rs.getLong("number")
+        return 0
     }
 }

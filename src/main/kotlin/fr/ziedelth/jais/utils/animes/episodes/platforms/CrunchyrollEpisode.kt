@@ -34,7 +34,7 @@ data class CrunchyrollEpisode(
             this.country != null &&
             !this.pubDate.isNullOrBlank() &&
             !this.seriesTitle.isNullOrBlank() &&
-            !this.episodeNumber.isNullOrBlank() && this.episodeNumber.toLongOrNull() != null &&
+            !this.episodeNumber.isNullOrBlank() &&
             this.restriction != null && this.restriction.get("").asString.split(" ")
         .contains(this.country!!.restrictionEpisodes(this.platform!!)) &&
             !this.subtitleLanguages.isNullOrBlank() && this.subtitleLanguages.split(",")
@@ -49,8 +49,10 @@ data class CrunchyrollEpisode(
             releaseDate = ISO8601.fromCalendar2(this.pubDate)!!,
             anime = this.seriesTitle!!,
             season = this.season?.toLongOrNull() ?: 1,
-            number = this.episodeNumber?.toLongOrNull() ?: 1,
-            episodeType = EpisodeType.EPISODE,
+            number = this.episodeNumber?.toLongOrNull() ?: -1,
+            episodeType = if ((this.episodeNumber?.toLongOrNull()
+                    ?: -1L) != -1L
+            ) EpisodeType.EPISODE else EpisodeType.SPECIAL,
             langType = if (this.subtitleLanguages!! == this.country!!.subtitlesEpisodes(this.platform!!)) LangType.VOICE else LangType.SUBTITLES,
 
             eId = this.mediaId!!,

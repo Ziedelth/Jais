@@ -12,6 +12,7 @@ import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
+import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
@@ -53,19 +54,22 @@ object Jais {
         val connection = SQL.getConnection()
 
         this.platforms.forEach { platformImpl ->
-            val platformSQL = SQL.psui(connection, platformImpl.platformHandler)
+            val platformSQL = SQL.insertOrUpdatePlatform(connection, platformImpl.platformHandler)
 
             platformImpl.platform.checkEpisodes(calendar).forEach { episode ->
                 JLogger.config(episode.toString())
 
                 val countryImpl = this.getCountryInformation(episode.country)!!
-                val countrySQL = SQL.csui(connection, countryImpl.countryHandler)
-                val animeSQL = SQL.asi(connection, episode.anime, episode.releaseDate)
+                val countrySQL = SQL.insertOrUpdateCountry(connection, countryImpl.countryHandler)
+                val animeSQL = SQL.insertOrUpdateAnime(connection, episode.anime, episode.releaseDate)
 
                 if (platformSQL != null && countrySQL != null && animeSQL != null) {
                     var episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
 
                     if (episodeSQL == null) {
+                        if (episode.episodeType == EpisodeType.SPECIAL && episode.number == -1L) episode.number =
+                            SQL.lastSpecialEpisode(connection, platformSQL, countrySQL, animeSQL) + 1
+
                         if (!SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode))
                             JLogger.warning("Failed to insert episode in database")
                         else {

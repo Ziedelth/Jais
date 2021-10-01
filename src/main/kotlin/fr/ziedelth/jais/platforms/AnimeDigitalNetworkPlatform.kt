@@ -26,7 +26,7 @@ import java.util.logging.Level
 @PlatformHandler(
     name = "Anime Digital Network",
     url = "https://animedigitalnetwork.fr/",
-    image = "images/anime_digital_network.png",
+    image = "images/anime_digital_network.jpg",
     color = 0x0096FF,
     countries = [FranceCountry::class]
 )

@@ -17,6 +17,7 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
     season = "Saison",
     episode = "Épisode",
     film = "Film",
+    special = "Spécial",
     subtitles = "VOSTFR",
     dubbed = "VF"
 )

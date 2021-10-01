@@ -11,6 +11,7 @@ data class CountrySQL(
     val season: String?,
     val episode: String?,
     val film: String?,
+    val special: String?,
     val subtitles: String?,
     val dubbed: String?,
 )

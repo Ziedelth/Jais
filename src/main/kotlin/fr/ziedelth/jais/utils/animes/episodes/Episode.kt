@@ -12,7 +12,7 @@ data class Episode(
     val releaseDate: String,
     val anime: String,
     val season: Long,
-    val number: Long,
+    var number: Long,
     val episodeType: EpisodeType,
     val langType: LangType,
 
@@ -33,6 +33,7 @@ data class Episode(
 enum class EpisodeType {
     EPISODE,
     FILM,
+    SPECIAL,
     ;
 }
 

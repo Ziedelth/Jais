@@ -23,7 +23,7 @@ import java.util.logging.Level
 @PlatformHandler(
     name = "Crunchyroll",
     url = "https://www.crunchyroll.com/",
-    image = "images/crunchyroll.png",
+    image = "images/crunchyroll.jpg",
     color = 0xFF6C00,
     countries = [FranceCountry::class]
 )
