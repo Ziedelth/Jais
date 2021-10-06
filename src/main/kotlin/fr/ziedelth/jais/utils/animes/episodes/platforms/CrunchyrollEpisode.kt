@@ -27,7 +27,7 @@ data class CrunchyrollEpisode(
     val mediaId: String?,
     val episodeTitle: String?,
     val thumbnail: Array<Thumbnail>?,
-    val duration: String?,
+    val duration: Long? = null,
     val link: String?,
 ) {
     var platformHandler: PlatformHandler? = null
@@ -50,13 +50,13 @@ data class CrunchyrollEpisode(
             !this.episodeNumber.isNullOrBlank() &&
             this.restriction != null && this.restriction.get("").asString.split(" ")
         .contains(this.country!!.restrictionEpisodes(this.platform!!)) &&
-            this.title?.contains(
+            (this.title?.contains(
                 "(${this.countryHandler?.dubbed})",
                 true
             ) == true || (!this.subtitleLanguages.isNullOrBlank() && this.subtitleLanguages.split(",")
-        .contains(this.country!!.subtitlesEpisodes(this.platform!!))) &&
+                .contains(this.country!!.subtitlesEpisodes(this.platform!!)))) &&
             !this.mediaId.isNullOrBlank() &&
-            !this.duration.isNullOrBlank() && this.duration.toLongOrNull() != null
+            this.duration != null
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -79,7 +79,7 @@ data class CrunchyrollEpisode(
             title = this.episodeTitle,
             url = this.link,
             image = this.thumbnail?.firstOrNull()?.url,
-            duration = this.duration!!.toLong(),
+            duration = this.duration!!,
         ) else null
     }
 
@@ -132,7 +132,9 @@ data class CrunchyrollEpisode(
         return result
     }
 
-
+    override fun toString(): String {
+        return "CrunchyrollEpisode(title=$title, pubDate=$pubDate, seriesTitle=$seriesTitle, season=$season, episodeNumber=$episodeNumber, restriction=$restriction, subtitleLanguages=$subtitleLanguages, mediaId=$mediaId, episodeTitle=$episodeTitle, thumbnail=${thumbnail?.contentToString()}, duration=$duration, link=$link, platformHandler=$platformHandler, platform=$platform, countryHandler=$countryHandler, country=$country)"
+    }
 }
 
 data class Thumbnail(

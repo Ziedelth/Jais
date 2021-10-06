@@ -113,7 +113,9 @@ data class AnimeDigitalNetworkEpisode(
         return result
     }
 
-
+    override fun toString(): String {
+        return "AnimeDigitalNetworkEpisode(releaseDate=$releaseDate, show=$show, season=$season, shortNumber=$shortNumber, languages=${languages?.contentToString()}, id=$id, name=$name, image=$image, duration=$duration, url=$url, platformHandler=$platformHandler, platform=$platform, countryHandler=$countryHandler, country=$country)"
+    }
 }
 
 data class Show(

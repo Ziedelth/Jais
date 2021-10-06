@@ -16,6 +16,7 @@ import fr.ziedelth.jais.utils.sql.components.EpisodeSQL
 import fr.ziedelth.jais.utils.sql.components.PlatformSQL
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.Statement
 
 object SQL {
     fun getConnection(): Connection? {
@@ -27,36 +28,42 @@ object SQL {
      */
 
     private fun getPlatformIsInDatabase(connection: Connection?, platformHandler: PlatformHandler): PlatformSQL? {
-        val ps = connection?.prepareStatement("SELECT * FROM platforms WHERE name = ? LIMIT 1;")
-        ps?.setString(1, platformHandler.name)
+        val ps = connection?.prepareStatement("SELECT id FROM platforms WHERE LOWER(name) = ? LIMIT 1;")
+        ps?.setString(1, platformHandler.name.lowercase())
         val rs = ps?.executeQuery()
 
         if (rs?.next() == true) return PlatformSQL(
             id = rs.getInt("id"),
-            name = rs.getString("name"),
-            url = rs.getString("url"),
-            image = rs.getString("image"),
-            color = rs.getString("color"),
+            platformHandler = platformHandler
         )
         return null
     }
 
-    private fun insertPlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
-        val ps = connection?.prepareStatement("INSERT INTO platforms (name, url, image, color) VALUES (?, ?, ?, ?)")
+    private fun insertPlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Int {
+        val ps = connection?.prepareStatement(
+            "INSERT INTO platforms (name, url, image, color) VALUES (?, ?, ?, ?);",
+            Statement.RETURN_GENERATED_KEYS
+        )
         ps?.setString(1, platformHandler.name)
         ps?.setString(2, platformHandler.url)
         ps?.setString(3, platformHandler.image)
         ps?.setString(4, platformHandler.color.toString(16))
-        return ps?.executeUpdate() == 1
+        val affectedRows = ps?.executeUpdate() == 1
+
+        return if (affectedRows) {
+            val rs = ps?.generatedKeys
+            if (rs?.next() == true) rs.getInt("id")
+            else 0
+        } else 0
     }
 
     private fun updatePlatformInDatabase(connection: Connection?, platformHandler: PlatformHandler): Boolean {
         val ps =
-            connection?.prepareStatement("UPDATE platforms SET url = ?, image = ?, color = ? WHERE name = ? LIMIT 1;")
+            connection?.prepareStatement("UPDATE platforms SET url = ?, image = ?, color = ? WHERE LOWER(name) = ? LIMIT 1;")
         ps?.setString(1, platformHandler.url)
         ps?.setString(2, platformHandler.image)
         ps?.setString(3, platformHandler.color.toString(16))
-        ps?.setString(4, platformHandler.name)
+        ps?.setString(4, platformHandler.name.lowercase())
         return ps?.executeUpdate() == 1
     }
 
@@ -67,17 +74,18 @@ object SQL {
             if (platformHandler.url != platformSQL.url || platformHandler.image != platformSQL.image || platformHandler.color.toString(
                     16
                 ) != platformSQL.color
-            )
+            ) {
                 if (!updatePlatformInDatabase(
                         connection,
                         platformHandler
                     )
                 ) JLogger.warning("Failed to update platform in database")
+                else return getPlatformIsInDatabase(connection, platformHandler)
+            }
         } else {
-            if (!insertPlatformInDatabase(connection, platformHandler))
-                JLogger.warning("Failed to insert platform in database")
-            else
-                return getPlatformIsInDatabase(connection, platformHandler)
+            val id = insertPlatformInDatabase(connection, platformHandler)
+            if (id == 0) JLogger.warning("Failed to insert platform in database")
+            else return PlatformSQL(id = id, platformHandler = platformHandler)
         }
 
         return platformSQL
@@ -88,27 +96,17 @@ object SQL {
      */
 
     private fun getCountryIsInDatabase(connection: Connection?, countryHandler: CountryHandler): CountrySQL? {
-        val ps = connection?.prepareStatement("SELECT * FROM countries WHERE name = ? LIMIT 1;")
-        ps?.setString(1, countryHandler.name)
+        val ps = connection?.prepareStatement("SELECT id FROM countries WHERE LOWER(name) = ? LIMIT 1;")
+        ps?.setString(1, countryHandler.name.lowercase())
         val rs = ps?.executeQuery()
 
-        if (rs?.next() == true) return CountrySQL(
-            id = rs.getInt("id"),
-            name = rs.getString("name"),
-            flag = rs.getString("flag"),
-            season = rs.getString("season"),
-            episode = rs.getString("episode"),
-            film = rs.getString("film"),
-            special = rs.getString("special"),
-            subtitles = rs.getString("subtitles"),
-            dubbed = rs.getString("dubbed"),
-        )
+        if (rs?.next() == true) return CountrySQL(id = rs.getInt("id"), countryHandler = countryHandler)
         return null
     }
 
-    private fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
+    private fun insertCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Int {
         val ps =
-            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, special, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            connection?.prepareStatement("INSERT INTO countries (name, flag, season, episode, film, special, subtitles, dubbed) VALUES (?, ?, ?, ?, ?, ?, ?, ?);")
         ps?.setString(1, countryHandler.name)
         ps?.setString(2, countryHandler.flag)
         ps?.setString(3, countryHandler.season)
@@ -117,12 +115,18 @@ object SQL {
         ps?.setString(6, countryHandler.special)
         ps?.setString(7, countryHandler.subtitles)
         ps?.setString(8, countryHandler.dubbed)
-        return ps?.executeUpdate() == 1
+        val affectedRows = ps?.executeUpdate() == 1
+
+        return if (affectedRows) {
+            val rs = ps?.generatedKeys
+            if (rs?.next() == true) rs.getInt("id")
+            else 0
+        } else 0
     }
 
     private fun updateCountryInDatabase(connection: Connection?, countryHandler: CountryHandler): Boolean {
         val ps =
-            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, special = ?, subtitles = ?, dubbed = ? WHERE name = ? LIMIT 1;")
+            connection?.prepareStatement("UPDATE countries SET flag = ?, season = ?, episode = ?, film = ?, special = ?, subtitles = ?, dubbed = ? WHERE LOWER(name) = ? LIMIT 1;")
         ps?.setString(1, countryHandler.flag)
         ps?.setString(2, countryHandler.season)
         ps?.setString(3, countryHandler.episode)
@@ -130,7 +134,7 @@ object SQL {
         ps?.setString(5, countryHandler.special)
         ps?.setString(6, countryHandler.subtitles)
         ps?.setString(7, countryHandler.dubbed)
-        ps?.setString(8, countryHandler.name)
+        ps?.setString(8, countryHandler.name.lowercase())
         return ps?.executeUpdate() == 1
     }
 
@@ -138,24 +142,18 @@ object SQL {
         val countrySQL = getCountryIsInDatabase(connection, countryHandler)
 
         if (countrySQL != null) {
-            if (countryHandler.flag != countrySQL.flag ||
-                countryHandler.season != countrySQL.season ||
-                countryHandler.episode != countrySQL.episode ||
-                countryHandler.film != countrySQL.film ||
-                countryHandler.special != countrySQL.special ||
-                countryHandler.subtitles != countrySQL.subtitles ||
-                countryHandler.dubbed != countrySQL.dubbed
-            )
+            if (countryHandler.flag != countrySQL.flag || countryHandler.season != countrySQL.season || countryHandler.episode != countrySQL.episode || countryHandler.film != countrySQL.film || countryHandler.special != countrySQL.special || countryHandler.subtitles != countrySQL.subtitles || countryHandler.dubbed != countrySQL.dubbed) {
                 if (!updateCountryInDatabase(
                         connection,
                         countryHandler
                     )
                 ) JLogger.warning("Failed to update country in database")
+                else return getCountryIsInDatabase(connection, countryHandler)
+            }
         } else {
-            if (!insertCountryInDatabase(connection, countryHandler))
-                JLogger.warning("Failed to insert country in database")
-            else
-                return getCountryIsInDatabase(connection, countryHandler)
+            val id = insertCountryInDatabase(connection, countryHandler)
+            if (id == 0) JLogger.warning("Failed to insert country in database")
+            else return CountrySQL(id = id, countryHandler = countryHandler)
         }
 
         return countrySQL
@@ -166,8 +164,8 @@ object SQL {
      */
 
     private fun getAnimeIsInDatabase(connection: Connection?, name: String): AnimeSQL? {
-        val ps = connection?.prepareStatement("SELECT * FROM animes WHERE name = ? LIMIT 1;")
-        ps?.setString(1, name)
+        val ps = connection?.prepareStatement("SELECT * FROM animes WHERE LOWER(name) = ? LIMIT 1;")
+        ps?.setString(1, name.lowercase())
         val rs = ps?.executeQuery()
 
         if (rs?.next() == true) return AnimeSQL(
@@ -179,21 +177,29 @@ object SQL {
         return null
     }
 
-    private fun insertAnimeInDatabase(connection: Connection?, name: String, releaseDate: String): Boolean {
-        val ps = connection?.prepareStatement("INSERT INTO animes (name, releaseDate, image) VALUES (?, ?, NULL)")
+    private fun insertAnimeInDatabase(connection: Connection?, name: String, releaseDate: String): Int {
+        val ps = connection?.prepareStatement(
+            "INSERT INTO animes (name, releaseDate, image) VALUES (?, ?, NULL);",
+            Statement.RETURN_GENERATED_KEYS
+        )
         ps?.setString(1, name)
         ps?.setString(2, releaseDate)
-        return ps?.executeUpdate() == 1
+        val affectedRows = ps?.executeUpdate() == 1
+
+        return if (affectedRows) {
+            val rs = ps?.generatedKeys
+            if (rs?.next() == true) rs.getInt("id")
+            else 0
+        } else 0
     }
 
     fun insertOrUpdateAnime(connection: Connection?, name: String, releaseDate: String): AnimeSQL? {
         val animeSQL = getAnimeIsInDatabase(connection, name)
 
         if (animeSQL == null) {
-            if (!insertAnimeInDatabase(connection, name, releaseDate))
-                JLogger.warning("Failed to insert anime in database")
-            else
-                return getAnimeIsInDatabase(connection, name)
+            val id = insertAnimeInDatabase(connection, name, releaseDate)
+            if (id == 0) JLogger.warning("Failed to insert anime in database")
+            else return AnimeSQL(id = id, name = name, releaseDate = releaseDate, image = null)
         }
 
         return animeSQL
@@ -204,8 +210,8 @@ object SQL {
      */
 
     fun getEpisodeIsInDatabase(connection: Connection?, episode: Episode): EpisodeSQL? {
-        val ps = connection?.prepareStatement("SELECT * FROM episodes WHERE eId = ? LIMIT 1;")
-        ps?.setString(1, episode.eId)
+        val ps = connection?.prepareStatement("SELECT * FROM episodes WHERE LOWER(eId) = ? LIMIT 1;")
+        ps?.setString(1, episode.eId.lowercase())
         val rs = ps?.executeQuery()
 
         if (rs?.next() == true) return EpisodeSQL(
@@ -214,8 +220,8 @@ object SQL {
             countryId = rs.getInt("countryId"),
             animeId = rs.getInt("animeId"),
             releaseDate = rs.getString("releaseDate"),
-            season = rs.getInt("season"),
-            number = rs.getInt("number"),
+            season = rs.getLong("season"),
+            number = rs.getLong("number"),
             episodeType = EpisodeType.valueOf(rs.getString("episodeType")),
             langType = LangType.valueOf(rs.getString("langType")),
             eId = rs.getString("eId"),
@@ -233,9 +239,11 @@ object SQL {
         countrySQL: CountrySQL,
         animeSQL: AnimeSQL,
         episode: Episode
-    ): Boolean {
-        val ps =
-            connection?.prepareStatement("INSERT INTO episodes (platformId, countryId, animeId, releaseDate, season, number, episodeType, langType, eId, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    ): Int {
+        val ps = connection?.prepareStatement(
+            "INSERT INTO episodes (platformId, countryId, animeId, releaseDate, season, number, episodeType, langType, eId, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+            Statement.RETURN_GENERATED_KEYS
+        )
         ps?.setInt(1, platformSQL.id)
         ps?.setInt(2, countrySQL.id)
         ps?.setInt(3, animeSQL.id)
@@ -249,17 +257,23 @@ object SQL {
         ps?.setString(11, episode.url)
         ps?.setString(12, episode.image)
         ps?.setLong(13, episode.duration)
-        return ps?.executeUpdate() == 1
+        val affectedRows = ps?.executeUpdate() == 1
+
+        return if (affectedRows) {
+            val rs = ps?.generatedKeys
+            if (rs?.next() == true) rs.getInt("id")
+            else 0
+        } else 0
     }
 
     fun updateEpisodeInDatabase(connection: Connection?, episode: Episode): Boolean {
         val ps =
-            connection?.prepareStatement("UPDATE episodes SET title = ?, url = ?, image = ?, duration = ? WHERE eId = ? LIMIT 1;")
+            connection?.prepareStatement("UPDATE episodes SET title = ?, url = ?, image = ?, duration = ? WHERE LOWER(eId) = ? LIMIT 1;")
         ps?.setString(1, episode.title)
         ps?.setString(2, episode.url)
         ps?.setString(3, episode.image)
         ps?.setLong(4, episode.duration)
-        ps?.setString(5, episode.eId)
+        ps?.setString(5, episode.eId.lowercase())
         return ps?.executeUpdate() == 1
     }
 

@@ -9,21 +9,27 @@ import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.JThread
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
+import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.sql.SQL
+import fr.ziedelth.jais.utils.sql.components.EpisodeSQL
 import java.util.*
+import java.util.logging.Level
 import kotlin.reflect.KClass
 
 object Jais {
-    private var isRunning = true
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
+    private val comparator =
+        Comparator.comparing(Episode::anime).thenComparing(Episode::releaseDate).thenComparing(Episode::season)
+            .thenComparing(Episode::number)
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -41,63 +47,80 @@ object Jais {
         if (!this.addPlatform(WakanimPlatform::class.java))
             JLogger.warning("Failed to add Wakanim platform")
 
-        // this.platforms.forEach { it.platform.checkLastNews() }
         // this.platforms.forEach { it.platform.checkEpisodes() }
-        this.checkEpisodes()
 
-        JLogger.info("Running...")
-        while (this.isRunning)
-            Thread.sleep(25)
+        JThread.start({
+            JLogger.info("Checking episodes...")
+            this.checkEpisodes()
+            JLogger.info("All episodes are checked!")
+        }, 120000L)
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
-        val connection = SQL.getConnection()
 
-        this.platforms.forEach { platformImpl ->
-            val platformSQL = SQL.insertOrUpdatePlatform(connection, platformImpl.platformHandler)
+        try {
+            val connection = SQL.getConnection()
 
-            platformImpl.platform.checkEpisodes(calendar).forEach { episode ->
-                JLogger.config(episode.toString())
+            this.platforms.forEach { platformImpl ->
+                val platformSQL = SQL.insertOrUpdatePlatform(connection, platformImpl.platformHandler)
 
-                val countryImpl = this.getCountryInformation(episode.country)!!
-                val countrySQL = SQL.insertOrUpdateCountry(connection, countryImpl.countryHandler)
-                val animeSQL = SQL.insertOrUpdateAnime(connection, episode.anime, episode.releaseDate)
+                platformImpl.platform.checkEpisodes(calendar).toList().stream().sorted(this.comparator)
+                    .forEach { episode ->
+                        val countryImpl = this.getCountryInformation(episode.country)!!
+                        val countrySQL = SQL.insertOrUpdateCountry(connection, countryImpl.countryHandler)
+                        val animeSQL = SQL.insertOrUpdateAnime(connection, episode.anime, episode.releaseDate)
 
-                if (platformSQL != null && countrySQL != null && animeSQL != null) {
-                    var episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+                        if (platformSQL != null && countrySQL != null && animeSQL != null) {
+                            var episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
 
-                    if (episodeSQL == null) {
-                        if (episode.episodeType == EpisodeType.SPECIAL && episode.number == -1L) episode.number =
-                            SQL.lastSpecialEpisode(connection, platformSQL, countrySQL, animeSQL, episode.season) + 1
+                            if (episodeSQL == null) {
+                                if (episode.episodeType == EpisodeType.SPECIAL && episode.number == -1L) episode.number =
+                                    SQL.lastSpecialEpisode(
+                                        connection,
+                                        platformSQL,
+                                        countrySQL,
+                                        animeSQL,
+                                        episode.season
+                                    ) + 1
 
-                        if (!SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode))
-                            JLogger.warning("Failed to insert episode in database")
-                        else {
-                            episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+                                val id =
+                                    SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode)
+                                if (id == 0) JLogger.warning("Failed to insert episode in database")
+                                else {
+                                    episodeSQL = EpisodeSQL(
+                                        id = id,
+                                        platformSQL = platformSQL,
+                                        countrySQL = countrySQL,
+                                        animeSQL = animeSQL,
+                                        episode = episode
+                                    )
 
-                            JLogger.info("New episode in database")
-                            JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
-                        }
-                    } else {
-                        if (episode.title != episodeSQL.title || episode.url != episodeSQL.url || episode.image != episodeSQL.image || episode.duration != episodeSQL.duration) {
-                            if (!SQL.updateEpisodeInDatabase(
-                                    connection,
-                                    episode
-                                )
-                            ) JLogger.warning("Failed to update episode in database")
-                            else {
-                                episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
+                                    JLogger.info("New episode in database")
+                                    JLogger.config("ID: ${episodeSQL.id} | EID: ${episodeSQL.eId} | Anime: ${episode.anime} | Title: ${episodeSQL.title} | Episode type: ${episodeSQL.episodeType} | Lang type: ${episodeSQL.langType}")
+                                }
+                            } else {
+                                if (episode.title != episodeSQL.title || episode.url != episodeSQL.url || episode.image != episodeSQL.image || episode.duration != episodeSQL.duration) {
+                                    if (!SQL.updateEpisodeInDatabase(
+                                            connection,
+                                            episode
+                                        )
+                                    ) JLogger.warning("Failed to update episode in database")
+                                    else {
+                                        episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
 
-                                JLogger.info("Update in database")
-                                JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
+                                        JLogger.info("Update in database")
+                                        JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
+                                    }
+                                }
                             }
                         }
                     }
-                }
             }
-        }
 
-        connection?.close()
+            connection?.close()
+        } catch (exception: Exception) {
+            JLogger.log(Level.WARNING, "Error on checking episodes", exception)
+        }
     }
 
     private fun addCountry(country: Class<out Country>): Boolean {
@@ -145,15 +168,6 @@ object Jais {
 
     private fun getCountryInformation(country: KClass<out Country>?): CountryImpl? {
         return this.countries.firstOrNull { it.country::class.java == country?.java }
-    }
-
-    fun getPlatformInformation(platform: String?): PlatformImpl? {
-        return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
-            it.platformHandler.name.equals(
-                platform,
-                true
-            )
-        } else null
     }
 
     fun getPlatformInformation(platform: Platform?): PlatformImpl? {

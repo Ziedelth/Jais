@@ -38,7 +38,7 @@ import kotlin.math.pow
     countries = [FranceCountry::class]
 )
 class WakanimPlatform : Platform() {
-    private val options = ChromeOptions().setHeadless(true)
+    private val options = ChromeOptions().setHeadless(true).setProxy(null)
     private val service = ChromeDriverService.Builder().withSilent(true).build() as ChromeDriverService
 
     override fun checkLastNews() {
@@ -46,6 +46,7 @@ class WakanimPlatform : Platform() {
     }
 
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
+        val platformHandler = Jais.getPlatformInformation(this)?.platformHandler
         val list = mutableListOf<Episode>()
         val date = getDate(calendar)
 
@@ -53,24 +54,34 @@ class WakanimPlatform : Platform() {
             var driver: ChromeDriver? = null
 
             try {
+                /*
+                With proxy : ~2895ms
+                Without proxy : ~3238ms, ~2997ms, ~2973ms
+                 */
                 Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
                 driver = ChromeDriver(this.service, this.options)
-                driver.manage().timeouts().pageLoadTimeout(20L, TimeUnit.SECONDS)
-                driver.manage().timeouts().setScriptTimeout(20L, TimeUnit.SECONDS)
+                driver.manage().timeouts().pageLoadTimeout(60L, TimeUnit.SECONDS)
+                driver.manage().timeouts().setScriptTimeout(60L, TimeUnit.SECONDS)
                 val wait = WebDriverWait(driver, 10L)
+                val episodesList = mutableListOf<WakanimEpisode>()
 
                 driver.get("https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false")
 
+                // TODO: Visibility, presence or findElement ?
+                /*
+                Presence : ~58,5ms
+                Visibility : ~88,4ms
+                FindElement : ~68ms
+                 */
                 val bodyText =
-                    wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("body")))?.text?.split("\n")
+                    wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")))?.text?.split("\n")
                         ?.toMutableList()
                 bodyText?.removeAt(0)
-                val episodesList = mutableListOf<WakanimEpisode>()
 
                 if (!bodyText.isNullOrEmpty()) {
-                    if (bodyText[0] == "Pas de nouveaux épisodes !") return@forEach
+                    if (bodyText[0].equals("Pas de nouveaux épisodes !", true)) return@forEach
                     val urls =
-                        wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
+                        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
                             ?.map { it.getAttribute("href") }
 
                     if (!urls.isNullOrEmpty()) {
@@ -82,12 +93,18 @@ class WakanimPlatform : Platform() {
                         } step 4) {
                             val episodeText = bodyText.subList(i, i + 4).joinToString().split(",")
                             val tas = episodeText[0].split(" ")
+
                             val time = ISO8601.fromCalendar1("${this.getISODate(calendar)}T${tas[0]}:00Z")
-                            val anime = tas.subList(1, tas.size).joinToString(" ")
-                            val number = episodeText[2].replace(" ", "").toLongOrNull()
+                            if (calendar.before(ISO8601.toCalendar1(time))) continue
+                            val anime = episodeText.subList(0, episodeText.size - 3).joinToString(",").split(" ")
+                                .filterIndexed { index, _ -> index != 0 }.joinToString(" ")
+                            val number = episodeText[episodeText.size - 2].replace(" ", "").toLongOrNull()
                             val episodeType =
-                                if (Jais.getCountryInformation(country)!!.countryHandler.film == episodeText[1].split(" ")[2]) EpisodeType.FILM else EpisodeType.EPISODE
-                            val langType = LangType.getLangType(episodeText[3].replace(" ", ""))
+                                if (Jais.getCountryInformation(country)!!.countryHandler.film == episodeText[episodeText.size - 3].split(
+                                        " "
+                                    )[2]
+                                ) EpisodeType.FILM else EpisodeType.EPISODE
+                            val langType = LangType.getLangType(episodeText[episodeText.size - 1].replace(" ", ""))
                             val url = urls[i / 4]
                             val wakanimType = url.split("/")[6]
 
@@ -108,11 +125,9 @@ class WakanimPlatform : Platform() {
                                 ).firstOrNull()
                             } else {
                                 try {
-                                    val noEpisodes = driver.findElementByClassName("NoEpisodes")
-                                    if (noEpisodes != null) continue
+                                    if (driver.findElementByClassName("NoEpisodes") != null) continue
                                 } catch (exception: Exception) {
                                 }
-
                                 wait.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         By.className("list-episodes-container"),
@@ -123,12 +138,8 @@ class WakanimPlatform : Platform() {
 
                             if (cardEpisodeElement == null) continue
 
-                            val cardNumber = wait.until(
-                                ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                    cardEpisodeElement,
-                                    By.className("slider_item_number")
-                                )
-                            )?.lastOrNull()?.text?.replace(" ", "")?.toLongOrNull()
+                            val cardElements = cardEpisodeElement.text?.split("\n")
+                            val cardNumber = cardElements?.get(0)?.toLongOrNull()
 
                             if (number != null && cardNumber != null && number == cardNumber) {
                                 val cardUrl = wait.until(
@@ -137,37 +148,30 @@ class WakanimPlatform : Platform() {
                                         By.className("slider_item_star")
                                     )
                                 )?.lastOrNull()?.getAttribute("href")
-                                val episodeId = cardUrl?.split("/")?.get(7)?.toLongOrNull()
-                                val cardSeason = wait.until(
-                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                        cardEpisodeElement,
-                                        By.className("slider_item_season")
-                                    )
-                                )?.lastOrNull()?.text
-                                val season = if (cardSeason?.contains(
-                                        Jais.getCountryInformation(country)!!.countryHandler.season,
-                                        true
-                                    ) == true
-                                ) {
-                                    val split = cardSeason.split(" ")
-                                    split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
-                                } else 1L
                                 val image = wait.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         cardEpisodeElement,
                                         By.tagName("img")
                                     )
                                 )?.lastOrNull()?.getAttribute("src")
-                                val cardDuration = wait.until(
-                                    ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                        cardEpisodeElement,
-                                        By.className("slider_item_duration")
+
+                                val episodeId = cardUrl?.split("/")?.get(7)?.toLongOrNull()
+                                val cardSeason = cardElements[cardElements.size - 1]
+
+                                val season = if (cardSeason.contains(
+                                        Jais.getCountryInformation(country)!!.countryHandler.season,
+                                        true
                                     )
-                                )?.lastOrNull()?.text?.split(":")
-                                val duration = cardDuration?.mapIndexed { it, t ->
+                                ) {
+                                    val split = cardSeason.split(" ")
+                                    split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
+                                } else 1L
+
+                                val cardDuration = cardElements[1].split(":")
+                                val duration = cardDuration.mapIndexed { it, t ->
                                     (t.ifEmpty { "0" }.toLongOrNull()
                                         ?.times(60.0.pow(((cardDuration.size - it) - 1).toDouble())) ?: 0L).toLong()
-                                }?.sum()
+                                }.sum()
 
                                 episodesList.add(
                                     WakanimEpisode(

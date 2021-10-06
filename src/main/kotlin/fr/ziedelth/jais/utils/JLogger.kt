@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils
 
+import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -20,7 +21,9 @@ object JLogger : Logger("ZiedLogger", null) {
         consoleHandler.formatter = jFormatter
         consoleHandler.level = Level.ALL
         this.addHandler(consoleHandler)
-        val fileHandler = FileHandler("jais-log-%g-%u.log", 1 * 1024 * 1024, 1)
+        val logsFolder = File("logs")
+        if (!logsFolder.exists()) logsFolder.mkdirs()
+        val fileHandler = FileHandler("logs/log.log", 1 * 1024 * 1024, 5, true)
         fileHandler.formatter = jFormatter
         fileHandler.level = Level.ALL
         this.addHandler(fileHandler)

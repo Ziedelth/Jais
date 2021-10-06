@@ -25,7 +25,7 @@ data class WakanimEpisode(
     val episodeId: Long?,
     val image: String?,
     val duration: Long?,
-    val url: String?
+    var url: String?
 ) {
     var platformHandler: PlatformHandler? = null
     var platform: Platform? = null
@@ -111,5 +111,7 @@ data class WakanimEpisode(
         return result
     }
 
-
+    override fun toString(): String {
+        return "WakanimEpisode(releaseDate=$releaseDate, anime=$anime, season=$season, number=$number, episodeType=$episodeType, langType=$langType, episodeId=$episodeId, image=$image, duration=$duration, url=$url, platformHandler=$platformHandler, platform=$platform, countryHandler=$countryHandler, country=$country)"
+    }
 }

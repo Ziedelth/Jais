@@ -53,24 +53,24 @@ Toutes les dépendances sont gérés automatiquement par Maven.
     * Version : **2.8.8**
     * [GitHub](https://github.com/google/gson)
 * SLF4J Simple Binding
-  * Version : **1.7.32**
-  * [Site Web](http://www.slf4j.org/)
-  * [GitHub](https://github.com/qos-ch/slf4j)
+    * Version : **1.7.32**
+    * [Site Web](http://www.slf4j.org/)
+    * [GitHub](https://github.com/qos-ch/slf4j)
 * jsoup Java HTML Parser
-  * Version : **1.14.2**
-  * [Site Web](https://jsoup.org/)
-  * [GitHub](https://github.com/jhy/jsoup/)
+    * Version : **1.14.2**
+    * [Site Web](https://jsoup.org/)
+    * [GitHub](https://github.com/jhy/jsoup/)
 * mariadb-java-client
-  * Version : **2.7.3**
-  * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
-  * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)
+    * Version : **2.7.3**
+    * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
+    * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)
 * Selenium
-  * Version : **3.141.59**
-  * [Site Web](https://www.selenium.dev/)
-  * [GitHub](https://github.com/SeleniumHQ/selenium)
+    * Version : **3.141.59**
+    * [Site Web](https://www.selenium.dev/)
+    * [GitHub](https://github.com/SeleniumHQ/selenium)
 * Jackson
-  * Version : **2.12.5**
-  * [GitHub](https://github.com/FasterXML/jackson-dataformat-xml)
+    * Version : **2.12.5**
+    * [GitHub](https://github.com/FasterXML/jackson-dataformat-xml)
 * PF4F
-  * Version : **3.6.0**
-  * [GitHub](https://github.com/pf4j/pf4j)
+    * Version : **3.6.0**
+    * [GitHub](https://github.com/pf4j/pf4j)

@@ -10,7 +10,7 @@ data class Episode(
     val platform: String,
     val country: String,
     val releaseDate: String,
-    val anime: String,
+    var anime: String,
     val season: Long,
     var number: Long,
     val episodeType: EpisodeType,
@@ -23,6 +23,8 @@ data class Episode(
     val duration: Long
 ) {
     init {
+        this.anime = this.anime.replace("’", "'")
+
         val countryHandler = Jais.getCountryInformation(this.country)!!.countryHandler
         this.eId = "${
             this.platform.uppercase().substring(0 until 4)
