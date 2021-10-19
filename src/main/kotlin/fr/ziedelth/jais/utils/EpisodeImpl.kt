@@ -28,7 +28,7 @@ data class EpisodeImpl(
         this.animes = this.animes.sortedBy { ISO8601.toCalendar1(it.releaseDate) }.toMutableList()
 
         this.animes.forEach { aImpl ->
-            aImpl.episodes = aImpl.episodes.stream().sorted(EPISODE_COMPARATOR).toList()
+            aImpl.episodes = aImpl.episodes.sortedWith(EPISODE_COMPARATOR).toMutableList()
 
             fetchAnimeImage(aImpl)
             aImpl.episodes.forEach { eImpl -> fetchEpisodeImage(eImpl) }

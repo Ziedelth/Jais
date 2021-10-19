@@ -74,7 +74,7 @@ object Jais {
                 }
 
                 if (episodeImpl != null) {
-                    list.stream().sorted(this.comparator).forEachOrdered { episode ->
+                    list.sortedWith(this.comparator).forEach { episode ->
                         val platformImpl = this.getPlatformInformation(episode.platform)!!
                         val countryImpl = this.getCountryInformation(episode.country)!!
                         val pImpl = episodeImpl.insertOrUpdatePlatform(platformImpl.platformHandler)
