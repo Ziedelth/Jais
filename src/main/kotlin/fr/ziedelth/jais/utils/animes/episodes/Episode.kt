@@ -5,12 +5,14 @@
 package fr.ziedelth.jais.utils.animes.episodes
 
 import fr.ziedelth.jais.Jais
+import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 
 data class Episode(
     val platform: String,
     val country: String,
     val releaseDate: String,
     var anime: String,
+    var animeImage: String?,
     val season: Long,
     var number: Long,
     val episodeType: EpisodeType,
@@ -37,6 +39,17 @@ enum class EpisodeType {
     FILM,
     SPECIAL,
     ;
+
+    fun id(countryHandler: CountryHandler?): String? = when (this) {
+        EPISODE -> countryHandler?.episode
+        FILM -> countryHandler?.film
+        SPECIAL -> countryHandler?.special
+    }
+
+    companion object {
+        fun getEpisodeType(countryHandler: CountryHandler, string: String?): EpisodeType? =
+            values().find { it.id(countryHandler) == string }
+    }
 }
 
 enum class LangType {

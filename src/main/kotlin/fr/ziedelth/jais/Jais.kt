@@ -4,32 +4,32 @@
 
 package fr.ziedelth.jais
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
-import fr.ziedelth.jais.utils.JLogger
-import fr.ziedelth.jais.utils.JThread
+import fr.ziedelth.jais.utils.*
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
-import fr.ziedelth.jais.utils.sql.SQL
-import fr.ziedelth.jais.utils.sql.components.EpisodeSQL
+import java.io.File
+import java.io.FileReader
+import java.nio.file.Files
 import java.util.*
-import java.util.logging.Level
 import kotlin.reflect.KClass
 
 object Jais {
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
-    private val comparator =
-        Comparator.comparing(Episode::anime).thenComparing(Episode::releaseDate).thenComparing(Episode::season)
-            .thenComparing(Episode::number)
+    private val comparator = Comparator.comparing { episode: Episode -> ISO8601.toCalendar1(episode.releaseDate) }
+        .thenComparing(Episode::anime).thenComparing(Episode::season).thenComparing(Episode::number)
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -47,8 +47,6 @@ object Jais {
         if (!this.addPlatform(WakanimPlatform::class.java))
             JLogger.warning("Failed to add Wakanim platform")
 
-        // this.platforms.forEach { it.platform.checkEpisodes() }
-
         JThread.start({
             JLogger.info("Checking episodes...")
             this.checkEpisodes()
@@ -57,71 +55,59 @@ object Jais {
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
+        Impl.tryCatch("Failed to fetch episodes") {
+            val list = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
+            JLogger.config("Fetched episodes length: ${list.size}")
 
-        try {
-            val connection = SQL.getConnection()
+            if (list.isNotEmpty()) {
+                val gson = GsonBuilder().setPrettyPrinting().create()
 
-            this.platforms.forEach { platformImpl ->
-                val platformSQL = SQL.insertOrUpdatePlatform(connection, platformImpl.platformHandler)
+                val fileMinimize = File("episodes.minimize.json")
+                val file = File("episodes.json")
 
-                platformImpl.platform.checkEpisodes(calendar).toList().stream().sorted(this.comparator)
-                    .forEach { episode ->
+                val episodeImpl = if (!file.exists()) {
+                    file.createNewFile()
+                    Files.writeString(file.toPath(), gson.toJson(JsonObject()))
+                    EpisodeImpl()
+                } else {
+                    gson.fromJson(FileReader(file), EpisodeImpl::class.java)
+                }
+
+                if (episodeImpl != null) {
+                    list.stream().sorted(this.comparator).forEachOrdered { episode ->
+                        val platformImpl = this.getPlatformInformation(episode.platform)!!
                         val countryImpl = this.getCountryInformation(episode.country)!!
-                        val countrySQL = SQL.insertOrUpdateCountry(connection, countryImpl.countryHandler)
-                        val animeSQL = SQL.insertOrUpdateAnime(connection, episode.anime, episode.releaseDate)
+                        val pImpl = episodeImpl.insertOrUpdatePlatform(platformImpl.platformHandler)
+                        val cImpl = episodeImpl.insertOrUpdateCountry(countryImpl.countryHandler)
 
-                        if (platformSQL != null && countrySQL != null && animeSQL != null) {
-                            var episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
-
-                            if (episodeSQL == null) {
-                                if (episode.episodeType == EpisodeType.SPECIAL && episode.number == -1L) episode.number =
-                                    SQL.lastSpecialEpisode(
-                                        connection,
-                                        platformSQL,
-                                        countrySQL,
-                                        animeSQL,
-                                        episode.season
-                                    ) + 1
-
-                                val id =
-                                    SQL.insertEpisodeInDatabase(connection, platformSQL, countrySQL, animeSQL, episode)
-                                if (id == 0) JLogger.warning("Failed to insert episode in database")
-                                else {
-                                    episodeSQL = EpisodeSQL(
-                                        id = id,
-                                        platformSQL = platformSQL,
-                                        countrySQL = countrySQL,
-                                        animeSQL = animeSQL,
-                                        episode = episode
-                                    )
-
-                                    JLogger.info("New episode in database")
-                                    JLogger.config("ID: ${episodeSQL.id} | EID: ${episodeSQL.eId} | Anime: ${episode.anime} | Title: ${episodeSQL.title} | Episode type: ${episodeSQL.episodeType} | Lang type: ${episodeSQL.langType}")
-                                }
-                            } else {
-                                if (episode.title != episodeSQL.title || episode.url != episodeSQL.url || episode.image != episodeSQL.image || episode.duration != episodeSQL.duration) {
-                                    if (!SQL.updateEpisodeInDatabase(
-                                            connection,
-                                            episode
-                                        )
-                                    ) JLogger.warning("Failed to update episode in database")
-                                    else {
-                                        episodeSQL = SQL.getEpisodeIsInDatabase(connection, episode)
-
-                                        JLogger.info("Update in database")
-                                        JLogger.config("ID: ${episodeSQL?.id} | EID: ${episodeSQL?.eId} | Anime: ${episode.anime} | Title: ${episodeSQL?.title} | Episode type: ${episodeSQL?.episodeType} | Lang type: ${episodeSQL?.langType}")
-                                    }
-                                }
-                            }
-                        }
+                        episodeImpl.insertOrUpdateEpisode(
+                            pImpl.uuid,
+                            cImpl.uuid,
+                            episode
+                        )
                     }
-            }
 
-            connection?.close()
-        } catch (exception: Exception) {
-            JLogger.log(Level.WARNING, "Error on checking episodes", exception)
+                    episodeImpl.update()
+                }
+
+
+                Files.writeString(fileMinimize.toPath(), Gson().toJson(episodeImpl))
+                Files.writeString(file.toPath(), gson.toJson(episodeImpl))
+
+                val add = file.length() - fileMinimize.length()
+                JLogger.config("Minimize episodes file weight: ${FileImpl.toFormat(fileMinimize.length())}")
+                JLogger.config(
+                    "Episodes file weight: ${FileImpl.toFormat(file.length())} (${this.addOrMinus(add)}${
+                        FileImpl.toFormat(
+                            add
+                        )
+                    })"
+                )
+            }
         }
     }
+
+    private fun addOrMinus(number: Long): String = if (number > 0) "+" else "-"
 
     private fun addCountry(country: Class<out Country>): Boolean {
         if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(CountryHandler::class.java)) {
@@ -172,6 +158,15 @@ object Jais {
 
     fun getPlatformInformation(platform: Platform?): PlatformImpl? {
         return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
+    }
+
+    fun getPlatformInformation(platform: String?): PlatformImpl? {
+        return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
+            it.platformHandler.name.equals(
+                platform,
+                true
+            )
+        } else null
     }
 
     fun getAllowedCountries(platform: Platform?): Array<Country> {

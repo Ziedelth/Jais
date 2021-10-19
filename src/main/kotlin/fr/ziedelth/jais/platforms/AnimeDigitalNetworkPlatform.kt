@@ -26,7 +26,7 @@ import java.util.logging.Level
 @PlatformHandler(
     name = "Anime Digital Network",
     url = "https://animedigitalnetwork.fr/",
-    image = "images/anime_digital_network.jpg",
+    image = "images/platforms/anime_digital_network.jpg",
     color = 0x0096FF,
     countries = [FranceCountry::class]
 )
@@ -72,9 +72,17 @@ class AnimeDigitalNetworkPlatform : Platform() {
                 val episodesList = (jsonObject?.get("videos") as JsonArray?)?.filter { it != null && it.isJsonObject }
                     ?.mapNotNull { gson.fromJson(it, AnimeDigitalNetworkEpisode::class.java) }
                 episodesList?.forEach { it.platform = this; it.country = country }
-                episodesList?.filter { it.isValid() && calendar.after(ISO8601.toCalendar1(it.releaseDate)) }
-                    ?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }?.mapNotNull { it.toEpisode() }
-                    ?.let { list.addAll(it) }
+
+                episodesList?.filter {
+                    !this.checkedEpisodes.contains(it.id.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
+                        ISO8601.fromCalendar1(it.releaseDate),
+                        ISO8601.fromCalendar(calendar)
+                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
+                }?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }?.forEachIndexed { _, animeDigitalNetworkEpisode ->
+                    val episode = animeDigitalNetworkEpisode.toEpisode() ?: return@forEachIndexed
+                    list.add(episode)
+                    this.addCheckEpisodes(animeDigitalNetworkEpisode.id!!.toString())
+                }
             } catch (exception: Exception) {
                 JLogger.log(
                     Level.SEVERE,

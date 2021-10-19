@@ -43,7 +43,7 @@ data class AnimeDigitalNetworkEpisode(
     fun isValid(): Boolean = this.platform != null &&
             this.country != null &&
             !this.releaseDate.isNullOrBlank() &&
-            this.show != null && (!this.show.title.isNullOrBlank() || !this.show.originalTitle.isNullOrBlank()) &&
+            this.show != null && !this.show.title.isNullOrBlank() &&
             !this.shortNumber.isNullOrBlank() && this.shortNumber.toLongOrNull() != null &&
             this.languages != null && LangType.getLangType(this.languages.lastOrNull()) != null &&
             this.id != null &&
@@ -54,7 +54,8 @@ data class AnimeDigitalNetworkEpisode(
             platform = this.platformHandler!!.name,
             country = this.countryHandler!!.name,
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
-            anime = if (!this.show!!.originalTitle.isNullOrBlank()) this.show.originalTitle!! else this.show.title!!,
+            anime = this.show!!.title!!,
+            animeImage = this.show.image2x,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.shortNumber?.toLongOrNull() ?: 1,
             episodeType = EpisodeType.EPISODE,
@@ -120,5 +121,5 @@ data class AnimeDigitalNetworkEpisode(
 
 data class Show(
     val title: String?,
-    val originalTitle: String?
+    val image2x: String?,
 )

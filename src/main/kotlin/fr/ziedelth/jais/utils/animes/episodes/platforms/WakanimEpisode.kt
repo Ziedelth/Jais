@@ -17,6 +17,7 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 data class WakanimEpisode(
     val releaseDate: String?,
     val anime: String?,
+    val animeImage: String?,
     val season: Long?,
     val number: Long?,
     val episodeType: EpisodeType?,
@@ -56,6 +57,7 @@ data class WakanimEpisode(
             country = this.countryHandler!!.name,
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = this.anime!!,
+            animeImage = this.animeImage,
             season = this.season ?: 1,
             number = this.number ?: 1,
             episodeType = this.episodeType!!,

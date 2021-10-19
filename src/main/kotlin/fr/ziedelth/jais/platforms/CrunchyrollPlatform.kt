@@ -11,10 +11,14 @@ import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.WebDriverBuilder
+import fr.ziedelth.jais.utils.WebDriverImpl
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.platforms.CrunchyrollEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import org.openqa.selenium.By
+import org.openqa.selenium.support.ui.ExpectedConditions
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
@@ -23,11 +27,13 @@ import java.util.logging.Level
 @PlatformHandler(
     name = "Crunchyroll",
     url = "https://www.crunchyroll.com/",
-    image = "images/crunchyroll.jpg",
+    image = "images/platforms/crunchyroll.jpg",
     color = 0xFF6C00,
     countries = [FranceCountry::class]
 )
 class CrunchyrollPlatform : Platform() {
+    private val animeImages = mutableMapOf<String?, String?>()
+
     override fun checkLastNews() {
         TODO("Not yet implemented")
     }
@@ -39,6 +45,8 @@ class CrunchyrollPlatform : Platform() {
         val objectMapper = ObjectMapper()
 
         this.getAllowedCountries().forEach { country ->
+            var webDriverImpl: WebDriverImpl? = null
+
             try {
                 val inputStream =
                     URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openStream()
@@ -50,16 +58,51 @@ class CrunchyrollPlatform : Platform() {
                 val episodesList =
                     (jsonObject?.get("channel") as JsonObject?)?.get("item")?.asJsonArray?.filter { it != null && it.isJsonObject }
                         ?.mapNotNull { gson.fromJson(it, CrunchyrollEpisode::class.java) }
+
                 episodesList?.forEach { it.platform = this; it.country = country }
-                episodesList?.filter { it.isValid() && calendar.after(ISO8601.toCalendar2(it.pubDate)) }
-                    ?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.mapNotNull { it.toEpisode() }
-                    ?.let { list.addAll(it) }
+
+                episodesList?.filter {
+                    !this.checkedEpisodes.contains(it.mediaId) && it.isValid() && ISO8601.isSameDayUsingISO8601(
+                        ISO8601.fromCalendar2(it.pubDate),
+                        ISO8601.fromCalendar(calendar)
+                    ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
+                }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.forEachIndexed { _, crunchyrollEpisode ->
+                    if (!this.animeImages.containsKey(crunchyrollEpisode.seriesTitle)) {
+                        if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver(true)
+                        webDriverImpl?.driver?.get(crunchyrollEpisode.link)
+
+                        try {
+                            webDriverImpl?.driver?.findElementById("onetrust-accept-btn-handler")?.click()
+                        } catch (exception: Exception) {
+                        }
+
+                        val animeUrl = webDriverImpl?.wait?.until(
+                            ExpectedConditions.visibilityOfNestedElementsLocatedBy(
+                                By.className("showmedia-header"),
+                                By.className("text-link")
+                            )
+                        )?.firstOrNull()?.getAttribute("href")
+                        webDriverImpl?.driver?.get(animeUrl)
+                        val animeImage =
+                            webDriverImpl?.driver?.findElementByXPath("//*[@id=\"sidebar_elements\"]/li[1]/img")
+                                ?.getAttribute("src")
+                        crunchyrollEpisode.seriesImage = animeImage
+
+                        this.animeImages[crunchyrollEpisode.seriesTitle] = animeImage
+                    } else crunchyrollEpisode.seriesImage = this.animeImages[crunchyrollEpisode.seriesTitle]
+
+                    val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
+                    list.add(episode)
+                    this.addCheckEpisodes(crunchyrollEpisode.mediaId!!)
+                }
             } catch (exception: Exception) {
                 JLogger.log(
                     Level.SEVERE,
                     "Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}",
                     exception
                 )
+            } finally {
+                webDriverImpl?.driver?.quit()
             }
         }
 

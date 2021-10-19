@@ -19,6 +19,7 @@ data class CrunchyrollEpisode(
     val title: String?,
     val pubDate: String?,
     val seriesTitle: String?,
+    var seriesImage: String? = null,
     val season: String?,
     val episodeNumber: String?,
     val restriction: JsonObject?,
@@ -64,6 +65,7 @@ data class CrunchyrollEpisode(
             country = this.countryHandler!!.name,
             releaseDate = ISO8601.fromCalendar2(this.pubDate)!!,
             anime = this.seriesTitle!!,
+            animeImage = this.seriesImage,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber?.toLongOrNull() ?: -1,
             episodeType = if ((this.episodeNumber?.toLongOrNull()
@@ -78,7 +80,9 @@ data class CrunchyrollEpisode(
             eId = this.mediaId!!,
             title = this.episodeTitle,
             url = this.link,
-            image = this.thumbnail?.firstOrNull()?.url,
+            image = this.thumbnail?.maxByOrNull {
+                it.width?.toLongOrNull()?.times(it.height?.toLongOrNull() ?: 0) ?: 0
+            }?.url,
             duration = this.duration!!,
         ) else null
     }
