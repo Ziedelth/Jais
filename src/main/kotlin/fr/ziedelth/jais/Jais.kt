@@ -36,22 +36,18 @@ object Jais {
         JLogger.info("Init...")
 
         JLogger.info("Adding countries...")
-        if (!this.addCountry(FranceCountry::class.java))
-            JLogger.warning("Failed to add France country")
+        this.addCountry(FranceCountry::class.java)
 
         JLogger.info("Adding platforms...")
-        if (!this.addPlatform(AnimeDigitalNetworkPlatform::class.java))
-            JLogger.warning("Failed to add AnimeDigitalNetwork platform")
-        if (!this.addPlatform(CrunchyrollPlatform::class.java))
-            JLogger.warning("Failed to add Crunchyroll platform")
-        if (!this.addPlatform(WakanimPlatform::class.java))
-            JLogger.warning("Failed to add Wakanim platform")
+        this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
+        this.addPlatform(CrunchyrollPlatform::class.java)
+        this.addPlatform(WakanimPlatform::class.java)
 
         JThread.start({
             JLogger.info("Checking episodes...")
             this.checkEpisodes()
             JLogger.info("All episodes are checked!")
-        }, 120000L)
+        }, delay = 120000L, priority = Thread.MAX_PRIORITY)
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
@@ -109,30 +105,26 @@ object Jais {
 
     private fun addOrMinus(number: Long): String = if (number > 0) "+" else "-"
 
-    private fun addCountry(country: Class<out Country>): Boolean {
+    private fun addCountry(country: Class<out Country>) {
         if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(CountryHandler::class.java)) {
-            return this.countries.add(
+            this.countries.add(
                 CountryImpl(
                     countryHandler = country.getAnnotation(CountryHandler::class.java),
                     country = country.getConstructor().newInstance()
                 )
             )
-        }
-
-        return false
+        } else JLogger.warning("Failed to add ${country.simpleName}")
     }
 
-    private fun addPlatform(platform: Class<out Platform>): Boolean {
+    private fun addPlatform(platform: Class<out Platform>) {
         if (this.platforms.none { it.platform::class.java == platform } && platform.isAnnotationPresent(PlatformHandler::class.java)) {
-            return this.platforms.add(
+            this.platforms.add(
                 PlatformImpl(
                     platformHandler = platform.getAnnotation(PlatformHandler::class.java),
                     platform = platform.getConstructor().newInstance()
                 )
             )
-        }
-
-        return false
+        } else JLogger.warning("Failed to add ${platform.simpleName}")
     }
 
     fun getCountriesInformation(): Array<CountryImpl> {

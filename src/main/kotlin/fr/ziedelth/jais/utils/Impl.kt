@@ -7,11 +7,11 @@ package fr.ziedelth.jais.utils
 import java.util.logging.Level
 
 object Impl {
-    fun tryCatch(errorMessage: String, action: () -> Unit) {
+    fun tryCatch(errorMessage: String? = null, action: () -> Unit) {
         try {
             action.invoke()
         } catch (exception: Exception) {
-            JLogger.log(Level.WARNING, errorMessage, exception)
+            if (!errorMessage.isNullOrEmpty()) JLogger.log(Level.WARNING, errorMessage, exception)
         }
     }
 }

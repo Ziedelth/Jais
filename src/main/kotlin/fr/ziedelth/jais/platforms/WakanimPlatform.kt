@@ -7,7 +7,7 @@ package fr.ziedelth.jais.platforms
 import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
-import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.WebDriverBuilder
 import fr.ziedelth.jais.utils.WebDriverImpl
 import fr.ziedelth.jais.utils.animes.countries.Country
@@ -22,7 +22,6 @@ import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.ExpectedConditions
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.logging.Level
 import kotlin.math.max
 import kotlin.math.pow
 
@@ -38,10 +37,7 @@ class WakanimPlatform : Platform() {
     private val bodyText = mutableMapOf<Country, MutableList<String>?>()
     private val urls = mutableMapOf<Country, List<String>?>()
 
-    override fun checkLastNews() {
-        TODO("Not yet implemented")
-    }
-
+    @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
         val date = getDate(calendar)
@@ -49,28 +45,28 @@ class WakanimPlatform : Platform() {
         this.getAllowedCountries().forEach { country ->
             var webDriverImpl: WebDriverImpl? = null
 
-            try {
+            Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val episodesList = mutableListOf<WakanimEpisode>()
 
                 if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
                     this.lastCheck[country] = System.currentTimeMillis()
 
                     if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
-                    webDriverImpl.driver?.get("https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false")
+                    webDriverImpl?.driver?.get("https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false")
 
                     val bodyText =
-                        webDriverImpl.wait?.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")))?.text?.split(
+                        webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")))?.text?.split(
                             "\n"
                         )?.toMutableList()
                     bodyText?.removeAt(0)
                     this.bodyText[country] = bodyText
                     this.urls[country] =
-                        webDriverImpl.wait?.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
+                        webDriverImpl?.wait?.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
                             ?.map { it.getAttribute("href") }
                 }
 
                 if (!this.bodyText[country].isNullOrEmpty()) {
-                    if (this.bodyText[country]?.get(0).equals("Pas de nouveaux épisodes !", true)) return@forEach
+                    if (this.bodyText[country]?.get(0).equals("Pas de nouveaux épisodes !", true)) return@tryCatch
 
                     if (!this.urls[country].isNullOrEmpty()) {
                         for (i in 0 until (this.bodyText[country]?.indexOfFirst {
@@ -106,16 +102,12 @@ class WakanimPlatform : Platform() {
                             }
 
                             if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
-                            webDriverImpl.driver?.get(url)
-
-                            try {
-                                webDriverImpl.driver?.findElementByClassName("css-1fxzzmg")?.click()
-                            } catch (exception: Exception) {
-                            }
+                            webDriverImpl?.driver?.get(url)
+                            Impl.tryCatch { webDriverImpl?.driver?.findElementByClassName("css-1fxzzmg")?.click() }
 
                             val cardEpisodeElement: WebElement? = if (wakanimType.equals("episode", true)) {
                                 // IN EPISODES
-                                webDriverImpl.wait?.until(
+                                webDriverImpl?.wait?.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         By.className(
                                             "slider_list"
@@ -124,11 +116,11 @@ class WakanimPlatform : Platform() {
                                 )?.firstOrNull()
                             } else {
                                 try {
-                                    if (webDriverImpl.driver?.findElementByClassName("NoEpisodes") != null) continue
+                                    if (webDriverImpl?.driver?.findElementByClassName("NoEpisodes") != null) continue
                                 } catch (exception: Exception) {
                                 }
 
-                                webDriverImpl.wait?.until(
+                                webDriverImpl?.wait?.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         By.className(
                                             "list-episodes-container"
@@ -143,7 +135,7 @@ class WakanimPlatform : Platform() {
                             val cardNumber = cardElements?.get(0)?.toLongOrNull()
 
                             if (number != null && cardNumber != null && number == cardNumber) {
-                                val cardUrl = webDriverImpl.wait?.until(
+                                val cardUrl = webDriverImpl?.wait?.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         cardEpisodeElement,
                                         By.className("slider_item_star")
@@ -152,13 +144,13 @@ class WakanimPlatform : Platform() {
                                 val episodeId = cardUrl?.split("/")?.get(7)
                                 if (episodeId == null || this.checkedEpisodes.contains(episodeId)) continue
 
-                                val animeUrl = webDriverImpl.wait?.until(
+                                val animeUrl = webDriverImpl?.wait?.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         cardEpisodeElement,
                                         By.className("slider_item_showTitle")
                                     )
                                 )?.lastOrNull()?.getAttribute("href")
-                                val image = webDriverImpl.wait?.until(
+                                val image = webDriverImpl?.wait?.until(
                                     ExpectedConditions.visibilityOfNestedElementsLocatedBy(
                                         cardEpisodeElement,
                                         By.tagName("img")
@@ -179,13 +171,16 @@ class WakanimPlatform : Platform() {
                                         ?.times(60.0.pow(((cardDuration.size - it) - 1).toDouble())) ?: 0L).toLong()
                                 }.sum()
 
-                                webDriverImpl.driver?.get(animeUrl)
-
-                                val animeImage = webDriverImpl.wait?.until(
-                                    ExpectedConditions.visibilityOfElementLocated(
-                                        By.className("SerieHeader-thumb")
-                                    )
-                                )?.getAttribute("src")
+                                val animeImage = if (!this.animeImages.containsKey(anime)) {
+                                    webDriverImpl?.driver?.get(animeUrl)
+                                    webDriverImpl?.wait?.until(
+                                        ExpectedConditions.visibilityOfElementLocated(
+                                            By.className(
+                                                "SerieHeader-thumb"
+                                            )
+                                        )
+                                    )?.getAttribute("src")
+                                } else this.animeImages[anime]
 
                                 episodesList.add(
                                     WakanimEpisode(
@@ -224,15 +219,9 @@ class WakanimPlatform : Platform() {
                             .encodeToString("${wakanimEpisode.releaseDate}${wakanimEpisode.anime}${wakanimEpisode.number}${wakanimEpisode.episodeType}${wakanimEpisode.langType}".encodeToByteArray())
                     )
                 }
-            } catch (exception: Exception) {
-                JLogger.log(
-                    Level.SEVERE,
-                    "Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}",
-                    exception
-                )
-            } finally {
-                webDriverImpl?.driver?.quit()
             }
+
+            webDriverImpl?.driver?.quit()
         }
 
         return list.toTypedArray()

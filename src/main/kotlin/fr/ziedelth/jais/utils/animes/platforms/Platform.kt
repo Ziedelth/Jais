@@ -12,7 +12,13 @@ import java.util.*
 
 abstract class Platform {
     private var lastDate = Calendar.getInstance()
+    protected val animeImages = mutableMapOf<String?, String?>()
     protected val checkedEpisodes = mutableListOf<String>()
+
+    fun addAnimeImage(anime: String?, animeImage: String?) {
+        if (!ISO8601.isSameDayUsingInstant(Calendar.getInstance(), this.lastDate)) this.checkedEpisodes.clear()
+        if (!this.animeImages.containsKey(anime)) this.animeImages[anime] = animeImage
+    }
 
     fun addCheckEpisodes(id: String) {
         if (!ISO8601.isSameDayUsingInstant(Calendar.getInstance(), this.lastDate)) this.checkedEpisodes.clear()
@@ -20,6 +26,5 @@ abstract class Platform {
     }
 
     fun getAllowedCountries(): Array<Country> = Jais.getAllowedCountries(this)
-    abstract fun checkLastNews()
     abstract fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode>
 }

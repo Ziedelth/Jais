@@ -9,18 +9,19 @@ import kotlin.math.max
 object JThread {
     private val threads = mutableListOf<Thread>()
 
-    fun start(action: () -> Unit) {
+    fun start(action: () -> Unit, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY) {
         val thread = Thread {
             action.invoke()
         }
 
-        thread.isDaemon = false
+        thread.isDaemon = daemon
+        thread.priority = priority
         thread.start()
 
         this.threads.add(thread)
     }
 
-    fun start(action: () -> Unit, delay: Long) {
+    fun start(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY) {
         val thread = Thread {
             val currentThread = Thread.currentThread()
 
@@ -32,7 +33,8 @@ object JThread {
             }
         }
 
-        thread.isDaemon = false
+        thread.isDaemon = daemon
+        thread.priority = priority
         thread.start()
 
         this.threads.add(thread)

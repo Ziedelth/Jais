@@ -4,15 +4,12 @@
 
 package fr.ziedelth.jais.platforms
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
-import fr.ziedelth.jais.utils.JLogger
+import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.platforms.AnimeDigitalNetworkEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
@@ -21,7 +18,6 @@ import java.io.InputStreamReader
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.logging.Level
 
 @PlatformHandler(
     name = "Anime Digital Network",
@@ -31,37 +27,13 @@ import java.util.logging.Level
     countries = [FranceCountry::class]
 )
 class AnimeDigitalNetworkPlatform : Platform() {
-    override fun checkLastNews() {
-        val gson = GsonBuilder().setPrettyPrinting().create()
-        val xmlMapper = XmlMapper()
-        val objectMapper = ObjectMapper()
-
-        this.getAllowedCountries().forEach { country ->
-            try {
-                val inputStream =
-                    URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.checkOnNewsURL(this)}").openStream()
-                val jsonObject: JsonObject? = gson.fromJson(
-                    objectMapper.writeValueAsString(xmlMapper.readTree(InputStreamReader(inputStream))),
-                    JsonObject::class.java
-                )
-
-                JLogger.config(gson.toJson(jsonObject))
-            } catch (exception: Exception) {
-                JLogger.log(
-                    Level.SEVERE,
-                    "Failed to get ${this.javaClass.simpleName} news : ${exception.message}",
-                    exception
-                )
-            }
-        }
-    }
-
+    @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
         val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
-            try {
+            Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream = URL(
                     "https://gw.api.animedigitalnetwork.${country.checkOnEpisodesURL(this)}/video/calendar?date=${
                         getDate(calendar)
@@ -83,12 +55,6 @@ class AnimeDigitalNetworkPlatform : Platform() {
                     list.add(episode)
                     this.addCheckEpisodes(animeDigitalNetworkEpisode.id!!.toString())
                 }
-            } catch (exception: Exception) {
-                JLogger.log(
-                    Level.SEVERE,
-                    "Failed to get ${this.javaClass.simpleName} episode(s) : ${exception.message}",
-                    exception
-                )
             }
         }
 
