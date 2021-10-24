@@ -93,8 +93,13 @@ class WakanimPlatform : Platform() {
                             val wakanimType = url?.split("/")?.get(6)
 
                             if (wakanimType.equals("episode", true)) {
+                                val hash = Base64.getEncoder()
+                                    .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
                                 val episodeId = url?.split("/")?.get(7)
-                                if (episodeId == null || this.checkedEpisodes.contains(episodeId)) continue
+                                if (episodeId == null || (this.checkedEpisodes.contains(hash) || this.checkedEpisodes.contains(
+                                        episodeId
+                                    ))
+                                ) continue
                             } else {
                                 val episodeId = Base64.getEncoder()
                                     .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())

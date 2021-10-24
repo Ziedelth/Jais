@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils
+package fr.ziedelth.jais.utils.debug
 
 import java.io.File
 import java.io.PrintWriter

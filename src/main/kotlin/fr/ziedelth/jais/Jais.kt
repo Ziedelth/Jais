@@ -4,14 +4,16 @@
 
 package fr.ziedelth.jais
 
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
-import fr.ziedelth.jais.utils.*
+import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.Notifications
+import fr.ziedelth.jais.utils.animes.EpisodeImpl
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
@@ -19,6 +21,9 @@ import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
+import fr.ziedelth.jais.utils.debug.JLogger
+import fr.ziedelth.jais.utils.debug.JRecord
+import fr.ziedelth.jais.utils.debug.JThread
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
@@ -33,6 +38,7 @@ object Jais {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        Notifications.sendNotification("\uD83D\uDC95 Aibō", "I'm happy to serve you, Aibō!")
         JLogger.info("Init...")
 
         JLogger.info("Adding countries...")
@@ -45,7 +51,12 @@ object Jais {
 
         JThread.start({
             JLogger.info("Checking episodes...")
+
+            val jRecord = JRecord("Fetch_Episodes")
+            jRecord.start()
             this.checkEpisodes()
+            jRecord.stop()
+
             JLogger.info("All episodes are checked!")
         }, delay = 120000L, priority = Thread.MAX_PRIORITY)
     }
@@ -57,8 +68,6 @@ object Jais {
 
             if (list.isNotEmpty()) {
                 val gson = GsonBuilder().setPrettyPrinting().create()
-
-                val fileMinimize = File("episodes.minimize.json")
                 val file = File("episodes.json")
 
                 val episodeImpl = if (!file.exists()) {
@@ -76,34 +85,17 @@ object Jais {
                         val pImpl = episodeImpl.insertOrUpdatePlatform(platformImpl.platformHandler)
                         val cImpl = episodeImpl.insertOrUpdateCountry(countryImpl.countryHandler)
 
-                        episodeImpl.insertOrUpdateEpisode(
-                            pImpl.uuid,
-                            cImpl.uuid,
-                            episode
-                        )
+                        val showOut = episodeImpl.insertOrUpdateEpisode(pImpl.uuid, cImpl.uuid, episode)
+                        if (showOut) Notifications.sendEpisodeNotification(episode)
                     }
 
                     episodeImpl.update()
                 }
 
-
-                Files.writeString(fileMinimize.toPath(), Gson().toJson(episodeImpl))
                 Files.writeString(file.toPath(), gson.toJson(episodeImpl))
-
-                val add = file.length() - fileMinimize.length()
-                JLogger.config("Minimize episodes file weight: ${FileImpl.toFormat(fileMinimize.length())}")
-                JLogger.config(
-                    "Episodes file weight: ${FileImpl.toFormat(file.length())} (${this.addOrMinus(add)}${
-                        FileImpl.toFormat(
-                            add
-                        )
-                    })"
-                )
             }
         }
     }
-
-    private fun addOrMinus(number: Long): String = if (number > 0) "+" else "-"
 
     private fun addCountry(country: Class<out Country>) {
         if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(CountryHandler::class.java)) {

@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils
 
+import fr.ziedelth.jais.utils.debug.JLogger
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.OutputStream

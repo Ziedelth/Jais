@@ -2,14 +2,15 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils
+package fr.ziedelth.jais.utils.debug
 
 import kotlin.math.max
 
 object JThread {
-    private val threads = mutableListOf<Thread>()
+    private var count = 0
+    private val threads = mutableMapOf<Int, Thread>()
 
-    fun start(action: () -> Unit, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY) {
+    fun start(action: () -> Unit, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
         val thread = Thread {
             action.invoke()
         }
@@ -18,10 +19,12 @@ object JThread {
         thread.priority = priority
         thread.start()
 
-        this.threads.add(thread)
+        val id = count++
+        threads[id] = thread
+        return id
     }
 
-    fun start(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY) {
+    fun start(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
         val thread = Thread {
             val currentThread = Thread.currentThread()
 
@@ -37,10 +40,17 @@ object JThread {
         thread.priority = priority
         thread.start()
 
-        this.threads.add(thread)
+        val id = count++
+        threads[id] = thread
+        return id
+    }
+
+    fun stop(id: Int) {
+        threads[id]?.interrupt()
+        threads.remove(id)
     }
 
     fun stopAll() {
-        this.threads.forEach { it.interrupt() }
+        threads.forEach { it.value.interrupt() }
     }
 }

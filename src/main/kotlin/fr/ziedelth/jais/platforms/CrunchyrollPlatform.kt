@@ -66,16 +66,12 @@ class CrunchyrollPlatform : Platform() {
                         if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver(true)
                         webDriverImpl?.driver?.get(crunchyrollEpisode.link)
 
-                        Impl.tryCatch { webDriverImpl?.driver?.findElementById("onetrust-accept-btn-handler")?.click() }
-
-                        val animeUrl = webDriverImpl?.wait?.until(
-                            ExpectedConditions.visibilityOfNestedElementsLocatedBy(
-                                By.className("showmedia-header"), By.className("text-link")
-                            )
-                        )?.firstOrNull()?.getAttribute("href")
+                        val animeUrl =
+                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"showmedia_about_episode_num\"]/a")))
+                                ?.getAttribute("href")
                         webDriverImpl?.driver?.get(animeUrl)
                         val animeImage =
-                            webDriverImpl?.driver?.findElementByXPath("//*[@id=\"sidebar_elements\"]/li[1]/img")
+                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"sidebar_elements\"]/li[1]/img")))
                                 ?.getAttribute("src")
                         crunchyrollEpisode.seriesImage = animeImage
 

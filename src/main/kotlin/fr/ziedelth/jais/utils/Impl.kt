@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils
 
+import fr.ziedelth.jais.utils.debug.JLogger
 import java.util.logging.Level
 
 object Impl {

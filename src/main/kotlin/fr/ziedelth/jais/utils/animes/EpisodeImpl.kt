@@ -2,13 +2,17 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils
+package fr.ziedelth.jais.utils.animes
 
+import fr.ziedelth.jais.utils.FileImpl
+import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import fr.ziedelth.jais.utils.debug.JLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -96,7 +100,7 @@ data class EpisodeImpl(
         )?.episodes?.filter { it.season == episodeIImpl.season && it.episodeType == episodeIImpl.episodeType && it.langType == episodeIImpl.langType }
             ?.maxByOrNull { it.number }?.number ?: 0
 
-    fun insertOrUpdateEpisode(platformId: String, countryId: String, episode: Episode) {
+    fun insertOrUpdateEpisode(platformId: String, countryId: String, episode: Episode): Boolean {
         val episodeIImpl = EpisodeIImpl(platformId, UUID.randomUUID().toString(), episode)
         if (episodeIImpl.episodeType != EpisodeType.EPISODE) episodeIImpl.number =
             this.getLastNumberEpisodeType(countryId, episode.anime, episodeIImpl) + 1
@@ -130,6 +134,8 @@ data class EpisodeImpl(
 
                 this.animes.add(aImpl)
             }
+
+            return true
         } else {
             // Épisode existant dans un anime, récupération...
             val aImpl = this.animes.find { aImpl -> aImpl.episodes.any { it.eId == episodeIImpl.eId } }
@@ -145,6 +151,8 @@ data class EpisodeImpl(
 
             if (aep?.duration != episodeIImpl.duration) aep?.duration = episodeIImpl.duration
         }
+
+        return false
     }
 
     private fun fetchAnimeImage(animeImpl: AnimeImpl) {
