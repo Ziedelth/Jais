@@ -72,4 +72,6 @@ object FileImpl {
         )
         else String.format("%.0f B", bytes.toFloat())
     }
+
+    fun toFormat(bytes: Int): String = toFormat(bytes.toLong())
 }

@@ -14,12 +14,7 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
 @CountryHandler(
     name = "France",
     flag = "\uD83C\uDDEB\uD83C\uDDF7",
-    season = "Saison",
-    episode = "Épisode",
-    film = "Film",
-    special = "Spécial",
-    subtitles = "VOSTFR",
-    dubbed = "VF"
+    season = "Saison"
 )
 class FranceCountry : Country {
     override fun checkOnNewsURL(platform: Platform): String? {

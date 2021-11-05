@@ -9,10 +9,5 @@ package fr.ziedelth.jais.utils.animes.countries
 annotation class CountryHandler(
     val name: String,
     val flag: String,
-    val season: String,
-    val episode: String,
-    val film: String,
-    val special: String,
-    val subtitles: String,
-    val dubbed: String
+    val season: String
 )

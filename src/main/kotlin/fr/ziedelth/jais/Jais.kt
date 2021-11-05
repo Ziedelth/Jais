@@ -12,8 +12,7 @@ import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.Notifications
-import fr.ziedelth.jais.utils.animes.EpisodeImpl
+import fr.ziedelth.jais.utils.animes.EpisodeMapper
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
@@ -22,7 +21,6 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.debug.JLogger
-import fr.ziedelth.jais.utils.debug.JRecord
 import fr.ziedelth.jais.utils.debug.JThread
 import java.io.File
 import java.io.FileReader
@@ -38,7 +36,6 @@ object Jais {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        Notifications.sendNotification("\uD83D\uDC95 Aibō", "I'm happy to serve you, Aibō!")
         JLogger.info("Init...")
 
         JLogger.info("Adding countries...")
@@ -51,11 +48,7 @@ object Jais {
 
         JThread.start({
             JLogger.info("Checking episodes...")
-
-            val jRecord = JRecord("Fetch_Episodes")
-            jRecord.start()
             this.checkEpisodes()
-            jRecord.stop()
 
             JLogger.info("All episodes are checked!")
         }, delay = 120000L, priority = Thread.MAX_PRIORITY)
@@ -70,29 +63,28 @@ object Jais {
                 val gson = GsonBuilder().setPrettyPrinting().create()
                 val file = File("episodes.json")
 
-                val episodeImpl = if (!file.exists()) {
+                val episodeMapper = if (!file.exists()) {
                     file.createNewFile()
                     Files.writeString(file.toPath(), gson.toJson(JsonObject()))
-                    EpisodeImpl()
+                    EpisodeMapper()
                 } else {
-                    gson.fromJson(FileReader(file), EpisodeImpl::class.java)
+                    gson.fromJson(FileReader(file), EpisodeMapper::class.java)
                 }
 
-                if (episodeImpl != null) {
+                if (episodeMapper != null) {
                     list.sortedWith(this.comparator).forEach { episode ->
                         val platformImpl = this.getPlatformInformation(episode.platform)!!
                         val countryImpl = this.getCountryInformation(episode.country)!!
-                        val pImpl = episodeImpl.insertOrUpdatePlatform(platformImpl.platformHandler)
-                        val cImpl = episodeImpl.insertOrUpdateCountry(countryImpl.countryHandler)
+                        val pImpl = episodeMapper.insertOrUpdatePlatform(platformImpl.platformHandler)
+                        val cImpl = episodeMapper.insertOrUpdateCountry(countryImpl.countryHandler)
 
-                        val showOut = episodeImpl.insertOrUpdateEpisode(pImpl.uuid, cImpl.uuid, episode)
-                        if (showOut) Notifications.sendEpisodeNotification(episode)
+                        episodeMapper.insertOrUpdateEpisode(pImpl.uuid, cImpl.uuid, episode)
                     }
 
-                    episodeImpl.update()
+                    episodeMapper.update()
                 }
 
-                Files.writeString(file.toPath(), gson.toJson(episodeImpl))
+                Files.writeString(file.toPath(), gson.toJson(episodeMapper))
             }
         }
     }

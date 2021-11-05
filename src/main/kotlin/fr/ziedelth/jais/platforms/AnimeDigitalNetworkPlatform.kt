@@ -49,7 +49,8 @@ class AnimeDigitalNetworkPlatform : Platform() {
                     !this.checkedEpisodes.contains(it.id.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
                         ISO8601.fromCalendar1(it.releaseDate),
                         ISO8601.fromCalendar(calendar)
-                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
+                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate)) && it.show?.genres?.map { g -> g.lowercase() }
+                        ?.contains("Animation japonaise".lowercase()) == true
                 }?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }?.forEachIndexed { _, animeDigitalNetworkEpisode ->
                     val episode = animeDigitalNetworkEpisode.toEpisode() ?: return@forEachIndexed
                     list.add(episode)

@@ -58,6 +58,7 @@ data class WakanimEpisode(
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = this.anime!!,
             animeImage = this.animeImage,
+            animeGenres = emptyArray(),
             season = this.season ?: 1,
             number = this.number ?: 1,
             episodeType = this.episodeType!!,
@@ -69,51 +70,5 @@ data class WakanimEpisode(
             image = this.image,
             duration = this.duration!!,
         ) else null
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as WakanimEpisode
-
-        if (releaseDate != other.releaseDate) return false
-        if (anime != other.anime) return false
-        if (season != other.season) return false
-        if (number != other.number) return false
-        if (episodeType != other.episodeType) return false
-        if (langType != other.langType) return false
-        if (episodeId != other.episodeId) return false
-        if (image != other.image) return false
-        if (duration != other.duration) return false
-        if (url != other.url) return false
-        if (platformHandler != other.platformHandler) return false
-        if (platform != other.platform) return false
-        if (countryHandler != other.countryHandler) return false
-        if (country != other.country) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = releaseDate?.hashCode() ?: 0
-        result = 31 * result + (anime?.hashCode() ?: 0)
-        result = 31 * result + (season?.hashCode() ?: 0)
-        result = 31 * result + (number?.hashCode() ?: 0)
-        result = 31 * result + (episodeType?.hashCode() ?: 0)
-        result = 31 * result + (langType?.hashCode() ?: 0)
-        result = 31 * result + (episodeId?.hashCode() ?: 0)
-        result = 31 * result + (image?.hashCode() ?: 0)
-        result = 31 * result + (duration?.hashCode() ?: 0)
-        result = 31 * result + (url?.hashCode() ?: 0)
-        result = 31 * result + (platformHandler?.hashCode() ?: 0)
-        result = 31 * result + (platform?.hashCode() ?: 0)
-        result = 31 * result + (countryHandler?.hashCode() ?: 0)
-        result = 31 * result + (country?.hashCode() ?: 0)
-        return result
-    }
-
-    override fun toString(): String {
-        return "WakanimEpisode(releaseDate=$releaseDate, anime=$anime, season=$season, number=$number, episodeType=$episodeType, langType=$langType, episodeId=$episodeId, image=$image, duration=$duration, url=$url, platformHandler=$platformHandler, platform=$platform, countryHandler=$countryHandler, country=$country)"
     }
 }

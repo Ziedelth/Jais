@@ -8,22 +8,20 @@ import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
+import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import fr.ziedelth.jais.utils.debug.JLogger
-import java.io.File
-import java.io.FileOutputStream
+import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 
-const val DESIRED_WEIGHT = 50 * 1024 // In ib (1024 format)
 private val EPISODE_COMPARATOR =
-    Comparator.comparing { episodeIImpl: EpisodeIImpl -> episodeIImpl.season }.thenComparing(EpisodeIImpl::number)
+    Comparator.comparing { episodeIImpl: EpisodeImpl -> episodeIImpl.season }.thenComparing(EpisodeImpl::number)
 
-data class EpisodeImpl(
+data class EpisodeMapper(
     var platforms: MutableList<PlatformImpl> = mutableListOf(),
     var countries: MutableList<CountryImpl> = mutableListOf(),
     var animes: MutableList<AnimeImpl> = mutableListOf(),
@@ -31,12 +29,7 @@ data class EpisodeImpl(
     fun update() {
         this.animes = this.animes.sortedBy { ISO8601.toCalendar1(it.releaseDate) }.toMutableList()
 
-        this.animes.forEach { aImpl ->
-            aImpl.episodes = aImpl.episodes.sortedWith(EPISODE_COMPARATOR).toMutableList()
-
-            fetchAnimeImage(aImpl)
-            aImpl.episodes.forEach { eImpl -> fetchEpisodeImage(eImpl) }
-        }
+        this.animes.forEach { aImpl -> aImpl.episodes = aImpl.episodes.sortedWith(EPISODE_COMPARATOR).toMutableList() }
     }
 
     private fun hasPlatform(name: String): Boolean =
@@ -73,11 +66,6 @@ data class EpisodeImpl(
 
             if (cImpl.flag != countryHandler.flag) cImpl.flag = countryHandler.flag
             if (cImpl.season != countryHandler.season) cImpl.season = countryHandler.season
-            if (cImpl.episode != countryHandler.episode) cImpl.episode = countryHandler.episode
-            if (cImpl.film != countryHandler.film) cImpl.film = countryHandler.film
-            if (cImpl.special != countryHandler.special) cImpl.special = countryHandler.special
-            if (cImpl.subtitles != countryHandler.subtitles) cImpl.subtitles = countryHandler.subtitles
-            if (cImpl.dubbed != countryHandler.dubbed) cImpl.dubbed = countryHandler.dubbed
 
             cImpl
         } else {
@@ -93,7 +81,7 @@ data class EpisodeImpl(
     private fun getAnime(countryId: String, anime: String): AnimeImpl? =
         this.animes.find { it.countryId == countryId && it.name.lowercase().contains(anime.lowercase()) }
 
-    private fun getLastNumberEpisodeType(countryId: String, anime: String, episodeIImpl: EpisodeIImpl): Long =
+    private fun getLastNumberEpisodeType(countryId: String, anime: String, episodeIImpl: EpisodeImpl): Long =
         this.getAnime(
             countryId,
             anime
@@ -101,7 +89,7 @@ data class EpisodeImpl(
             ?.maxByOrNull { it.number }?.number ?: 0
 
     fun insertOrUpdateEpisode(platformId: String, countryId: String, episode: Episode): Boolean {
-        val episodeIImpl = EpisodeIImpl(platformId, UUID.randomUUID().toString(), episode)
+        val episodeIImpl = EpisodeImpl(platformId, UUID.randomUUID().toString(), episode)
         if (episodeIImpl.episodeType != EpisodeType.EPISODE) episodeIImpl.number =
             this.getLastNumberEpisodeType(countryId, episode.anime, episodeIImpl) + 1
 
@@ -126,6 +114,7 @@ data class EpisodeImpl(
                     episode.releaseDate,
                     episode.anime,
                     episode.animeImage,
+                    episode.animeGenres.toMutableList(),
                     mutableListOf(episodeIImpl)
                 )
 
@@ -156,55 +145,26 @@ data class EpisodeImpl(
     }
 
     private fun fetchAnimeImage(animeImpl: AnimeImpl) {
-        val file = File(FileImpl.directories("images", "animes"), "${animeImpl.uuid}.jpg")
-
-        if (FileImpl.notExists(file) && !animeImpl.image.isNullOrEmpty()) {
-            Impl.tryCatch("Failed to fetch anime image ${animeImpl.name}") {
-                JLogger.info("Fetching animeImpl image ${animeImpl.name}...")
-                val quality = this.compress(animeImpl.image, 350, 500, file)
-                JLogger.config(
-                    "Anime image ${animeImpl.name} quality -> ${
-                        String.format(
-                            "%.2f",
-                            quality * 100
-                        )
-                    }% ${FileImpl.toFormat(file.length())}"
-                )
-            }
+        Impl.tryCatch("Failed to fetch anime image ${animeImpl.name}") {
+            val image = writeImage(animeImpl.image, 350, 500)
+            animeImpl.image = Base64.getEncoder().encodeToString(image)
         }
     }
 
-    private fun fetchEpisodeImage(episodeIImpl: EpisodeIImpl) {
-        val file = File(FileImpl.directories("images", "episodes"), "${episodeIImpl.uuid}.jpg")
-
-        if (FileImpl.notExists(file) && !episodeIImpl.image.isNullOrEmpty()) {
-            Impl.tryCatch("Failed to fetch episode image ${episodeIImpl.eId}") {
-                JLogger.info("Fetching episode image ${episodeIImpl.eId}...")
-                val quality = this.compress(episodeIImpl.image, 640, 360, file)
-                JLogger.config(
-                    "Episode image ${episodeIImpl.eId} quality -> ${
-                        String.format(
-                            "%.2f",
-                            quality * 100
-                        )
-                    }% ${FileImpl.toFormat(file.length())}"
-                )
-            }
+    private fun fetchEpisodeImage(episodeIImpl: EpisodeImpl) {
+        Impl.tryCatch("Failed to fetch episode image ${episodeIImpl.eId}") {
+            val image = writeImage(episodeIImpl.image, 640, 360)
+            episodeIImpl.image = Base64.getEncoder().encodeToString(image)
         }
     }
 
-    private fun compress(image: String?, width: Int, height: Int, file: File): Float {
-        val resizedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), width, height)
-        var quality = -1f
-
-        do {
-            if (quality == -1f) quality = .75f
-            else quality -= .01f
-
-            FileImpl.compressImage(resizedImage, FileOutputStream(file), quality)
-        } while (file.length() > DESIRED_WEIGHT)
-
-        return quality
+    private fun writeImage(url: String?, width: Int, height: Int): ByteArray? {
+        return if (!url.isNullOrEmpty()) {
+            val image = FileImpl.resizeImage(ImageIO.read(URL(url)), width, height)
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            ImageIO.write(image, "jpg", byteArrayOutputStream)
+            byteArrayOutputStream.toByteArray()
+        } else null
     }
 }
 
@@ -229,22 +189,12 @@ data class CountryImpl(
     val name: String,
     var flag: String,
     var season: String,
-    var episode: String,
-    var film: String,
-    var special: String,
-    var subtitles: String,
-    var dubbed: String
 ) {
     constructor(uuid: String, countryHandler: CountryHandler) : this(
         uuid = uuid,
         name = countryHandler.name,
         flag = countryHandler.flag,
         season = countryHandler.season,
-        episode = countryHandler.episode,
-        film = countryHandler.film,
-        special = countryHandler.special,
-        subtitles = countryHandler.subtitles,
-        dubbed = countryHandler.dubbed,
     )
 }
 
@@ -254,10 +204,11 @@ data class AnimeImpl(
     val releaseDate: String,
     val name: String,
     var image: String?,
-    var episodes: MutableList<EpisodeIImpl>
+    var genres: MutableList<AnimeGenre>,
+    var episodes: MutableList<EpisodeImpl>
 )
 
-data class EpisodeIImpl(
+data class EpisodeImpl(
     val platformId: String,
     val uuid: String,
     val releaseDate: String,

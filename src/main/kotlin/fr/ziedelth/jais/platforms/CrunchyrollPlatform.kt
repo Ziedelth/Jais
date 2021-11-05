@@ -6,7 +6,7 @@ package fr.ziedelth.jais.platforms
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
@@ -34,7 +34,7 @@ class CrunchyrollPlatform : Platform() {
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
-        val gson = Gson()
+        val gson = GsonBuilder().setPrettyPrinting().create()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
 
@@ -60,10 +60,9 @@ class CrunchyrollPlatform : Platform() {
                         ISO8601.fromCalendar(calendar)
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.forEachIndexed { _, crunchyrollEpisode ->
-                    val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
-
                     if (!this.animeImages.containsKey(crunchyrollEpisode.seriesTitle)) {
-                        if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver(true)
+                        if (webDriverImpl == null) webDriverImpl =
+                            WebDriverBuilder.setDriver(chrome = true, show = true)
                         webDriverImpl?.driver?.get(crunchyrollEpisode.link)
 
                         val animeUrl =
@@ -77,6 +76,8 @@ class CrunchyrollPlatform : Platform() {
 
                         this.addAnimeImage(crunchyrollEpisode.seriesTitle, animeImage)
                     } else crunchyrollEpisode.seriesImage = this.animeImages[crunchyrollEpisode.seriesTitle]
+
+                    val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
 
                     list.add(episode)
                     this.addCheckEpisodes(crunchyrollEpisode.mediaId!!)

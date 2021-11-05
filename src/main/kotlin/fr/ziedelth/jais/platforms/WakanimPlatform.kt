@@ -17,6 +17,7 @@ import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import fr.ziedelth.jais.utils.debug.JLogger
 import org.openqa.selenium.By
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.ExpectedConditions
@@ -43,6 +44,7 @@ class WakanimPlatform : Platform() {
         val date = getDate(calendar)
 
         this.getAllowedCountries().forEach { country ->
+            val countryInformation = Jais.getCountryInformation(country)
             var webDriverImpl: WebDriverImpl? = null
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
@@ -51,7 +53,7 @@ class WakanimPlatform : Platform() {
                 if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
                     this.lastCheck[country] = System.currentTimeMillis()
 
-                    if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
+                    if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver(show = true)
                     webDriverImpl?.driver?.get("https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false")
 
                     val bodyText =
@@ -61,7 +63,7 @@ class WakanimPlatform : Platform() {
                     bodyText?.removeAt(0)
                     this.bodyText[country] = bodyText
                     this.urls[country] =
-                        webDriverImpl?.wait?.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
+                        webDriverImpl?.wait?.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(By.className("Calendar-linkImg")))
                             ?.map { it.getAttribute("href") }
                 }
 
@@ -82,13 +84,15 @@ class WakanimPlatform : Platform() {
                             val anime = episodeText?.subList(0, episodeText.size - 3)?.joinToString(",")?.split(" ")
                                 ?.filterIndexed { index, _ -> index != 0 }?.joinToString(" ")
                             val number = episodeText?.get(episodeText.size - 2)?.replace(" ", "")?.toLongOrNull()
+
                             val episodeType =
-                                if (Jais.getCountryInformation(country)!!.countryHandler.film == (episodeText?.get(
+                                if (EpisodeType.FILM.getData(countryInformation?.country?.javaClass)?.data == (episodeText?.get(
                                         episodeText.size - 3
                                     )?.split(" ")?.get(2) ?: "")
                                 ) EpisodeType.FILM else EpisodeType.EPISODE
                             val langType =
                                 LangType.getLangType(episodeText?.get(episodeText.size - 1)?.replace(" ", ""))
+                            if (langType == LangType.UNKNOWN) continue
                             val url = this.urls[country]?.get(i / 4)
                             val wakanimType = url?.split("/")?.get(6)
 
@@ -106,9 +110,38 @@ class WakanimPlatform : Platform() {
                                 if (episodeId == null || this.checkedEpisodes.contains(episodeId)) continue
                             }
 
-                            if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
+                            if (webDriverImpl == null) webDriverImpl =
+                                WebDriverBuilder.setDriver(show = true)
                             webDriverImpl?.driver?.get(url)
-                            Impl.tryCatch { webDriverImpl?.driver?.findElementByClassName("css-1fxzzmg")?.click() }
+
+                            for (nbTry in 1..5) {
+                                try {
+                                    if (webDriverImpl?.driver?.findElement(By.id("main-iframe")) != null) {
+                                        JLogger.warning("Detected as robot for ${this.javaClass.simpleName}... Waiting 10 seconds...")
+                                        Thread.currentThread().join(10000)
+                                        if (nbTry >= 5) return@tryCatch
+                                        continue
+                                    } else break
+                                } catch (exception: Exception) {
+                                    break
+                                }
+                            }
+
+                            Impl.tryCatch { webDriverImpl?.driver?.findElement(By.className("css-1fxzzmg"))?.click() }
+
+//                            webDriverImpl?.driver?.findElementByXPath("/html/body/header/div[2]/div/div[4]/a/span")?.click()?.let {
+//                                val loginElement = webDriverImpl?.wait?.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/nav[2]/div/form/div[1]/input")))
+//                                loginElement?.click()
+//                                loginElement?.sendKeys("ziedelth@gmail.com")
+//
+//                                val passwordElement = webDriverImpl?.wait?.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/nav[2]/div/form/div[2]/input")))
+//                                passwordElement?.click().let { passwordElement?.sendKeys("b9%HB^P*5Pz5Pe") }
+//
+//                                webDriverImpl?.driver?.findElementByXPath("/html/body/nav[2]/div/form/button")?.click()
+//                                JLogger.warning("Connect...")
+//                            }
+//
+//                            Thread.currentThread().join(10000L)
 
                             val cardEpisodeElement: WebElement? = if (wakanimType.equals("episode", true)) {
                                 // IN EPISODES
@@ -121,7 +154,7 @@ class WakanimPlatform : Platform() {
                                 )?.firstOrNull()
                             } else {
                                 try {
-                                    if (webDriverImpl?.driver?.findElementByClassName("NoEpisodes") != null) continue
+                                    if (webDriverImpl?.driver?.findElement(By.className("NoEpisodes")) != null) continue
                                 } catch (exception: Exception) {
                                 }
 
@@ -178,6 +211,20 @@ class WakanimPlatform : Platform() {
 
                                 val animeImage = if (!this.animeImages.containsKey(anime)) {
                                     webDriverImpl?.driver?.get(animeUrl)
+
+                                    for (nbTry in 1..5) {
+                                        try {
+                                            if (webDriverImpl?.driver?.findElement(By.id("main-iframe")) != null) {
+                                                JLogger.warning("Detected as robot for ${this.javaClass.simpleName}... Waiting 10 seconds...")
+                                                Thread.currentThread().join(10000)
+                                                if (nbTry >= 5) return@tryCatch
+                                                continue
+                                            } else break
+                                        } catch (exception: Exception) {
+                                            break
+                                        }
+                                    }
+
                                     webDriverImpl?.wait?.until(
                                         ExpectedConditions.visibilityOfElementLocated(
                                             By.className(
