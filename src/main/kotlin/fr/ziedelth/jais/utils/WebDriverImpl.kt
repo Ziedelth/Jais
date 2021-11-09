@@ -18,38 +18,41 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 object WebDriverBuilder {
+    data class WebDriverImpl(val driver: WebDriver?, val wait: WebDriverWait?)
+
+    private val drivers: MutableList<WebDriverImpl> = mutableListOf()
     private val profile = FirefoxProfile()
     private val service = ChromeDriverService.Builder().withSilent(true).build() as ChromeDriverService
 
-    fun setDriver(chrome: Boolean = true, show: Boolean = false): WebDriverImpl {
+    fun setDriver(chrome: Boolean = true): WebDriverImpl {
         Logger.getLogger(ProtocolHandshake::class.java.name).level = Level.OFF
 
-        if (chrome) {
-            val options = ChromeOptions().setHeadless(!show)
+        val driver = if (chrome) {
+            val options = ChromeOptions().setProxy(null)
+            options.setCapability("silent", true)
             options.addArguments("--disable-blink-features=AutomationControlled")
+            options.addArguments("Referrer")
             options.setExperimentalOption("excludeSwitches", arrayOf("enable-automation"))
             options.setExperimentalOption("useAutomationExtension", false)
-            options.setBinary("C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe")
 
-            val driver = ChromeDriver(this.service, options)
-            driver.manage().timeouts().pageLoadTimeout(60L, TimeUnit.SECONDS)
-            driver.manage().timeouts().setScriptTimeout(60L, TimeUnit.SECONDS)
-            val wait = WebDriverWait(driver, 120L)
-            return WebDriverImpl(driver, wait)
+            ChromeDriver(this.service, options)
         } else {
             System.setProperty(FirefoxDriver.SystemProperty.DRIVER_USE_MARIONETTE, "true")
             System.setProperty(FirefoxDriver.SystemProperty.BROWSER_LOGFILE, "/dev/null")
-            val options = FirefoxOptions().setHeadless(!show).setProfile(this.profile)
+            val options = FirefoxOptions().setProfile(this.profile).setProxy(null)
             options.setCapability("silent", true)
             options.addArguments("--disable-blink-features=AutomationControlled")
+            options.addArguments("Referrer")
 
-            val driver = FirefoxDriver(options)
-            driver.manage().timeouts().pageLoadTimeout(60L, TimeUnit.SECONDS)
-            driver.manage().timeouts().setScriptTimeout(60L, TimeUnit.SECONDS)
-            val wait = WebDriverWait(driver, 120L)
-            return WebDriverImpl(driver, wait)
+            FirefoxDriver(options)
         }
+
+        driver.manage().timeouts().pageLoadTimeout(60L, TimeUnit.SECONDS)
+        driver.manage().timeouts().setScriptTimeout(60L, TimeUnit.SECONDS)
+        val wait = WebDriverWait(driver, 120L)
+        val webDriverImpl = WebDriverImpl(driver, wait)
+
+        this.drivers.add(webDriverImpl)
+        return webDriverImpl
     }
 }
-
-data class WebDriverImpl(val driver: WebDriver?, val wait: WebDriverWait?)

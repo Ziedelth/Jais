@@ -33,6 +33,12 @@ data class CrunchyrollEpisode(
     val link: String?,
     val keywords: String?,
 ) {
+    data class Thumbnail(
+        val url: String?,
+        val width: String?,
+        val height: String?
+    )
+
     var platformImpl: PlatformImpl? = null
     var platform: Platform? = null
         set(value) {
@@ -71,7 +77,7 @@ data class CrunchyrollEpisode(
             country = this.countryImpl!!.countryHandler.name,
             releaseDate = ISO8601.fromCalendar2(this.pubDate)!!,
             anime = this.seriesTitle!!,
-            animeImage = this.seriesImage,
+            animeImage = this.seriesImage?.replace("http://", "https://")?.replace("http://", "https://"),
             animeGenres = AnimeGenre.getGenres(this.keywords?.split(", ")?.toTypedArray() ?: emptyArray()),
             season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber?.toLongOrNull() ?: -1,
@@ -89,18 +95,11 @@ data class CrunchyrollEpisode(
 
             eId = this.mediaId!!,
             title = this.episodeTitle,
-            url = this.link,
+            url = this.link?.replace("http://", "https://"),
             image = this.thumbnail?.maxByOrNull {
                 it.width?.toLongOrNull()?.times(it.height?.toLongOrNull() ?: 0) ?: 0
-            }?.url,
+            }?.url?.replace("http://", "https://"),
             duration = this.duration!!,
         ) else null
     }
 }
-
-data class Thumbnail(
-    val url: String?,
-    val width: String?,
-    val height: String?
-)
-

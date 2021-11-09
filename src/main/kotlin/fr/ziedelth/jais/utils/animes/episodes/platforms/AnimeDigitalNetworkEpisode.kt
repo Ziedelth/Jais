@@ -28,6 +28,13 @@ data class AnimeDigitalNetworkEpisode(
     val duration: Long?,
     val url: String?,
 ) {
+    data class Show(
+        val title: String?,
+        val image2x: String?,
+        val shortTitle: String?,
+        val genres: Array<String>?,
+    )
+
     var platformHandler: PlatformHandler? = null
     var platform: Platform? = null
         set(value) {
@@ -56,7 +63,7 @@ data class AnimeDigitalNetworkEpisode(
             country = this.countryHandler!!.name,
             releaseDate = ISO8601.fromCalendar1(this.releaseDate)!!,
             anime = this.show!!.shortTitle ?: this.show.title!!,
-            animeImage = this.show.image2x,
+            animeImage = this.show.image2x?.replace("http://", "https://"),
             animeGenres = AnimeGenre.getGenres(
                 this.show.genres?.flatMap { it.split(" / ") }?.toTypedArray() ?: emptyArray()
             ),
@@ -67,16 +74,9 @@ data class AnimeDigitalNetworkEpisode(
 
             eId = this.id!!.toString(),
             title = this.name,
-            url = this.url,
-            image = this.image,
+            url = this.url?.replace("http://", "https://"),
+            image = this.image?.replace("http://", "https://"),
             duration = this.duration!!,
         ) else null
     }
 }
-
-data class Show(
-    val title: String?,
-    val image2x: String?,
-    val shortTitle: String?,
-    val genres: Array<String>?,
-)

@@ -5,9 +5,9 @@
 package fr.ziedelth.jais.utils
 
 import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
-
 
 object ISO8601 {
     private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
@@ -59,5 +59,11 @@ object ISO8601 {
 
     fun isSameDayUsingISO8601(iso8601string1: String?, iso8601string2: String?): Boolean {
         return iso8601string1?.split("T")?.get(0) == iso8601string2?.split("T")?.get(0)
+    }
+
+    fun toUTCDate(iso8601string: String?): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date.from(ZonedDateTime.parse(iso8601string).toInstant()))
     }
 }

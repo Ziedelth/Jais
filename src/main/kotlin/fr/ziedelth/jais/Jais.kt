@@ -10,13 +10,11 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
-import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.EpisodeMapper
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
-import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
@@ -31,8 +29,6 @@ import kotlin.reflect.KClass
 object Jais {
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
-    private val comparator = Comparator.comparing { episode: Episode -> ISO8601.toCalendar1(episode.releaseDate) }
-        .thenComparing(Episode::anime).thenComparing(Episode::season).thenComparing(Episode::number)
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -51,7 +47,7 @@ object Jais {
             this.checkEpisodes()
 
             JLogger.info("All episodes are checked!")
-        }, delay = 120000L, priority = Thread.MAX_PRIORITY)
+        }, delay = 300000L, priority = Thread.MAX_PRIORITY)
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
@@ -72,7 +68,7 @@ object Jais {
                 }
 
                 if (episodeMapper != null) {
-                    list.sortedWith(this.comparator).forEach { episode ->
+                    list.forEach { episode ->
                         val platformImpl = this.getPlatformInformation(episode.platform)!!
                         val countryImpl = this.getCountryInformation(episode.country)!!
                         val pImpl = episodeMapper.insertOrUpdatePlatform(platformImpl.platformHandler)
@@ -111,10 +107,6 @@ object Jais {
         } else JLogger.warning("Failed to add ${platform.simpleName}")
     }
 
-    fun getCountriesInformation(): Array<CountryImpl> {
-        return this.countries.toTypedArray()
-    }
-
     fun getCountryInformation(country: String?): CountryImpl? {
         return if (!country.isNullOrBlank()) this.countries.firstOrNull {
             it.countryHandler.name.equals(
@@ -136,7 +128,7 @@ object Jais {
         return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
     }
 
-    fun getPlatformInformation(platform: String?): PlatformImpl? {
+    private fun getPlatformInformation(platform: String?): PlatformImpl? {
         return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
             it.platformHandler.name.equals(
                 platform,

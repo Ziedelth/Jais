@@ -33,7 +33,7 @@ class JPluginLogger(val plugin: JavaPlugin) : Logger("ZiedPluginLogger", null) {
 
 class JPluginFormatter(val plugin: JavaPlugin) : Formatter() {
     override fun format(record: LogRecord?): String {
-        val message: String = formatMessage(record)
+        val message = formatMessage(record)
         val sw = StringWriter()
         val pw = PrintWriter(sw)
         pw.println()

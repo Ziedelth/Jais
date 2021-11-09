@@ -13,6 +13,24 @@ import java.util.logging.*
 import java.util.logging.Formatter
 
 object JLogger : Logger("ZiedLogger", null) {
+    class JFormatter : Formatter() {
+        override fun format(record: LogRecord?): String {
+            val message = formatMessage(record)
+            val sw = StringWriter()
+            val pw = PrintWriter(sw)
+            pw.println()
+            record?.thrown?.printStackTrace(pw)
+            pw.close()
+            val throwable: String = sw.toString()
+            return "[${
+                SimpleDateFormat(
+                    "HH:mm:ss yyyy/MM/dd",
+                    Locale.FRANCE
+                ).format(Date())
+            } ${record?.level?.localizedName}] ${message}${throwable}${if (throwable.isEmpty()) System.lineSeparator() else ""}"
+        }
+    }
+
     init {
         val jFormatter = JFormatter()
 
@@ -28,23 +46,5 @@ object JLogger : Logger("ZiedLogger", null) {
         fileHandler.level = Level.ALL
         this.addHandler(fileHandler)
         this.level = Level.ALL
-    }
-}
-
-class JFormatter : Formatter() {
-    override fun format(record: LogRecord?): String {
-        val message = formatMessage(record)
-        val sw = StringWriter()
-        val pw = PrintWriter(sw)
-        pw.println()
-        record?.thrown?.printStackTrace(pw)
-        pw.close()
-        val throwable: String = sw.toString()
-        return "[${
-            SimpleDateFormat(
-                "HH:mm:ss yyyy/MM/dd",
-                Locale.FRANCE
-            ).format(Date())
-        } ${record?.level?.localizedName}] ${message}${throwable}${if (throwable.isEmpty()) System.lineSeparator() else ""}"
     }
 }

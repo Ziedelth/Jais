@@ -12,7 +12,6 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.WebDriverBuilder
-import fr.ziedelth.jais.utils.WebDriverImpl
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.platforms.CrunchyrollEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
@@ -39,7 +38,7 @@ class CrunchyrollPlatform : Platform() {
         val objectMapper = ObjectMapper()
 
         this.getAllowedCountries().forEach { country ->
-            var webDriverImpl: WebDriverImpl? = null
+            var webDriverImpl: WebDriverBuilder.WebDriverImpl? = null
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream =
@@ -61,8 +60,7 @@ class CrunchyrollPlatform : Platform() {
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.forEachIndexed { _, crunchyrollEpisode ->
                     if (!this.animeImages.containsKey(crunchyrollEpisode.seriesTitle)) {
-                        if (webDriverImpl == null) webDriverImpl =
-                            WebDriverBuilder.setDriver(chrome = true, show = true)
+                        if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
                         webDriverImpl?.driver?.get(crunchyrollEpisode.link)
 
                         val animeUrl =

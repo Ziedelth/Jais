@@ -5,7 +5,6 @@
 package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.utils.FileImpl
-import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
@@ -13,23 +12,93 @@ import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
 import fr.ziedelth.jais.utils.animes.episodes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import java.io.ByteArrayOutputStream
+import java.io.File
 import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
-
-private val EPISODE_COMPARATOR =
-    Comparator.comparing { episodeIImpl: EpisodeImpl -> episodeIImpl.season }.thenComparing(EpisodeImpl::number)
 
 data class EpisodeMapper(
     var platforms: MutableList<PlatformImpl> = mutableListOf(),
     var countries: MutableList<CountryImpl> = mutableListOf(),
     var animes: MutableList<AnimeImpl> = mutableListOf(),
 ) {
-    fun update() {
-        this.animes = this.animes.sortedBy { ISO8601.toCalendar1(it.releaseDate) }.toMutableList()
+    data class PlatformImpl(
+        val uuid: String,
+        val name: String,
+        var url: String,
+        var image: String,
+        var color: Int,
+    ) {
+        constructor(uuid: String, platformHandler: PlatformHandler) : this(
+            uuid = uuid,
+            name = platformHandler.name,
+            url = platformHandler.url,
+            image = platformHandler.image,
+            color = platformHandler.color,
+        )
+    }
 
-        this.animes.forEach { aImpl -> aImpl.episodes = aImpl.episodes.sortedWith(EPISODE_COMPARATOR).toMutableList() }
+    data class CountryImpl(
+        val uuid: String,
+        val name: String,
+        var flag: String,
+        var season: String,
+    ) {
+        constructor(uuid: String, countryHandler: CountryHandler) : this(
+            uuid = uuid,
+            name = countryHandler.name,
+            flag = countryHandler.flag,
+            season = countryHandler.season,
+        )
+    }
+
+    data class AnimeImpl(
+        val countryId: String,
+        val uuid: String,
+        val releaseDate: String,
+        val name: String,
+        var image: String?,
+        var genres: MutableList<AnimeGenre>,
+        var episodes: MutableList<EpisodeImpl>
+    )
+
+    data class EpisodeImpl(
+        val platformId: String,
+        val uuid: String,
+        val releaseDate: String,
+        val season: Long,
+        var number: Long,
+        val episodeType: EpisodeType,
+        val langType: LangType,
+        val eId: String,
+
+        var title: String?,
+        var url: String?,
+        var image: String?,
+        var duration: Long
+    ) {
+        constructor(platformId: String, uuid: String, episode: Episode) : this(
+            platformId = platformId,
+            uuid = uuid,
+            releaseDate = episode.releaseDate,
+            season = episode.season,
+            number = episode.number,
+            episodeType = episode.episodeType,
+            langType = episode.langType,
+            eId = episode.eId,
+            title = episode.title,
+            url = episode.url,
+            image = episode.image,
+            duration = episode.duration
+        )
+    }
+
+    fun update() {
+        this.animes = this.animes.sortedBy { it.name }.toMutableList()
+        this.animes.forEach { aImpl -> aImpl.episodes =
+            aImpl.episodes.sortedWith(Comparator.comparing { episodeIImpl: EpisodeImpl -> episodeIImpl.season }
+                .thenComparing(EpisodeImpl::number)).toMutableList()
+        }
     }
 
     private fun hasPlatform(name: String): Boolean =
@@ -101,10 +170,14 @@ data class EpisodeMapper(
 
                 if (aImpl.image.isNullOrEmpty() && episode.animeImage?.isNotEmpty() == true) {
                     aImpl.image = episode.animeImage
-                    fetchAnimeImage(aImpl)
+                    aImpl.image = fetchAnimeImage(aImpl)
                 }
 
-                fetchEpisodeImage(episodeIImpl)
+                if (aImpl.genres.isEmpty() && episode.animeGenres.isNotEmpty()) {
+                    aImpl.genres = episode.animeGenres.toMutableList()
+                }
+
+                episodeIImpl.image = fetchEpisodeImage(episodeIImpl)
 
                 aImpl.episodes.add(episodeIImpl)
             } else {
@@ -118,8 +191,8 @@ data class EpisodeMapper(
                     mutableListOf(episodeIImpl)
                 )
 
-                fetchAnimeImage(aImpl)
-                fetchEpisodeImage(episodeIImpl)
+                aImpl.image = fetchAnimeImage(aImpl)
+                episodeIImpl.image = fetchEpisodeImage(episodeIImpl)
 
                 this.animes.add(aImpl)
             }
@@ -127,15 +200,15 @@ data class EpisodeMapper(
             return true
         } else {
             // Épisode existant dans un anime, récupération...
-            val aImpl = this.animes.find { aImpl -> aImpl.episodes.any { it.eId == episodeIImpl.eId } }
-            val aep = aImpl?.episodes?.find { it.eId == episodeIImpl.eId }
+            val aep =
+                this.animes.find { aImpl -> aImpl.episodes.any { it.eId == episodeIImpl.eId } }?.episodes?.find { it.eId == episodeIImpl.eId }
 
             if (aep?.title != episodeIImpl.title) aep?.title = episodeIImpl.title
             if (aep?.url != episodeIImpl.url) aep?.url = episodeIImpl.url
 
             if (aep?.image != episodeIImpl.image) {
                 aep?.image = episodeIImpl.image
-                fetchEpisodeImage(episodeIImpl)
+                episodeIImpl.image = fetchEpisodeImage(episodeIImpl)
             }
 
             if (aep?.duration != episodeIImpl.duration) aep?.duration = episodeIImpl.duration
@@ -144,97 +217,37 @@ data class EpisodeMapper(
         return false
     }
 
-    private fun fetchAnimeImage(animeImpl: AnimeImpl) {
+    private fun fetchAnimeImage(animeImpl: AnimeImpl): String? {
+        var path: String? = null
+        if (animeImpl.image.isNullOrEmpty()) return path
+
         Impl.tryCatch("Failed to fetch anime image ${animeImpl.name}") {
-            val image = writeImage(animeImpl.image, 350, 500)
-            animeImpl.image = Base64.getEncoder().encodeToString(image)
+            val folder = FileImpl.directories("images", "animes")
+            val file = File(folder, "${animeImpl.uuid}.jpg")
+
+            val image = FileImpl.resizeImage(ImageIO.read(URL(animeImpl.image)), 350, 500)
+            ImageIO.write(image, "jpg", file)
+
+            path = file.path
         }
+
+        return path
     }
 
-    private fun fetchEpisodeImage(episodeIImpl: EpisodeImpl) {
+    private fun fetchEpisodeImage(episodeIImpl: EpisodeImpl): String? {
+        var path: String? = null
+        if (episodeIImpl.image.isNullOrEmpty()) return path
+
         Impl.tryCatch("Failed to fetch episode image ${episodeIImpl.eId}") {
-            val image = writeImage(episodeIImpl.image, 640, 360)
-            episodeIImpl.image = Base64.getEncoder().encodeToString(image)
+            val folder = FileImpl.directories("images", "episodes")
+            val file = File(folder, "${episodeIImpl.uuid}.jpg")
+
+            val image = FileImpl.resizeImage(ImageIO.read(URL(episodeIImpl.image)), 640, 360)
+            ImageIO.write(image, "jpg", file)
+
+            path = file.path
         }
+
+        return path
     }
-
-    private fun writeImage(url: String?, width: Int, height: Int): ByteArray? {
-        return if (!url.isNullOrEmpty()) {
-            val image = FileImpl.resizeImage(ImageIO.read(URL(url)), width, height)
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            ImageIO.write(image, "jpg", byteArrayOutputStream)
-            byteArrayOutputStream.toByteArray()
-        } else null
-    }
-}
-
-data class PlatformImpl(
-    val uuid: String,
-    val name: String,
-    var url: String,
-    var image: String,
-    var color: Int,
-) {
-    constructor(uuid: String, platformHandler: PlatformHandler) : this(
-        uuid = uuid,
-        name = platformHandler.name,
-        url = platformHandler.url,
-        image = platformHandler.image,
-        color = platformHandler.color,
-    )
-}
-
-data class CountryImpl(
-    val uuid: String,
-    val name: String,
-    var flag: String,
-    var season: String,
-) {
-    constructor(uuid: String, countryHandler: CountryHandler) : this(
-        uuid = uuid,
-        name = countryHandler.name,
-        flag = countryHandler.flag,
-        season = countryHandler.season,
-    )
-}
-
-data class AnimeImpl(
-    val countryId: String,
-    val uuid: String,
-    val releaseDate: String,
-    val name: String,
-    var image: String?,
-    var genres: MutableList<AnimeGenre>,
-    var episodes: MutableList<EpisodeImpl>
-)
-
-data class EpisodeImpl(
-    val platformId: String,
-    val uuid: String,
-    val releaseDate: String,
-    val season: Long,
-    var number: Long,
-    val episodeType: EpisodeType,
-    val langType: LangType,
-    val eId: String,
-
-    var title: String?,
-    var url: String?,
-    var image: String?,
-    var duration: Long
-) {
-    constructor(platformId: String, uuid: String, episode: Episode) : this(
-        platformId = platformId,
-        uuid = uuid,
-        releaseDate = episode.releaseDate,
-        season = episode.season,
-        number = episode.number,
-        episodeType = episode.episodeType,
-        langType = episode.langType,
-        eId = episode.eId,
-        title = episode.title,
-        url = episode.url,
-        image = episode.image,
-        duration = episode.duration
-    )
 }

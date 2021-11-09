@@ -5,11 +5,12 @@
 package fr.ziedelth.jais.utils.animes.episodes
 
 import fr.ziedelth.jais.Jais
+import fr.ziedelth.jais.utils.ISO8601
 
 data class Episode(
     val platform: String,
     val country: String,
-    val releaseDate: String,
+    var releaseDate: String,
     var anime: String,
     var animeImage: String?,
     val animeGenres: Array<AnimeGenre>,
@@ -25,6 +26,7 @@ data class Episode(
     val duration: Long
 ) {
     init {
+        this.releaseDate = ISO8601.toUTCDate(this.releaseDate)
         this.anime = this.anime.replace("’", "'")
 
         val countryInformation = Jais.getCountryInformation(this.country)
