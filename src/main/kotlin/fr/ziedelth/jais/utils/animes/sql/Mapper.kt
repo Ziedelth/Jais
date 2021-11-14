@@ -29,13 +29,13 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM countries", blh)
     }
 
-    private fun getCountry(connection: Connection?, id: Long): CountryData? {
+    fun getCountry(connection: Connection?, id: Long): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE id = ?", blh, id).firstOrNull()
     }
 
-    private fun getCountry(connection: Connection?, name: String): CountryData? {
+    fun getCountry(connection: Connection?, name: String): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE name = ?", blh, name).firstOrNull()
@@ -60,13 +60,13 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM platforms", blh)
     }
 
-    private fun getPlatform(connection: Connection?, id: Long): PlatformData? {
+    fun getPlatform(connection: Connection?, id: Long): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE id = ?", blh, id).firstOrNull()
     }
 
-    private fun getPlatform(connection: Connection?, name: String): PlatformData? {
+    fun getPlatform(connection: Connection?, name: String): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE name = ?", blh, name).firstOrNull()
@@ -91,13 +91,13 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM animes", ah)
     }
 
-    private fun getAnime(connection: Connection?, id: Long): AnimeData? {
+    fun getAnime(connection: Connection?, id: Long): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    private fun getAnime(connection: Connection?, name: String): AnimeData? {
+    fun getAnime(connection: Connection?, name: String): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes WHERE name = ?", ah, name).firstOrNull()
@@ -155,7 +155,7 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM genres", agh)
     }
 
-    private fun getAnimeGenres(connection: Connection?, animeId: Long, genre: String): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long, genre: String): AnimeGenreData? {
         val agh = AnimeGenreHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE anime_id = ? AND genre = ?", agh, animeId, genre)
@@ -180,7 +180,7 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM episodes", blh)
     }
 
-    private fun getEpisode(connection: Connection?, id: Long): EpisodeData? {
+    fun getEpisode(connection: Connection?, id: Long): EpisodeData? {
         val blh = BeanListHandler(EpisodeData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", blh, id).firstOrNull()
