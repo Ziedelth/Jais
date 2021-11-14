@@ -15,7 +15,6 @@ class EpisodeHandler :
         fun getColumnsToFieldsMap(): Map<String, String> {
             val map = mutableMapOf<String, String>()
             map["anime_id"] = "animeId"
-            map["platform_id"] = "platformId"
             map["release_date"] = "releaseDate"
             map["episode_type"] = "episodeType"
             map["lang_type"] = "langType"

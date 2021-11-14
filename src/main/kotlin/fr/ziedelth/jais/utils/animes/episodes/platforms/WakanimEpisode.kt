@@ -51,7 +51,7 @@ data class WakanimEpisode(
             animeImage = this.animeImage!!.replace("http://", "https://"),
             animeGenres = this.animeGenres,
             animeDescription = this.animeDescription,
-            season = this.season ?: -1,
+            season = this.season ?: 1,
             number = this.number ?: -1,
             episodeType = this.episodeType!!,
             langType = this.langType!!,

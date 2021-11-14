@@ -7,7 +7,6 @@ package fr.ziedelth.jais.utils.animes.sql.data
 class EpisodeData {
     var id: Long = -1
     var animeId: Long = -1
-    var platformId: Long = -1
     lateinit var releaseDate: String
     var season: Int = -1
     var number: Int = -1

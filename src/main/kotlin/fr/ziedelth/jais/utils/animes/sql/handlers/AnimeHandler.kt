@@ -7,6 +7,7 @@ package fr.ziedelth.jais.utils.animes.sql.handlers
 import fr.ziedelth.jais.utils.animes.sql.data.AnimeData
 import fr.ziedelth.jais.utils.animes.sql.data.CountryData
 import fr.ziedelth.jais.utils.animes.sql.data.EpisodeData
+import fr.ziedelth.jais.utils.animes.sql.data.PlatformData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.QueryRunner
@@ -20,6 +21,7 @@ class AnimeHandler(private val connection: Connection?) :
         fun getColumnsToFieldsMap(): Map<String, String> {
             val map = mutableMapOf<String, String>()
             map["country_id"] = "countryId"
+            map["platform_id"] = "platformId"
             map["release_date"] = "releaseDate"
             return map
         }
@@ -30,16 +32,20 @@ class AnimeHandler(private val connection: Connection?) :
         val runner = QueryRunner()
 
         val blhC = BeanListHandler(CountryData::class.java)
+        val blhP = BeanListHandler(PlatformData::class.java)
         val animeGenreHandler = AnimeGenreHandler()
         val blhE = BeanListHandler(EpisodeData::class.java)
 
         val queryCountry = "SELECT * FROM countries WHERE id = ?"
+        val queryPlatform = "SELECT * FROM platforms WHERE id = ?"
         val queryGenres = "SELECT * FROM genres WHERE anime_id = ?"
         val queryEpisodes = "SELECT * FROM episodes WHERE anime_id = ?"
 
         animes.forEach {
             val country = runner.query(this.connection, queryCountry, blhC, it.countryId).firstOrNull()
             it.country = country
+            val platform = runner.query(this.connection, queryPlatform, blhP, it.platformId).firstOrNull()
+            it.platform = platform
             val genres = runner.query(this.connection, queryGenres, animeGenreHandler, it.id)
             it.genres = genres
             val episodes = runner.query(this.connection, queryEpisodes, blhE, it.id)

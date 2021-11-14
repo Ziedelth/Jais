@@ -71,6 +71,7 @@ object Jais {
                         val animeData = Mapper.insertAnime(
                             connection,
                             countryData.id,
+                            platformData.id,
                             ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
                             episode.anime,
                             episode.animeImage,
@@ -84,7 +85,6 @@ object Jais {
                             val episodeData = Mapper.insertEpisode(
                                 connection,
                                 animeData.id,
-                                platformData.id,
                                 ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
                                 episode.season.toInt(),
                                 episode.number.toInt(),

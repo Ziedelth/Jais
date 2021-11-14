@@ -58,7 +58,7 @@ data class AnimeDigitalNetworkEpisode(
                 this.show.genres?.flatMap { it.split(" / ") }?.toTypedArray() ?: emptyArray()
             ),
             animeDescription = this.show.summary,
-            season = this.season?.toLongOrNull() ?: -1,
+            season = this.season?.toLongOrNull() ?: 1,
             number = this.shortNumber?.toLongOrNull() ?: -1,
             episodeType = EpisodeType.EPISODE,
             langType = LangType.getLangType(this.languages!!.lastOrNull()),

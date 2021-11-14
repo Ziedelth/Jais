@@ -65,7 +65,7 @@ data class CrunchyrollEpisode(
             animeImage = this.seriesImage!!.replace("http://", "https://"),
             animeGenres = AnimeGenre.getGenres(this.keywords?.split(", ")?.toTypedArray() ?: emptyArray()),
             animeDescription = this.description,
-            season = this.season?.toLongOrNull() ?: -1,
+            season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber?.toLongOrNull() ?: -1,
             episodeType = if ((this.episodeNumber?.toLongOrNull()
                     ?: -1L) != -1L

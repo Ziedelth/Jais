@@ -97,28 +97,36 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    fun getAnime(connection: Connection?, name: String): AnimeData? {
+    fun getAnime(connection: Connection?, countryId: Long, platformId: Long, name: String): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM animes WHERE name = ?", ah, name).firstOrNull()
+        return runner.query(
+            connection,
+            "SELECT * FROM animes WHERE country_id = ? AND platform_id = ? AND name = ?",
+            ah,
+            countryId,
+            platformId,
+            name
+        ).firstOrNull()
     }
 
     fun insertAnime(
         connection: Connection?,
         countryId: Long,
+        platformId: Long,
         releaseDate: String,
         name: String,
         image: String,
         description: String?
     ): AnimeData? {
-        val anime = getAnime(connection, name)
+        val anime = getAnime(connection, countryId, platformId, name)
 
         return if (anime != null) {
             if (anime.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
                 val runner = QueryRunner()
-                val query = "UPDATE animes SET description = ? WHERE name = ?"
-                runner.update(connection, query, description, anime.name)
-                getAnime(connection, name)
+                val query = "UPDATE animes SET description = ? WHERE id = ?"
+                runner.update(connection, query, description, anime.id)
+                getAnime(connection, anime.id)
             } else anime
         } else {
             var imagePath = image
@@ -142,9 +150,10 @@ object Mapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO animes (id, country_id, release_date, name, image, description) VALUES (NULL, ?, ?, ?, ?, ?)"
+                "INSERT INTO animes (id, country_id, platform_id, release_date, name, image, description) VALUES (NULL, ?, ?, ?, ?, ?, ?)"
             val newId: Long =
-                runner.insert(connection, query, sh, countryId, releaseDate, name, imagePath, description).toLong()
+                runner.insert(connection, query, sh, countryId, platformId, releaseDate, name, imagePath, description)
+                    .toLong()
             getAnime(connection, newId)
         }
     }
@@ -196,7 +205,6 @@ object Mapper {
     fun insertEpisode(
         connection: Connection?,
         animeId: Long,
-        platformId: Long,
         releaseDate: String,
         season: Int,
         number: Int,
@@ -230,24 +238,13 @@ object Mapper {
                 imagePath = localFile.path
             }
 
-            var s = season
-
-            if (s == -1) {
-                val lastSeason = this.getAnime(
-                    connection,
-                    animeId
-                )?.episodes?.filter { it.platformId == platformId && it.episodeType == episodeType && it.langType == it.langType }
-                    ?.maxByOrNull { it.season }?.season
-                s = (lastSeason ?: 0) + 1
-            }
-
             var n = number
 
             if (n == -1) {
                 val lastNumber = this.getAnime(
                     connection,
                     animeId
-                )?.episodes?.filter { it.platformId == platformId && it.season == season && it.episodeType == episodeType && it.langType == it.langType }
+                )?.episodes?.filter { it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == it.langType }
                     ?.maxByOrNull { it.number }?.number
                 n = (lastNumber ?: 0) + 1
             }
@@ -255,15 +252,14 @@ object Mapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO episodes (id, anime_id, platform_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO episodes (id, anime_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
                 sh,
                 animeId,
-                platformId,
                 releaseDate,
-                s,
+                season,
                 n,
                 episodeType,
                 langType,
