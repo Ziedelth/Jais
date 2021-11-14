@@ -18,8 +18,4 @@ object PluginManager {
         this.plugins =
             this.pluginManager.plugins.filter { it.plugin is JavaPlugin }.map { it.plugin as JavaPlugin }.toTypedArray()
     }
-
-    fun loadPlugins() = this.plugins.forEach { it.onLoad() }
-    fun enablePlugins() = this.plugins.forEach { it.onEnable() }
-    fun disablePlugins() = this.plugins.forEach { it.onDisable() }
 }

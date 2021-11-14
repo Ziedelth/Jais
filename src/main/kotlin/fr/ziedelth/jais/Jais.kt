@@ -30,8 +30,6 @@ object Jais {
     fun main(args: Array<String>) {
         JLogger.info("Init...")
 
-        PluginManager.loadPlugins()
-
         JLogger.info("Adding countries...")
         this.addCountry(FranceCountry::class.java)
 
@@ -39,8 +37,6 @@ object Jais {
         this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
         this.addPlatform(CrunchyrollPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
-
-        PluginManager.enablePlugins()
 
         JThread.start({
             JLogger.info("Checking episodes...")
