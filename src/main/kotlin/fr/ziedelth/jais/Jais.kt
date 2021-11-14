@@ -151,7 +151,7 @@ object Jais {
         return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
     }
 
-    private fun getPlatformInformation(platform: String?): PlatformImpl? {
+    fun getPlatformInformation(platform: String?): PlatformImpl? {
         return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
             it.platformHandler.name.equals(
                 platform,
