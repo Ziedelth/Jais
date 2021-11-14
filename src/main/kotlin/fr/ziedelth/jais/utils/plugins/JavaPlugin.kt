@@ -8,7 +8,7 @@ import fr.ziedelth.jais.utils.debug.JLogger
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
 
-class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
+abstract class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
     fun getId(): String = this.wrapper.pluginId
 
     fun onLoad() {
