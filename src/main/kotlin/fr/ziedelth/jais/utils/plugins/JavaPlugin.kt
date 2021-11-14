@@ -4,10 +4,10 @@
 
 package fr.ziedelth.jais.utils.plugins
 
-import fr.ziedelth.jais.utils.animes.sql.data.EpisodeData
+import fr.ziedelth.jais.utils.animes.episodes.Episode
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
 
 abstract class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
-    abstract fun newEpisode(episodeData: EpisodeData)
+    abstract fun newEpisode(episode: Episode)
 }

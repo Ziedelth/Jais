@@ -98,9 +98,7 @@ object Jais {
                             )
 
                             if (!exists && episodeData != null) PluginManager.plugins.forEach {
-                                it.newEpisode(
-                                    episodeData
-                                )
+                                it.newEpisode(episode)
                             }
                         }
                     }
