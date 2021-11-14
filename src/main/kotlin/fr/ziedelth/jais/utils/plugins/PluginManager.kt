@@ -10,7 +10,7 @@ import java.io.File
 
 object PluginManager {
     private val pluginManager: PluginManager = DefaultPluginManager(File("plugins").toPath())
-    private val plugins: Array<JavaPlugin>
+    val plugins: Array<JavaPlugin>
 
     init {
         this.pluginManager.loadPlugins()

@@ -84,21 +84,25 @@ object Jais {
 
                         if (animeData != null) {
                             episode.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
-                            Mapper.insertEpisode(
-                                connection,
-                                animeData.id,
-                                platformData.id,
-                                episode.releaseDate,
-                                episode.season.toInt(),
-                                episode.number.toInt(),
-                                episode.episodeType.name,
-                                episode.langType.name,
-                                episode.eId,
-                                episode.title,
-                                episode.url!!,
-                                episode.image,
-                                episode.duration
-                            )
+
+                            if (Mapper.insertEpisode(
+                                    connection,
+                                    animeData.id,
+                                    platformData.id,
+                                    episode.releaseDate,
+                                    episode.season.toInt(),
+                                    episode.number.toInt(),
+                                    episode.episodeType.name,
+                                    episode.langType.name,
+                                    episode.eId,
+                                    episode.title,
+                                    episode.url!!,
+                                    episode.image,
+                                    episode.duration
+                                )
+                            ) {
+                                PluginManager.plugins.forEach { it.newEpisode(episode) }
+                            }
                         }
                     }
                 }

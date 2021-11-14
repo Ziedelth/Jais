@@ -195,10 +195,10 @@ object Mapper {
         url: String,
         image: String?,
         duration: Long
-    ): EpisodeData? {
+    ): Boolean {
         val episode = getEpisode(connection, episodeId)
 
-        return if (episode != null) episode
+        return if (episode != null) false
         else {
             var imagePath = image
 
@@ -222,14 +222,12 @@ object Mapper {
                 n = (lastNumber ?: 0) + 1
             }
 
-            val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
                 "INSERT INTO episodes (id, anime_id, platform_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            val newId: Long = runner.insert(
+            runner.update(
                 connection,
                 query,
-                sh,
                 animeId,
                 platformId,
                 releaseDate,
@@ -243,7 +241,8 @@ object Mapper {
                 imagePath,
                 duration
             )
-            getEpisode(connection, newId)
+
+            true
         }
     }
 }
