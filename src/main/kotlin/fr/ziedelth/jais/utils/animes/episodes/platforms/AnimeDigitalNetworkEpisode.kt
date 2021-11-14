@@ -8,10 +8,10 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
-import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.LangType
+import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
+import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 
@@ -32,6 +32,7 @@ data class AnimeDigitalNetworkEpisode(
         val title: String?,
         val image2x: String?,
         val shortTitle: String?,
+        val summary: String?,
         val genres: Array<String>?,
     )
 
@@ -67,6 +68,7 @@ data class AnimeDigitalNetworkEpisode(
             animeGenres = AnimeGenre.getGenres(
                 this.show.genres?.flatMap { it.split(" / ") }?.toTypedArray() ?: emptyArray()
             ),
+            animeDescription = this.show.summary,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.shortNumber?.toLongOrNull() ?: 1,
             episodeType = EpisodeType.EPISODE,

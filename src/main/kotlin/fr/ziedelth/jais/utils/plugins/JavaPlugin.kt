@@ -4,25 +4,22 @@
 
 package fr.ziedelth.jais.utils.plugins
 
+import fr.ziedelth.jais.utils.debug.JLogger
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
-import java.util.logging.Logger
 
 class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
-    private val logger = JPluginLogger(this)
-
     fun getId(): String = this.wrapper.pluginId
-    fun getLogger(): Logger = this.logger
 
     fun onLoad() {
-        this.getLogger().info("${this.getId()} is loaded!")
+        JLogger.info("${this.getId()} is loaded!")
     }
 
     fun onEnable() {
-        this.getLogger().info("${this.getId()} is enabled!")
+        JLogger.info("${this.getId()} is enabled!")
     }
 
     fun onDisable() {
-        this.getLogger().info("${this.getId()} is disabled!")
+        JLogger.info("${this.getId()} is disabled!")
     }
 }

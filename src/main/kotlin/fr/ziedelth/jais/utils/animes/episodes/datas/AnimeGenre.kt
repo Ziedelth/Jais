@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes
+package fr.ziedelth.jais.utils.animes.episodes.datas
 
 enum class AnimeGenre(val string: Array<String> = arrayOf()) {
     UNKNOWN,

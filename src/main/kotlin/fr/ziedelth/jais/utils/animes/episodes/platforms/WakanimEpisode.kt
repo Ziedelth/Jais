@@ -8,10 +8,10 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
-import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.LangType
+import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
+import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 
@@ -20,6 +20,7 @@ data class WakanimEpisode(
     val anime: String?,
     val animeImage: String?,
     val animeGenres: Array<AnimeGenre> = emptyArray(),
+    val animeDescription: String?,
     val season: Long?,
     val number: Long?,
     val episodeType: EpisodeType?,
@@ -61,6 +62,7 @@ data class WakanimEpisode(
             anime = this.anime!!,
             animeImage = this.animeImage?.replace("http://", "https://"),
             animeGenres = this.animeGenres,
+            animeDescription = this.animeDescription,
             season = this.season ?: 1,
             number = this.number ?: 1,
             episodeType = this.episodeType!!,

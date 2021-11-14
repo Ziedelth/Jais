@@ -13,10 +13,10 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.WebDriverBuilder
 import fr.ziedelth.jais.utils.animes.countries.Country
-import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.LangType
+import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
+import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
@@ -43,6 +43,7 @@ class WakanimPlatform : Platform() {
     data class WakanimAnime(
         val anime: String?,
         val image: String?,
+        val smallSummary: String?,
         val genres: Array<AnimeGenre>?
     )
 
@@ -62,6 +63,7 @@ class WakanimPlatform : Platform() {
             WakanimAnime(
                 jsonObject?.get("name")?.asString?.dropLastWhile(Char::isWhitespace),
                 jsonObject?.get("imageUrl")?.asString,
+                jsonObject?.get("smallSummary")?.asString,
                 jsonObject?.get("genres")?.asJsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull {
                     AnimeGenre.getGenre(
                         it.asJsonObject.get("name")?.asString?.dropLastWhile(Char::isWhitespace) ?: ""
@@ -221,6 +223,7 @@ class WakanimPlatform : Platform() {
                                         anime = anime,
                                         animeImage = wakanimAnime?.image,
                                         animeGenres = wakanimAnime?.genres ?: emptyArray(),
+                                        animeDescription = wakanimAnime?.smallSummary,
                                         season = season,
                                         number = number,
                                         episodeType = episodeType,

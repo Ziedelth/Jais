@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes
+package fr.ziedelth.jais.utils.animes.episodes.datas
 
 import fr.ziedelth.jais.utils.animes.countries.Country
 

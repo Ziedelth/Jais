@@ -4,25 +4,21 @@
 
 package fr.ziedelth.jais
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.EpisodeMapper
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
+import fr.ziedelth.jais.utils.animes.sql.Mapper
 import fr.ziedelth.jais.utils.debug.JLogger
 import fr.ziedelth.jais.utils.debug.JThread
-import java.io.File
-import java.io.FileReader
-import java.nio.file.Files
+import fr.ziedelth.jais.utils.plugins.PluginManager
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -34,6 +30,8 @@ object Jais {
     fun main(args: Array<String>) {
         JLogger.info("Init...")
 
+        PluginManager.loadPlugins()
+
         JLogger.info("Adding countries...")
         this.addCountry(FranceCountry::class.java)
 
@@ -42,46 +40,71 @@ object Jais {
         this.addPlatform(CrunchyrollPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
+        PluginManager.enablePlugins()
+
         JThread.start({
             JLogger.info("Checking episodes...")
             this.checkEpisodes()
-
             JLogger.info("All episodes are checked!")
         }, delay = 300000L, priority = Thread.MAX_PRIORITY)
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
         Impl.tryCatch("Failed to fetch episodes") {
+            val connection = Mapper.getConnection()
+
             val list = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
             JLogger.config("Fetched episodes length: ${list.size}")
 
             if (list.isNotEmpty()) {
-                val gson = GsonBuilder().setPrettyPrinting().create()
-                val file = File("episodes.json")
+                list.forEach { episode ->
+                    val platformImpl = this.getPlatformInformation(episode.platform)!!
+                    val countryImpl = this.getCountryInformation(episode.country)!!
+                    val platformData = Mapper.insertPlatform(
+                        connection,
+                        platformImpl.platformHandler.name,
+                        platformImpl.platformHandler.url,
+                        platformImpl.platformHandler.image
+                    )
+                    val countryData = Mapper.insertCountry(
+                        connection,
+                        countryImpl.countryHandler.name,
+                        countryImpl.countryHandler.flag
+                    )
 
-                val episodeMapper = if (!file.exists()) {
-                    file.createNewFile()
-                    Files.writeString(file.toPath(), gson.toJson(JsonObject()))
-                    EpisodeMapper()
-                } else {
-                    gson.fromJson(FileReader(file), EpisodeMapper::class.java)
-                }
+                    if (platformData != null && countryData != null) {
+                        val animeData = Mapper.insertAnime(
+                            connection,
+                            countryData.id,
+                            episode.releaseDate,
+                            episode.anime,
+                            episode.animeImage,
+                            episode.animeDescription
+                        )
 
-                if (episodeMapper != null) {
-                    list.forEach { episode ->
-                        val platformImpl = this.getPlatformInformation(episode.platform)!!
-                        val countryImpl = this.getCountryInformation(episode.country)!!
-                        val pImpl = episodeMapper.insertOrUpdatePlatform(platformImpl.platformHandler)
-                        val cImpl = episodeMapper.insertOrUpdateCountry(countryImpl.countryHandler)
-
-                        episodeMapper.insertOrUpdateEpisode(pImpl.uuid, cImpl.uuid, episode)
+                        if (animeData != null) {
+                            episode.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+                            Mapper.insertEpisode(
+                                connection,
+                                animeData.id,
+                                platformData.id,
+                                episode.releaseDate,
+                                episode.season.toInt(),
+                                episode.number.toInt(),
+                                episode.episodeType.name,
+                                episode.langType.name,
+                                episode.eId,
+                                episode.title,
+                                episode.url!!,
+                                episode.image,
+                                episode.duration
+                            )
+                        }
                     }
-
-                    episodeMapper.update()
                 }
-
-                Files.writeString(file.toPath(), gson.toJson(episodeMapper))
             }
+
+            connection?.close()
         }
     }
 

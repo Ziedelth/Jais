@@ -9,10 +9,10 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
-import fr.ziedelth.jais.utils.animes.episodes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.LangType
+import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
+import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 
@@ -32,6 +32,8 @@ data class CrunchyrollEpisode(
     val duration: Long? = null,
     val link: String?,
     val keywords: String?,
+
+    var description: String? = null,
 ) {
     data class Thumbnail(
         val url: String?,
@@ -79,6 +81,7 @@ data class CrunchyrollEpisode(
             anime = this.seriesTitle!!,
             animeImage = this.seriesImage?.replace("http://", "https://")?.replace("http://", "https://"),
             animeGenres = AnimeGenre.getGenres(this.keywords?.split(", ")?.toTypedArray() ?: emptyArray()),
+            animeDescription = this.description,
             season = this.season?.toLongOrNull() ?: 1,
             number = this.episodeNumber?.toLongOrNull() ?: -1,
             episodeType = if ((this.episodeNumber?.toLongOrNull()

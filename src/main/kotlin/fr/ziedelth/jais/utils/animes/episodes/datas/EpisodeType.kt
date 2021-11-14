@@ -2,10 +2,9 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes
+package fr.ziedelth.jais.utils.animes.episodes.datas
 
 import fr.ziedelth.jais.countries.FranceCountry
-import fr.ziedelth.jais.utils.animes.EpisodeDataImpl
 import fr.ziedelth.jais.utils.animes.countries.Country
 
 enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {

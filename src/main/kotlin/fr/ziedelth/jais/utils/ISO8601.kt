@@ -12,6 +12,7 @@ import java.util.*
 object ISO8601 {
     private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
     private val sdf2 = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH)
+    private val sdf3 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
     fun fromCalendar(iso8601calendar: Calendar?): String {
         val date = iso8601calendar?.time
@@ -62,8 +63,16 @@ object ISO8601 {
     }
 
     fun toUTCDate(iso8601string: String?): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-        return sdf.format(Date.from(ZonedDateTime.parse(iso8601string).toInstant()))
+        this.sdf3.timeZone = TimeZone.getTimeZone("UTC")
+        return this.sdf3.format(Date.from(ZonedDateTime.parse(iso8601string).toInstant()))
+    }
+
+    fun fromUTCDate(iso8601string: String?): Calendar? {
+        if (iso8601string.isNullOrBlank()) return null
+        val calendar = Calendar.getInstance()
+        this.sdf3.timeZone = TimeZone.getTimeZone("UTC")
+        val date = this.sdf3.parse(iso8601string)
+        calendar.time = date
+        return calendar
     }
 }

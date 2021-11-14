@@ -30,6 +30,14 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class CrunchyrollPlatform : Platform() {
+    data class CrunchyrollAnime(
+        val anime: String?,
+        val image: String?,
+        val description: String?
+    )
+
+    private val animes: MutableList<CrunchyrollAnime> = emptyArray<CrunchyrollAnime>().toMutableList()
+
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val list = mutableListOf<Episode>()
@@ -59,21 +67,51 @@ class CrunchyrollPlatform : Platform() {
                         ISO8601.fromCalendar(calendar)
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.forEachIndexed { _, crunchyrollEpisode ->
-                    if (!this.animeImages.containsKey(crunchyrollEpisode.seriesTitle)) {
+                    if (!this.animes.any { it.anime.equals(crunchyrollEpisode.seriesTitle, true) }) {
                         if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
                         webDriverImpl?.driver?.get(crunchyrollEpisode.link)
-
+                        Impl.tryCatch {
+                            webDriverImpl?.driver?.findElement(By.xpath("//*[@id=\"onetrust-accept-btn-handler\"]"))
+                                ?.click().let { webDriverImpl?.driver?.get(crunchyrollEpisode.link) }
+                        }
                         val animeUrl =
                             webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"showmedia_about_episode_num\"]/a")))
                                 ?.getAttribute("href")
+
                         webDriverImpl?.driver?.get(animeUrl)
+                        Impl.tryCatch {
+                            webDriverImpl?.driver?.findElement(By.xpath("//*[@id=\"onetrust-accept-btn-handler\"]"))
+                                ?.click().let { webDriverImpl?.driver?.get(animeUrl) }
+                        }
+
                         val animeImage =
                             webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"sidebar_elements\"]/li[1]/img")))
                                 ?.getAttribute("src")
-                        crunchyrollEpisode.seriesImage = animeImage
+                        val animeDescriptionElement =
+                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.className("description")))
+                        webDriverImpl?.wait?.until(
+                            ExpectedConditions.presenceOfNestedElementLocatedBy(
+                                animeDescriptionElement,
+                                By.tagName("a")
+                            )
+                        )?.click()
+                        val animeDescription = webDriverImpl?.wait?.until(
+                            ExpectedConditions.presenceOfNestedElementLocatedBy(
+                                animeDescriptionElement,
+                                By.className("more")
+                            )
+                        )?.text
 
-                        this.addAnimeImage(crunchyrollEpisode.seriesTitle, animeImage)
-                    } else crunchyrollEpisode.seriesImage = this.animeImages[crunchyrollEpisode.seriesTitle]
+                        crunchyrollEpisode.seriesImage = animeImage
+                        crunchyrollEpisode.description = animeDescription
+
+                        this.animes.add(CrunchyrollAnime(crunchyrollEpisode.seriesTitle, animeImage, animeDescription))
+                    } else {
+                        val crunchyrollAnime =
+                            this.animes.find { it.anime.equals(crunchyrollEpisode.seriesTitle, true) }!!
+                        crunchyrollEpisode.seriesImage = crunchyrollAnime.image
+                        crunchyrollEpisode.description = crunchyrollAnime.description
+                    }
 
                     val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
 

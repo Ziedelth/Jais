@@ -14,6 +14,8 @@ import java.util.logging.Formatter
 
 object JLogger : Logger("ZiedLogger", null) {
     class JFormatter : Formatter() {
+        private val sdf = SimpleDateFormat("HH:mm:ss yyyy/MM/dd", Locale.FRANCE)
+
         override fun format(record: LogRecord?): String {
             val message = formatMessage(record)
             val sw = StringWriter()
@@ -22,12 +24,7 @@ object JLogger : Logger("ZiedLogger", null) {
             record?.thrown?.printStackTrace(pw)
             pw.close()
             val throwable: String = sw.toString()
-            return "[${
-                SimpleDateFormat(
-                    "HH:mm:ss yyyy/MM/dd",
-                    Locale.FRANCE
-                ).format(Date())
-            } ${record?.level?.localizedName}] ${message}${throwable}${if (throwable.isEmpty()) System.lineSeparator() else ""}"
+            return "[${this.sdf.format(Date())} ${record?.level?.localizedName}] ${message}${throwable}${if (throwable.isEmpty()) System.lineSeparator() else ""}"
         }
     }
 
