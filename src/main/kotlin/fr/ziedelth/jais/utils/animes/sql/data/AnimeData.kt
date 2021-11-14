@@ -9,7 +9,7 @@ class AnimeData {
     var countryId: Long = -1
     lateinit var releaseDate: String
     lateinit var name: String
-    var image: String? = null
+    lateinit var image: String
     var description: String? = null
 
     var country: CountryData? = null

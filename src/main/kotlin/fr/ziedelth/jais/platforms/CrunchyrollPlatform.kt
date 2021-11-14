@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
@@ -59,14 +60,18 @@ class CrunchyrollPlatform : Platform() {
                 val episodesList =
                     (jsonObject?.get("channel") as JsonObject?)?.get("item")?.asJsonArray?.filter { it != null && it.isJsonObject }
                         ?.mapNotNull { gson.fromJson(it, CrunchyrollEpisode::class.java) }
-                episodesList?.forEach { it.platform = this; it.country = country }
+
+                episodesList?.forEach {
+                    it.platformImpl = Jais.getPlatformInformation(this)
+                    it.countryImpl = Jais.getCountryInformation(country)
+                }
 
                 episodesList?.filter {
                     !this.checkedEpisodes.contains(it.mediaId) && it.isValid() && ISO8601.isSameDayUsingISO8601(
                         ISO8601.fromCalendar2(it.pubDate),
                         ISO8601.fromCalendar(calendar)
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
-                }?.sortedBy { ISO8601.toCalendar2(it.pubDate) }?.forEachIndexed { _, crunchyrollEpisode ->
+                }?.forEachIndexed { _, crunchyrollEpisode ->
                     if (!this.animes.any { it.anime.equals(crunchyrollEpisode.seriesTitle, true) }) {
                         if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
                         webDriverImpl?.driver?.get(crunchyrollEpisode.link)
@@ -112,6 +117,8 @@ class CrunchyrollPlatform : Platform() {
                         crunchyrollEpisode.seriesImage = crunchyrollAnime.image
                         crunchyrollEpisode.description = crunchyrollAnime.description
                     }
+
+                    if (crunchyrollEpisode.seriesImage.isNullOrBlank()) return@forEachIndexed
 
                     val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
 

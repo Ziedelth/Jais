@@ -17,15 +17,15 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
     season = "Saison"
 )
 class FranceCountry : Country {
-    override fun checkOnNewsURL(platform: Platform): String? {
-        return when (platform::class.java) {
+    override fun checkOnNewsURL(platform: Platform?): String? {
+        return when (platform?.javaClass) {
             AnimeDigitalNetworkPlatform::class.java -> "frFR"
             else -> null
         }
     }
 
-    override fun checkOnEpisodesURL(platform: Platform): String? {
-        return when (platform::class.java) {
+    override fun checkOnEpisodesURL(platform: Platform?): String? {
+        return when (platform?.javaClass) {
             AnimeDigitalNetworkPlatform::class.java -> "fr"
             CrunchyrollPlatform::class.java -> "frFR"
             WakanimPlatform::class.java -> "fr"
@@ -33,23 +33,23 @@ class FranceCountry : Country {
         }
     }
 
-    override fun restrictionEpisodes(platform: Platform): String? {
-        return when (platform::class.java) {
+    override fun restrictionEpisodes(platform: Platform?): String? {
+        return when (platform?.javaClass) {
             CrunchyrollPlatform::class.java -> "fr"
             else -> null
         }
     }
 
-    override fun subtitlesEpisodes(platform: Platform): String? {
-        return when (platform::class.java) {
+    override fun subtitlesEpisodes(platform: Platform?): String? {
+        return when (platform?.javaClass) {
             AnimeDigitalNetworkPlatform::class.java -> "vostf"
             CrunchyrollPlatform::class.java -> "fr - fr"
             else -> null
         }
     }
 
-    override fun dubbedEpisodes(platform: Platform): String? {
-        return when (platform::class.java) {
+    override fun dubbedEpisodes(platform: Platform?): String? {
+        return when (platform?.javaClass) {
             AnimeDigitalNetworkPlatform::class.java -> "vf"
             else -> null
         }

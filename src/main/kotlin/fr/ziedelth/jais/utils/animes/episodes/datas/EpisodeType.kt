@@ -14,7 +14,7 @@ enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
     SPECIAL(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
     ;
 
-    fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.find { it.clazz == clazz }
+    fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
 
     companion object {
         fun getEpisodeType(string: String?): EpisodeType {

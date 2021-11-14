@@ -8,6 +8,7 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
+import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
@@ -53,26 +54,24 @@ object Jais {
             JLogger.config("Fetched episodes length: ${list.size}")
 
             if (list.isNotEmpty()) {
-                list.forEach { episode ->
-                    val platformImpl = this.getPlatformInformation(episode.platform)!!
-                    val countryImpl = this.getCountryInformation(episode.country)!!
+                list.sortedBy { it.releaseDate }.forEach { episode ->
                     val platformData = Mapper.insertPlatform(
                         connection,
-                        platformImpl.platformHandler.name,
-                        platformImpl.platformHandler.url,
-                        platformImpl.platformHandler.image
+                        episode.platform.platformHandler.name,
+                        episode.platform.platformHandler.url,
+                        episode.platform.platformHandler.image
                     )
                     val countryData = Mapper.insertCountry(
                         connection,
-                        countryImpl.countryHandler.name,
-                        countryImpl.countryHandler.flag
+                        episode.country.countryHandler.name,
+                        episode.country.countryHandler.flag
                     )
 
                     if (platformData != null && countryData != null) {
                         val animeData = Mapper.insertAnime(
                             connection,
                             countryData.id,
-                            episode.releaseDate,
+                            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
                             episode.anime,
                             episode.animeImage,
                             episode.animeDescription
@@ -81,23 +80,27 @@ object Jais {
                         if (animeData != null) {
                             episode.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
 
-                            if (Mapper.insertEpisode(
-                                    connection,
-                                    animeData.id,
-                                    platformData.id,
-                                    episode.releaseDate,
-                                    episode.season.toInt(),
-                                    episode.number.toInt(),
-                                    episode.episodeType.name,
-                                    episode.langType.name,
-                                    episode.eId,
-                                    episode.title,
-                                    episode.url!!,
-                                    episode.image,
-                                    episode.duration
+                            val exists = Mapper.getEpisode(connection, episode.episodeId) != null
+                            val episodeData = Mapper.insertEpisode(
+                                connection,
+                                animeData.id,
+                                platformData.id,
+                                ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+                                episode.season.toInt(),
+                                episode.number.toInt(),
+                                episode.episodeType.name,
+                                episode.langType.name,
+                                episode.episodeId,
+                                episode.title,
+                                episode.url,
+                                episode.image,
+                                episode.duration
+                            )
+
+                            if (!exists && episodeData != null) PluginManager.plugins.forEach {
+                                it.newEpisode(
+                                    episodeData
                                 )
-                            ) {
-                                PluginManager.plugins.forEach { it.newEpisode(episode) }
                             }
                         }
                     }

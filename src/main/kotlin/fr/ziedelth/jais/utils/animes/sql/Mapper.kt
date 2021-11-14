@@ -6,7 +6,6 @@ package fr.ziedelth.jais.utils.animes.sql
 
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
 import fr.ziedelth.jais.utils.animes.sql.data.*
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
@@ -109,21 +108,34 @@ object Mapper {
         countryId: Long,
         releaseDate: String,
         name: String,
-        image: String?,
+        image: String,
         description: String?
     ): AnimeData? {
         val anime = getAnime(connection, name)
 
-        return if (anime != null) anime
-        else {
+        return if (anime != null) {
+            if (anime.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
+                val runner = QueryRunner()
+                val query = "UPDATE animes SET description = ? WHERE name = ?"
+                runner.update(connection, query, description, anime.name)
+                getAnime(connection, name)
+            } else anime
+        } else {
             var imagePath = image
 
             Impl.tryCatch("Failed to create anime image file") {
                 val uuid = UUID.randomUUID()
                 val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
 
-                val localFile = File(FileImpl.directories("images", "animes"), "$uuid.jpg")
+                val fileName = "$uuid.jpg"
+                val localFile = File(FileImpl.directories("images", "animes"), fileName)
+                val webFile = File(
+                    FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\animes"),
+                    fileName
+                )
                 ImageIO.write(bufferedImage, "jpg", localFile)
+                ImageIO.write(bufferedImage, "jpg", webFile)
+
                 imagePath = localFile.path
             }
 
@@ -174,7 +186,7 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", blh, id).firstOrNull()
     }
 
-    private fun getEpisode(connection: Connection?, episodeId: String): EpisodeData? {
+    fun getEpisode(connection: Connection?, episodeId: String): EpisodeData? {
         val blh = BeanListHandler(EpisodeData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM episodes WHERE episode_id = ?", blh, episodeId).firstOrNull()
@@ -193,12 +205,12 @@ object Mapper {
         episodeId: String,
         title: String?,
         url: String,
-        image: String?,
+        image: String,
         duration: Long
-    ): Boolean {
+    ): EpisodeData? {
         val episode = getEpisode(connection, episodeId)
 
-        return if (episode != null) false
+        return if (episode != null) episode
         else {
             var imagePath = image
 
@@ -206,14 +218,32 @@ object Mapper {
                 val uuid = UUID.randomUUID()
                 val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 640, 360)
 
-                val localFile = File(FileImpl.directories("images", "episodes"), "$uuid.jpg")
+                val fileName = "$uuid.jpg"
+                val localFile = File(FileImpl.directories("images", "episodes"), fileName)
+                val webFile = File(
+                    FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\episodes"),
+                    fileName
+                )
                 ImageIO.write(bufferedImage, "jpg", localFile)
+                ImageIO.write(bufferedImage, "jpg", webFile)
+
                 imagePath = localFile.path
+            }
+
+            var s = season
+
+            if (s == -1) {
+                val lastSeason = this.getAnime(
+                    connection,
+                    animeId
+                )?.episodes?.filter { it.platformId == platformId && it.episodeType == episodeType && it.langType == it.langType }
+                    ?.maxByOrNull { it.season }?.season
+                s = (lastSeason ?: 0) + 1
             }
 
             var n = number
 
-            if (!episodeType.equals(EpisodeType.EPISODE.name, true)) {
+            if (n == -1) {
                 val lastNumber = this.getAnime(
                     connection,
                     animeId
@@ -222,16 +252,18 @@ object Mapper {
                 n = (lastNumber ?: 0) + 1
             }
 
+            val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
                 "INSERT INTO episodes (id, anime_id, platform_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            runner.update(
+            val newId: Long = runner.insert(
                 connection,
                 query,
+                sh,
                 animeId,
                 platformId,
                 releaseDate,
-                season,
+                s,
                 n,
                 episodeType,
                 langType,
@@ -242,7 +274,7 @@ object Mapper {
                 duration
             )
 
-            true
+            getEpisode(connection, newId)
         }
     }
 }

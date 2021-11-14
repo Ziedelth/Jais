@@ -18,7 +18,7 @@ enum class LangType(private val data: Array<EpisodeDataImpl>) {
     VOICE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "VF"))),
     ;
 
-    fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.find { it.clazz == clazz }
+    fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
 
     companion object {
         fun getLangType(string: String?): LangType {

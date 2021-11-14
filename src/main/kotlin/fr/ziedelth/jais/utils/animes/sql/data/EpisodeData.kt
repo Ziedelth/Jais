@@ -16,6 +16,6 @@ class EpisodeData {
     lateinit var episodeId: String
     var title: String? = null
     lateinit var url: String
-    var image: String? = null
+    lateinit var image: String
     var duration: Long = 0
 }

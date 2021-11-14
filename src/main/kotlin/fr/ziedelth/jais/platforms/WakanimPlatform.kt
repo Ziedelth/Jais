@@ -239,14 +239,17 @@ class WakanimPlatform : Platform() {
                     }
                 }
 
-                episodesList.forEach { it.platform = this; it.country = country }
+                episodesList.forEach {
+                    it.platformImpl = Jais.getPlatformInformation(this)
+                    it.countryImpl = Jais.getCountryInformation(country)
+                }
 
                 episodesList.filter {
                     !this.checkedEpisodes.contains(it.episodeId.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
                         ISO8601.fromCalendar1(it.releaseDate),
                         ISO8601.fromCalendar(calendar)
                     ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
-                }.sortedBy { ISO8601.toCalendar1(it.releaseDate) }.forEachIndexed { _, wakanimEpisode ->
+                }.forEachIndexed { _, wakanimEpisode ->
                     val episode = wakanimEpisode.toEpisode() ?: return@forEachIndexed
                     list.add(episode)
 

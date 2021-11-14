@@ -7,6 +7,7 @@ package fr.ziedelth.jais.platforms
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
@@ -43,7 +44,11 @@ class AnimeDigitalNetworkPlatform : Platform() {
                 inputStream.close()
                 val episodesList = (jsonObject?.get("videos") as JsonArray?)?.filter { it != null && it.isJsonObject }
                     ?.mapNotNull { gson.fromJson(it, AnimeDigitalNetworkEpisode::class.java) }
-                episodesList?.forEach { it.platform = this; it.country = country }
+
+                episodesList?.forEach {
+                    it.platformImpl = Jais.getPlatformInformation(this)
+                    it.countryImpl = Jais.getCountryInformation(country)
+                }
 
                 episodesList?.filter {
                     !this.checkedEpisodes.contains(it.id.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
@@ -51,10 +56,10 @@ class AnimeDigitalNetworkPlatform : Platform() {
                         ISO8601.fromCalendar(calendar)
                     ) && calendar.after(ISO8601.toCalendar1(it.releaseDate)) && it.show?.genres?.map { g -> g.lowercase() }
                         ?.contains("Animation japonaise".lowercase()) == true
-                }?.sortedBy { ISO8601.toCalendar1(it.releaseDate) }?.forEachIndexed { _, animeDigitalNetworkEpisode ->
+                }?.forEachIndexed { _, animeDigitalNetworkEpisode ->
                     val episode = animeDigitalNetworkEpisode.toEpisode() ?: return@forEachIndexed
                     list.add(episode)
-                    this.addCheckEpisodes(animeDigitalNetworkEpisode.id!!.toString())
+                    this.addCheckEpisodes(animeDigitalNetworkEpisode.id.toString())
                 }
             }
         }
