@@ -1,4 +1,4 @@
-<img align="right" src="https://ziedelth.fr/images/brand.jpg?raw=true" height="200" width="200" alt="Jaïs logo">
+<img align="right" src="https://dev.ziedelth.fr/images/jais.jpg" height="200" width="200" alt="Jaïs logo">
 
 # Jaïs
 
@@ -52,16 +52,10 @@ Toutes les dépendances sont gérés automatiquement par Maven.
 * Gson
     * Version : **2.8.8**
     * [GitHub](https://github.com/google/gson)
-* JDA
-    * Version : **4.3.0_304**
-    * [GitHub](https://github.com/DV8FromTheWorld/JDA)
 * SLF4J Simple Binding
     * Version : **1.7.32**
     * [Site Web](http://www.slf4j.org/)
     * [GitHub](https://github.com/qos-ch/slf4j)
-* instagram4j
-    * Version : **2.0.5**
-    * [GitHub](https://github.com/instagram4j/instagram4j)
 * jsoup Java HTML Parser
     * Version : **1.14.2**
     * [Site Web](https://jsoup.org/)
@@ -70,15 +64,13 @@ Toutes les dépendances sont gérés automatiquement par Maven.
     * Version : **2.7.3**
     * [Site Web](https://mariadb.com/kb/en/about-mariadb-connector-j/)
     * [GitHub](https://github.com/mariadb-corporation/mariadb-connector-j)
-* okhttp & okhttp-urlconnection
-    * Version : **4.9.1**
-    * [Site Web](https://square.github.io/okhttp/)
-    * [GitHub](https://github.com/square/okhttp)
 * Selenium
     * Version : **3.141.59**
     * [Site Web](https://www.selenium.dev/)
     * [GitHub](https://github.com/SeleniumHQ/selenium)
-* twitter4j-core
-    * Version : **4.0.7**
-    * [Site Web](https://twitter4j.org/)
-    * [GitHub](https://github.com/Twitter4J/Twitter4J)
+* Jackson
+    * Version : **2.12.5**
+    * [GitHub](https://github.com/FasterXML/jackson-dataformat-xml)
+* PF4F
+    * Version : **3.6.0**
+    * [GitHub](https://github.com/pf4j/pf4j)

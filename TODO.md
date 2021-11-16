@@ -1,1 +1,0 @@
-1. Check if internet is available
