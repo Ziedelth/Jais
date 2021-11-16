@@ -12,13 +12,11 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.WebDriverBuilder
+import fr.ziedelth.jais.utils.JBrowser
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.platforms.CrunchyrollEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import org.openqa.selenium.By
-import org.openqa.selenium.support.ui.ExpectedConditions
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
@@ -47,8 +45,6 @@ class CrunchyrollPlatform : Platform() {
         val objectMapper = ObjectMapper()
 
         this.getAllowedCountries().forEach { country ->
-            var webDriverImpl: WebDriverBuilder.WebDriverImpl? = null
-
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream =
                     URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openStream()
@@ -73,39 +69,14 @@ class CrunchyrollPlatform : Platform() {
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.forEachIndexed { _, crunchyrollEpisode ->
                     if (!this.animes.any { it.anime.equals(crunchyrollEpisode.seriesTitle, true) }) {
-                        if (webDriverImpl == null) webDriverImpl = WebDriverBuilder.setDriver()
-                        webDriverImpl?.driver?.get(crunchyrollEpisode.link)
-                        Impl.tryCatch {
-                            webDriverImpl?.driver?.findElement(By.xpath("//*[@id=\"onetrust-accept-btn-handler\"]"))
-                                ?.click().let { webDriverImpl?.driver?.get(crunchyrollEpisode.link) }
-                        }
-                        val animeUrl =
-                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"showmedia_about_episode_num\"]/a")))
-                                ?.getAttribute("href")
+                        var result = JBrowser.get(crunchyrollEpisode.link)
+                        val animeUrl = result?.selectXpath("//*[@id=\"showmedia_about_episode_num\"]/a")?.attr("href")
+                        result = JBrowser.get(animeUrl)
+                        val animeImage = result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")
 
-                        webDriverImpl?.driver?.get(animeUrl)
-                        Impl.tryCatch {
-                            webDriverImpl?.driver?.findElement(By.xpath("//*[@id=\"onetrust-accept-btn-handler\"]"))
-                                ?.click().let { webDriverImpl?.driver?.get(animeUrl) }
-                        }
-
-                        val animeImage =
-                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[@id=\"sidebar_elements\"]/li[1]/img")))
-                                ?.getAttribute("src")
-                        val animeDescriptionElement =
-                            webDriverImpl?.wait?.until(ExpectedConditions.presenceOfElementLocated(By.className("description")))
-                        webDriverImpl?.wait?.until(
-                            ExpectedConditions.presenceOfNestedElementLocatedBy(
-                                animeDescriptionElement,
-                                By.tagName("a")
-                            )
-                        )?.click()
-                        val animeDescription = webDriverImpl?.wait?.until(
-                            ExpectedConditions.presenceOfNestedElementLocatedBy(
-                                animeDescriptionElement,
-                                By.className("more")
-                            )
-                        )?.text
+                        var animeDescription = result?.getElementsByClass("more")?.text()
+                        if (animeDescription.isNullOrBlank()) animeDescription =
+                            result?.getElementsByClass("trunc-desc")?.text()
 
                         crunchyrollEpisode.seriesImage = animeImage
                         crunchyrollEpisode.description = animeDescription
@@ -126,8 +97,6 @@ class CrunchyrollPlatform : Platform() {
                     this.addCheckEpisodes(crunchyrollEpisode.mediaId!!)
                 }
             }
-
-            webDriverImpl?.driver?.quit()
         }
 
         return list.toTypedArray()

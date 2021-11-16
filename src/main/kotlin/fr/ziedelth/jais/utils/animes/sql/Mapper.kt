@@ -21,7 +21,8 @@ import javax.imageio.ImageIO
 
 
 object Mapper {
-    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "")
+    fun getConnection(): Connection? =
+        DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "&Jf&Rn7loUIv")
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -138,7 +139,8 @@ object Mapper {
                 val fileName = "$uuid.jpg"
                 val localFile = File(FileImpl.directories("images", "animes"), fileName)
                 val webFile = File(
-                    FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\animes"),
+                    // FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\animes"),
+                    FileImpl.directories("/var/www/ziedelth.fr/images/animes"),
                     fileName
                 )
                 ImageIO.write(bufferedImage, "jpg", localFile)
@@ -229,7 +231,8 @@ object Mapper {
                 val fileName = "$uuid.jpg"
                 val localFile = File(FileImpl.directories("images", "episodes"), fileName)
                 val webFile = File(
-                    FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\episodes"),
+                    // FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\episodes"),
+                    FileImpl.directories("/var/www/ziedelth.fr/images/episodes"),
                     fileName
                 )
                 ImageIO.write(bufferedImage, "jpg", localFile)

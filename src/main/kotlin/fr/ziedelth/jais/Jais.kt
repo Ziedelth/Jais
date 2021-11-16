@@ -50,7 +50,11 @@ object Jais {
         Impl.tryCatch("Failed to fetch episodes") {
             val connection = Mapper.getConnection()
 
-            val list = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
+            val list = this.platforms.flatMap {
+                JLogger.info("Fetch ${it.platformHandler.name} episodes...")
+                it.platform.checkEpisodes(calendar).toList()
+            }
+
             JLogger.config("Fetched episodes length: ${list.size}")
 
             if (list.isNotEmpty()) {
