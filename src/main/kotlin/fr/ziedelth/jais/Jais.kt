@@ -43,7 +43,7 @@ object Jais {
             JLogger.info("Checking episodes...")
             this.checkEpisodes()
             JLogger.info("All episodes are checked!")
-        }, delay = 300000L, priority = Thread.MAX_PRIORITY)
+        }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
     }
 
     private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
