@@ -89,6 +89,7 @@ class WakanimPlatform : Platform() {
                         val text = it?.text()
                         val ts = text?.split(" ")
                         val time = ISO8601.fromCalendar1("${this.getISODate(calendar)}T${ts?.get(0)}:00Z")
+                        if (calendar.before(ISO8601.toCalendar1(time))) return@forEachIndexed
                         val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ")
                         val number = ts?.get(ts.size - 2)?.replace(" ", "")?.toLongOrNull()
                         val episodeType =
