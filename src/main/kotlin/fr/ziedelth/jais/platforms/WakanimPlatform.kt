@@ -20,6 +20,7 @@ import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import org.jsoup.select.Elements
 import java.io.InputStreamReader
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -43,6 +44,7 @@ class WakanimPlatform : Platform() {
 
     private val animes: Array<WakanimAnime>
     private val lastCheck = mutableMapOf<Country, Long>()
+    private val cElements = mutableMapOf<Country, Elements?>()
 
     init {
         val gson = Gson()
@@ -83,109 +85,103 @@ class WakanimPlatform : Platform() {
                         "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false"
                     val result = JBrowser.get(url)
 
-                    val elements = result?.getElementsByClass("Calendar-ep")
+                    this.cElements[country] = result?.getElementsByClass("Calendar-ep")
+                }
 
-                    elements?.forEachIndexed { _, it ->
-                        val text = it?.text()
-                        val ts = text?.split(" ")
-                        val time = ISO8601.fromCalendar1("${this.getISODate(calendar)}T${ts?.get(0)}:00Z")
-                        if (calendar.before(ISO8601.toCalendar1(time))) return@forEachIndexed
-                        val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ")
-                        val number = ts?.get(ts.size - 2)?.replace(" ", "")?.toLongOrNull()
-                        val episodeType =
-                            if (EpisodeType.FILM.getData(countryInformation?.country?.javaClass)?.data == ts?.get(ts.size - 4)) EpisodeType.FILM else EpisodeType.EPISODE
-                        if (episodeType == EpisodeType.UNKNOWN) return@forEachIndexed
-                        val langType = LangType.getLangType(ts?.get(ts.size - 1)?.replace(" ", ""))
-                        if (langType == LangType.UNKNOWN) return@forEachIndexed
-                        val checkUrl = "https://www.wakanim.tv${
-                            it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")
-                        }"
-                        val wakanimType = checkUrl.split("/")[6]
+                this.cElements[country]?.forEachIndexed { _, it ->
+                    val text = it?.text()
+                    val ts = text?.split(" ")
+                    val time = ISO8601.fromCalendar1("${this.getISODate(calendar)}T${ts?.get(0)}:00Z")
+                    if (calendar.before(ISO8601.toCalendar1(time))) return@forEachIndexed
+                    val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ")
+                    val number = ts?.get(ts.size - 2)?.replace(" ", "")?.toLongOrNull()
+                    val episodeType =
+                        if (EpisodeType.FILM.getData(countryInformation?.country?.javaClass)?.data == ts?.get(ts.size - 4)) EpisodeType.FILM else EpisodeType.EPISODE
+                    if (episodeType == EpisodeType.UNKNOWN) return@forEachIndexed
+                    val langType = LangType.getLangType(ts?.get(ts.size - 1)?.replace(" ", ""))
+                    if (langType == LangType.UNKNOWN) return@forEachIndexed
+                    val checkUrl = "https://www.wakanim.tv${
+                        it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")
+                    }"
+                    val wakanimType = checkUrl.split("/")[6]
 
-                        if (wakanimType.equals("episode", true)) {
-                            val hash = Base64.getEncoder()
-                                .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
-                            val episodeId = checkUrl.split("/")[7]
-                            if (this.checkedEpisodes.contains(hash) || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
-                        } else {
-                            val episodeId = Base64.getEncoder()
-                                .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
-                            if (episodeId == null || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+                    if (wakanimType.equals("episode", true)) {
+                        val hash = Base64.getEncoder()
+                            .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
+                        val episodeId = checkUrl.split("/")[7]
+                        if (this.checkedEpisodes.contains(hash) || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+                    } else {
+                        val episodeId = Base64.getEncoder()
+                            .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
+                        if (episodeId == null || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+                    }
+
+                    val episodeResult = JBrowser.get(checkUrl)
+
+                    val cardEpisodeElement = if (wakanimType.equals("episode", true)) {
+                        episodeResult?.getElementsByClass("currentEp")?.firstOrNull()
+                    } else {
+                        try {
+                            if (episodeResult?.getElementsByClass("NoEpisodes")
+                                    ?.firstOrNull() != null
+                            ) return@forEachIndexed
+                        } catch (exception: Exception) {
                         }
 
-                        val episodeResult = JBrowser.get(checkUrl)
-
-                        val cardEpisodeElement = if (wakanimType.equals("episode", true)) {
-                            episodeResult?.getElementsByClass("currentEp")?.firstOrNull()
-                        } else {
-                            try {
-                                if (episodeResult?.getElementsByClass("NoEpisodes")
-                                        ?.firstOrNull() != null
-                                ) return@forEachIndexed
-                            } catch (exception: Exception) {
-                            }
-
-                            episodeResult?.getElementsByClass("slider_item")?.lastOrNull()
-                        }
-
-                        val cardNumber =
-                            cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
-
-                        if (number != null && cardNumber != null && number == cardNumber) {
-                            val cardUrl = "https://www.wakanim.tv${
-                                cardEpisodeElement.getElementsByClass("slider_item_star").attr("href")
-                            }"
-                            val episodeId = cardUrl.split("/")[7]
-                            if (episodeId.isBlank() || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
-                            val image = "https:${cardEpisodeElement.getElementsByTag("img").attr("src")}"
-                            val cardSeason = cardEpisodeElement.getElementsByClass("slider_item_season").text()
-
-                            val season = if (cardSeason.contains(
-                                    Jais.getCountryInformation(country)!!.countryHandler.season,
-                                    true
-                                )
-                            ) {
-                                val split = cardSeason.split(" ")
-                                split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
-                            } else 1L
-
-                            val cardDuration =
-                                cardEpisodeElement.getElementsByClass("slider_item_duration").text().split(":")
-                            val duration = cardDuration.mapIndexed { index, t ->
-                                (t.ifEmpty { "0" }.toLongOrNull()
-                                    ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
-                            }.sum()
-
-                            val wakanimAnime = this.animes.firstOrNull { it.anime.equals(anime, true) }
-
-                            episodesList.add(
-                                WakanimEpisode(
-                                    releaseDate = time,
-                                    anime = anime,
-                                    animeImage = wakanimAnime?.image,
-                                    animeGenres = wakanimAnime?.genres ?: emptyArray(),
-                                    animeDescription = wakanimAnime?.smallSummary,
-                                    season = season,
-                                    number = number,
-                                    episodeType = episodeType,
-                                    langType = langType,
-                                    episodeId = episodeId.toLongOrNull(),
-                                    image = image,
-                                    duration = duration,
-                                    url = cardUrl
-                                )
-                            )
+                        episodeResult?.getElementsByClass("slider_item")?.lastOrNull {
+                            it.hasClass("-big") && it.getElementsByClass("slider_item_number").text()
+                                .toLongOrNull() == number
                         }
                     }
 
-//                    for (i in 0 until (this.bodyText[country]?.indexOfFirst { it.equals("Aujourd'hui", true) || it[max(0, it.length - 3)] == '/' } ?: 0) step 4) {
-//                        val episodeText = bodyText?.subList(i, i + 4)?.joinToString()?.split(",")
-//                        println(episodeText)
-//                    }
+                    val cardNumber =
+                        cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
 
-//                    JLogger.config(bodyText?.joinToString(";; "))
-//                    this.bodyText[country] = bodyText
-//                    this.urls[country] = result?.getElementsByClass("Calendar-linkImg")?.map { it.attr("href") }
+                    if (number != null && cardNumber != null && number == cardNumber) {
+                        val cardUrl = "https://www.wakanim.tv${
+                            cardEpisodeElement.getElementsByClass("slider_item_star").attr("href")
+                        }"
+                        val episodeId = cardUrl.split("/")[7]
+                        if (episodeId.isBlank() || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+                        val image = "https:${cardEpisodeElement.getElementsByTag("img").attr("src")}"
+                        val cardSeason = cardEpisodeElement.getElementsByClass("slider_item_season").text()
+
+                        val season = if (cardSeason.contains(
+                                Jais.getCountryInformation(country)!!.countryHandler.season,
+                                true
+                            )
+                        ) {
+                            val split = cardSeason.split(" ")
+                            split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
+                        } else 1L
+
+                        val cardDuration =
+                            cardEpisodeElement.getElementsByClass("slider_item_duration").text().split(":")
+                        val duration = cardDuration.mapIndexed { index, t ->
+                            (t.ifEmpty { "0" }.toLongOrNull()
+                                ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
+                        }.sum()
+
+                        val wakanimAnime = this.animes.firstOrNull { it.anime.equals(anime, true) }
+
+                        episodesList.add(
+                            WakanimEpisode(
+                                releaseDate = time,
+                                anime = anime,
+                                animeImage = wakanimAnime?.image,
+                                animeGenres = wakanimAnime?.genres ?: emptyArray(),
+                                animeDescription = wakanimAnime?.smallSummary,
+                                season = season,
+                                number = number,
+                                episodeType = episodeType,
+                                langType = langType,
+                                episodeId = episodeId.toLongOrNull(),
+                                image = image,
+                                duration = duration,
+                                url = cardUrl
+                            )
+                        )
+                    }
                 }
 
                 episodesList.forEach {
