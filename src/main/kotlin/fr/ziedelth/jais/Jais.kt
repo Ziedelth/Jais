@@ -103,8 +103,10 @@ object Jais {
                                 episode.duration
                             )
 
-                            if (!exists && episodeData != null) PluginManager.plugins?.forEach {
-                                it.newEpisode(episode)
+                            if (!exists && episodeData != null) Impl.tryCatch {
+                                PluginManager.plugins?.forEach {
+                                    it.newEpisode(episode)
+                                }
                             }
                         }
                     }
