@@ -31,6 +31,8 @@ object Jais {
     fun main(args: Array<String>) {
         JLogger.info("Init...")
 
+        PluginManager.loadAll()
+
         JLogger.info("Adding countries...")
         this.addCountry(FranceCountry::class.java)
 
@@ -101,7 +103,7 @@ object Jais {
                                 episode.duration
                             )
 
-                            if (!exists && episodeData != null) PluginManager.plugins.forEach {
+                            if (!exists && episodeData != null) PluginManager.plugins?.forEach {
                                 it.newEpisode(episode)
                             }
                         }

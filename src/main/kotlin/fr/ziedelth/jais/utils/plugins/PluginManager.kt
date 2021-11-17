@@ -10,9 +10,9 @@ import java.io.File
 
 object PluginManager {
     private val pluginManager: PluginManager = DefaultPluginManager(File("plugins").toPath())
-    val plugins: Array<JavaPlugin>
+    var plugins: Array<JavaPlugin>? = null
 
-    init {
+    fun loadAll() {
         this.pluginManager.loadPlugins()
         this.pluginManager.startPlugins()
         this.plugins =
