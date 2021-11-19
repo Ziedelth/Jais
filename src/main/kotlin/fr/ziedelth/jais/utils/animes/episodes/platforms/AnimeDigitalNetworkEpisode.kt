@@ -44,8 +44,7 @@ data class AnimeDigitalNetworkEpisode(
             this.languages != null && LangType.getLangType(this.languages.lastOrNull()) != LangType.UNKNOWN &&
             this.id != null &&
             !this.url.isNullOrBlank() &&
-            !this.image2x.isNullOrBlank() &&
-            this.duration != null
+            !this.image2x.isNullOrBlank()
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -66,7 +65,7 @@ data class AnimeDigitalNetworkEpisode(
             title = this.name,
             url = this.url!!.replace("http://", "https://"),
             image = this.image2x!!.replace("http://", "https://"),
-            duration = this.duration!!,
+            duration = this.duration ?: -1,
         ) else null
     }
 }

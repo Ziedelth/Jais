@@ -12,9 +12,9 @@ import java.util.*
 
 abstract class Platform {
     private var lastDate = Calendar.getInstance()
-    protected val checkedEpisodes = mutableListOf<String>()
+    protected val checkedEpisodes = mutableListOf<String?>()
 
-    fun addCheckEpisodes(id: String) {
+    fun addCheckEpisodes(id: String?) {
         if (!ISO8601.isSameDayUsingInstant(Calendar.getInstance(), this.lastDate)) this.checkedEpisodes.clear()
         if (!this.checkedEpisodes.contains(id) && id != "null") this.checkedEpisodes.add(id)
     }

@@ -105,16 +105,9 @@ class WakanimPlatform : Platform() {
                     }"
                     val wakanimType = checkUrl.split("/")[6]
 
-                    if (wakanimType.equals("episode", true)) {
-                        val hash = Base64.getEncoder()
-                            .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
-                        val episodeId = checkUrl.split("/")[7]
-                        if (this.checkedEpisodes.contains(hash) || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
-                    } else {
-                        val episodeId = Base64.getEncoder()
-                            .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
-                        if (episodeId == null || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
-                    }
+                    val hash = Base64.getEncoder()
+                        .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
+                    if (hash.isNullOrBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
 
                     val episodeResult = JBrowser.get(checkUrl)
 
@@ -198,7 +191,6 @@ class WakanimPlatform : Platform() {
                     val episode = wakanimEpisode.toEpisode() ?: return@forEachIndexed
                     list.add(episode)
 
-                    this.addCheckEpisodes(wakanimEpisode.episodeId!!.toString())
                     this.addCheckEpisodes(
                         Base64.getEncoder()
                             .encodeToString("${wakanimEpisode.releaseDate}${wakanimEpisode.anime}${wakanimEpisode.number}${wakanimEpisode.episodeType}${wakanimEpisode.langType}".encodeToByteArray())

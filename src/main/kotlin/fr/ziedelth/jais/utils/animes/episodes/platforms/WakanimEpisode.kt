@@ -39,8 +39,7 @@ data class WakanimEpisode(
             this.langType != null && this.langType != LangType.UNKNOWN &&
             this.episodeId != null &&
             !this.url.isNullOrBlank() &&
-            !this.image.isNullOrBlank() &&
-            this.duration != null
+            !this.image.isNullOrBlank()
 
     fun toEpisode(): Episode? {
         return if (this.isValid()) Episode(
@@ -60,7 +59,7 @@ data class WakanimEpisode(
             title = null,
             url = this.url!!.replace("http://", "https://"),
             image = this.image!!.replace("http://", "https://"),
-            duration = this.duration!!,
+            duration = this.duration ?: -1,
         ) else null
     }
 }

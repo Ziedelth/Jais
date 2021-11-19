@@ -43,8 +43,11 @@ class CrunchyrollPlatform : Platform() {
         val gson = GsonBuilder().setPrettyPrinting().create()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
+        val platformImpl = Jais.getPlatformInformation(this)
 
         this.getAllowedCountries().forEach { country ->
+            val countryImpl = Jais.getCountryInformation(country)
+
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream =
                     URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openStream()
@@ -58,8 +61,8 @@ class CrunchyrollPlatform : Platform() {
                         ?.mapNotNull { gson.fromJson(it, CrunchyrollEpisode::class.java) }
 
                 episodesList?.forEach {
-                    it.platformImpl = Jais.getPlatformInformation(this)
-                    it.countryImpl = Jais.getCountryInformation(country)
+                    it.platformImpl = platformImpl
+                    it.countryImpl = countryImpl
                 }
 
                 episodesList?.filter {
@@ -69,15 +72,14 @@ class CrunchyrollPlatform : Platform() {
                     ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
                 }?.forEachIndexed { _, crunchyrollEpisode ->
                     if (!this.animes.any { it.anime.equals(crunchyrollEpisode.seriesTitle, true) }) {
-                        var result = JBrowser.get(crunchyrollEpisode.link)
-                        val animeUrl = result?.selectXpath("//*[@id=\"showmedia_about_episode_num\"]/a")?.attr("href")
-                        result = JBrowser.get(animeUrl)
-                        val animeImage = result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")
-
-                        var animeDescription = result?.getElementsByClass("more")?.text()
+                        val animeId = crunchyrollEpisode.link?.replace("http", "https")?.split("/")?.get(4)
+                        val result =
+                            JBrowser.get("${platformImpl?.platformHandler?.url}${country.restrictionEpisodes(this)}/$animeId")
+                                ?: return@forEachIndexed
+                        val animeImage = result.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img").attr("src")
+                        var animeDescription = result.getElementsByClass("more").first()?.text()
                         if (animeDescription.isNullOrBlank()) animeDescription =
-                            result?.getElementsByClass("trunc-desc")?.text()
-
+                            result.getElementsByClass("trunc-desc").text()
                         crunchyrollEpisode.seriesImage = animeImage
                         crunchyrollEpisode.description = animeDescription
 
@@ -90,11 +92,10 @@ class CrunchyrollPlatform : Platform() {
                     }
 
                     if (crunchyrollEpisode.seriesImage.isNullOrBlank()) return@forEachIndexed
-
                     val episode = crunchyrollEpisode.toEpisode() ?: return@forEachIndexed
 
                     list.add(episode)
-                    this.addCheckEpisodes(crunchyrollEpisode.mediaId!!)
+                    this.addCheckEpisodes(crunchyrollEpisode.mediaId)
                 }
             }
         }

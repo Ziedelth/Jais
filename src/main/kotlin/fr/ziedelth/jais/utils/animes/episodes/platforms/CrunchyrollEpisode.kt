@@ -40,9 +40,8 @@ data class CrunchyrollEpisode(
                 this.countryImpl != null &&
                 ISO8601.fromUTCDate(ISO8601.toUTCDate(ISO8601.fromCalendar(ISO8601.toCalendar2(this.pubDate)))) != null &&
                 !this.seriesTitle.isNullOrBlank() &&
-                this.restriction != null &&
-                this.restriction.get("").asString.split(" ")
-                    .contains(this.countryImpl!!.country.restrictionEpisodes(this.platformImpl!!.platform)) &&
+                this.restriction != null && this.restriction.get("").asString.split(" ")
+            .contains(this.countryImpl!!.country.restrictionEpisodes(this.platformImpl!!.platform)) &&
                 (this.title?.contains(
                     "(${
                         LangType.getLangType(this.countryImpl!!.country::class.java)
@@ -52,8 +51,7 @@ data class CrunchyrollEpisode(
                     .contains(this.countryImpl!!.country.subtitlesEpisodes(this.platformImpl!!.platform)))) &&
                 !this.mediaId.isNullOrBlank() &&
                 !this.link.isNullOrBlank() &&
-                !this.thumbnail.isNullOrEmpty() &&
-                this.duration != null
+                !this.thumbnail.isNullOrEmpty()
     }
 
     fun toEpisode(): Episode? {
@@ -84,7 +82,7 @@ data class CrunchyrollEpisode(
             image = this.thumbnail!!.maxByOrNull {
                 it.width?.toLongOrNull()?.times(it.height?.toLongOrNull() ?: 0) ?: 0
             }?.url?.replace("http://", "https://")!!,
-            duration = this.duration!!,
+            duration = this.duration ?: -1,
         ) else null
     }
 }
