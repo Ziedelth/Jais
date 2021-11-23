@@ -16,7 +16,7 @@ abstract class Platform {
 
     fun addCheckEpisodes(id: String?) {
         if (!ISO8601.isSameDayUsingInstant(Calendar.getInstance(), this.lastDate)) this.checkedEpisodes.clear()
-        if (!this.checkedEpisodes.contains(id) && id != "null") this.checkedEpisodes.add(id)
+        if (!this.checkedEpisodes.contains(id) && !id.isNullOrBlank() && id != "null") this.checkedEpisodes.add(id)
     }
 
     fun getAllowedCountries(): Array<Country> = Jais.getAllowedCountries(this)

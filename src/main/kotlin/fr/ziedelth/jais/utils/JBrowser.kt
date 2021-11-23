@@ -8,7 +8,6 @@ import fr.ziedelth.jais.utils.debug.JLogger
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 object JBrowser {
     fun get(url: String?): Document? {
@@ -16,9 +15,9 @@ object JBrowser {
         JLogger.info("Opening browser to $url...")
         val folder = File("browser")
 
-        val code = Runtime.getRuntime().exec("node index.js $url", null, folder).waitFor(1, TimeUnit.MINUTES)
+        val code = Runtime.getRuntime().exec("node index.js $url", null, folder).waitFor()
 
-        return if (code) {
+        return if (code == 0) {
             JLogger.info("Saving...")
             Jsoup.parse(File(folder, "result.html"), "UTF-8", url)
         } else null
