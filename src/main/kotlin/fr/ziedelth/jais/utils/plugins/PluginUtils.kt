@@ -6,6 +6,7 @@ package fr.ziedelth.jais.utils.plugins
 
 import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.scans.Scan
 import kotlin.math.floor
 
 object PluginUtils {
@@ -49,4 +50,18 @@ object PluginUtils {
 
     private fun getEpisodeDataMessage(episode: Episode, newLine: Boolean = true) =
         "${episode.country.countryHandler.season} ${episode.season} • ${episode.episodeType.getData(episode.country.country::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
+
+    fun getMessage(scan: Scan) = "🎉 ${scan.anime}\n" +
+            "${
+                getScanDataMessage(
+                    scan,
+                    false
+                )
+            }\n" +
+            "#Anime #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
+
+    fun getMarkdownMessage(scan: Scan) = getScanDataMessage(scan)
+
+    private fun getScanDataMessage(scan: Scan, newLine: Boolean = true) =
+        "Chapitre ${scan.number}\"}${if (newLine) "\n" else ""}"
 }
