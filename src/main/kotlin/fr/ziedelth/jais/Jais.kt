@@ -156,6 +156,8 @@ object Jais {
                                 animeData.id,
                                 ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
                                 scan.number.toInt(),
+                                scan.episodeType.name,
+                                scan.langType.name,
                                 scan.url
                             )
 

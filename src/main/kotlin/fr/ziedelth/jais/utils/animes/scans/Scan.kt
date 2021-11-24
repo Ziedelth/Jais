@@ -8,6 +8,8 @@ import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
+import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import java.awt.image.BufferedImage
 import java.net.URL
@@ -23,6 +25,8 @@ data class Scan(
     val animeGenres: Array<AnimeGenre>,
     val animeDescription: String?,
     val number: Long,
+    val episodeType: EpisodeType = EpisodeType.CHAPTER,
+    val langType: LangType = LangType.SUBTITLES,
     val url: String,
 ) {
     var animeBufferedImage: BufferedImage? = null

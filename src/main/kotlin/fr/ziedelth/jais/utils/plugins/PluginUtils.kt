@@ -37,7 +37,7 @@ object PluginUtils {
                 )
             } ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
             "${getEpisodeTimeMessage(episode)}\n" +
-            "#Anime #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
+            "#Anime #Episode #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
 
     fun getMarkdownMessage(episode: Episode) = "**${getEpisodeTitle(episode)}**\n" +
             getEpisodeDataMessage(episode) +
@@ -58,10 +58,10 @@ object PluginUtils {
                     false
                 )
             }\n" +
-            "#Anime #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
+            "#Anime #Scan #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
 
     fun getMarkdownMessage(scan: Scan) = getScanDataMessage(scan)
 
     private fun getScanDataMessage(scan: Scan, newLine: Boolean = true) =
-        "Chapitre ${scan.number}\"}${if (newLine) "\n" else ""}"
+        "${scan.episodeType.getData(scan.country.country::class.java)?.data} ${scan.number}${if (newLine) "\n" else ""}"
 }

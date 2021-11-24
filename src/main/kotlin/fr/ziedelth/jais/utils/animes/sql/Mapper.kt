@@ -301,6 +301,8 @@ object Mapper {
         animeId: Long,
         releaseDate: String,
         number: Int,
+        episodeType: String,
+        langType: String,
         url: String,
     ): ScanData? {
         val scan = getScan(connection, animeId, number)
@@ -310,7 +312,7 @@ object Mapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO scans (id, anime_id, release_date, number, url) VALUES (NULL, ?, ?, ?, ?)"
+                "INSERT INTO scans (id, anime_id, release_date, number, episode_type, lang_type, url) VALUES (NULL, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
@@ -318,6 +320,8 @@ object Mapper {
                 animeId,
                 releaseDate,
                 number,
+                episodeType,
+                langType,
                 url
             )
 
