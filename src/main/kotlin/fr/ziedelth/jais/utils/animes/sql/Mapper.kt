@@ -276,4 +276,52 @@ object Mapper {
             getEpisode(connection, newId)
         }
     }
+
+    fun getScans(connection: Connection?): MutableList<ScanData> {
+        val blh = BeanListHandler(ScanData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM scans", blh)
+    }
+
+    fun getScan(connection: Connection?, id: Long): ScanData? {
+        val blh = BeanListHandler(ScanData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM scans WHERE id = ?", blh, id).firstOrNull()
+    }
+
+    fun getScan(connection: Connection?, animeId: Long, number: Int): ScanData? {
+        val blh = BeanListHandler(ScanData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM scans WHERE anime_id = ? AND number = ?", blh, animeId, number)
+            .firstOrNull()
+    }
+
+    fun insertScan(
+        connection: Connection?,
+        animeId: Long,
+        releaseDate: String,
+        number: Int,
+        url: String,
+    ): ScanData? {
+        val scan = getScan(connection, animeId, number)
+
+        return if (scan != null) scan
+        else {
+            val sh = ScalarHandler<Long>()
+            val runner = QueryRunner()
+            val query =
+                "INSERT INTO scans (id, anime_id, release_date, number, url) VALUES (NULL, ?, ?, ?, ?)"
+            val newId: Long = runner.insert(
+                connection,
+                query,
+                sh,
+                animeId,
+                releaseDate,
+                number,
+                url
+            )
+
+            getScan(connection, newId)
+        }
+    }
 }

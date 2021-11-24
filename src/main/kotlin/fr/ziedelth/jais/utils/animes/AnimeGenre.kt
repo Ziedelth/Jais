@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes.datas
+package fr.ziedelth.jais.utils.animes
 
 enum class AnimeGenre(val string: Array<String> = arrayOf()) {
     UNKNOWN,
@@ -36,19 +36,21 @@ enum class AnimeGenre(val string: Array<String> = arrayOf()) {
     PIRATES(arrayOf("Pirates", "Pirate")),
     PSYCHOLOGY(arrayOf("Psychologie")),
     ROMANCE(arrayOf("Romance", "Romantique")),
-    SCHOOL(arrayOf("École", "School", "Scolaire")),
+    SCHOOL(arrayOf("École", "School", "Scolaire", "Vie Scolaire")),
     SCI_FI(arrayOf("Science-fiction", "Science-fi", "science fiction", "sci-fi")),
     SEINEN(arrayOf("Seinen")),
     SHOJO(arrayOf("Shôjo", "shojo")),
     SHONEN(arrayOf("Shônen", "Shonen", "shounen")),
     SPACE(arrayOf("Espace", "Space")),
-    SPORT(arrayOf("Sport")),
+    SPORT(arrayOf("Sport", "Sports")),
     STEAMPUNK(arrayOf("Steampunk")),
     SUPERNATURAL(arrayOf("Surnaturel", "Supernaturel", "supernatural")),
     THRILLER(arrayOf("Thriller")),
+    TRAGEDY(arrayOf("Tragédie", "tragedy")),
     SLICE_OF_LIFE(arrayOf("Tranche de vie", "Tranches de vie", "slice of life")),
     VIOLENCE(arrayOf("Violence")),
     WAR(arrayOf("War")),
+    WEBCOMIC(arrayOf("Webcomic")),
     YAOI(arrayOf("Yaoi")),
     YURI(arrayOf("Yuri")),
     ;
@@ -57,8 +59,8 @@ enum class AnimeGenre(val string: Array<String> = arrayOf()) {
         fun getGenre(string: String): AnimeGenre =
             values().firstOrNull { v -> v.string.map { it.lowercase() }.contains(string.lowercase()) } ?: UNKNOWN
 
-        fun getGenres(array: Array<String>): Array<AnimeGenre> =
-            array.mapNotNull { s -> values().firstOrNull { it.string.map(String::lowercase).contains(s.lowercase()) } }
-                .distinct().toTypedArray()
+        fun getGenres(array: Array<String>?): Array<AnimeGenre> =
+            array?.mapNotNull { s -> values().firstOrNull { it.string.map(String::lowercase).contains(s.lowercase()) } }
+                ?.distinct()?.toTypedArray() ?: emptyArray()
     }
 }

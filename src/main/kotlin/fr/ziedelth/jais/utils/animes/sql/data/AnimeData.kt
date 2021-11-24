@@ -17,4 +17,5 @@ class AnimeData {
     var platform: PlatformData? = null
     lateinit var genres: MutableList<AnimeGenreData>
     lateinit var episodes: MutableList<EpisodeData>
+    lateinit var scans: MutableList<ScanData>
 }

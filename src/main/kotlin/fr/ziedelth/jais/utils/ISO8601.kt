@@ -75,4 +75,9 @@ object ISO8601 {
         calendar.time = date
         return calendar
     }
+
+    fun fromUTCDate(iso8601calendar: Calendar?): String {
+        this.sdf3.timeZone = TimeZone.getTimeZone("UTC")
+        return this.sdf3.format(Date.from(iso8601calendar?.toInstant()))
+    }
 }

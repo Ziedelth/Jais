@@ -8,6 +8,7 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.scans.Scan
 import java.util.*
 
 abstract class Platform {
@@ -20,5 +21,6 @@ abstract class Platform {
     }
 
     fun getAllowedCountries(): Array<Country> = Jais.getAllowedCountries(this)
-    abstract fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode>
+    open fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode> = emptyArray()
+    open fun checkScans(calendar: Calendar = Calendar.getInstance()): Array<Scan> = emptyArray()
 }

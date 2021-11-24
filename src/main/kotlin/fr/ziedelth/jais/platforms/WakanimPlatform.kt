@@ -12,14 +12,15 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.JBrowser
+import fr.ziedelth.jais.utils.animes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
 import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.jsoup.select.Elements
 import java.io.InputStreamReader
 import java.net.URL
@@ -95,7 +96,7 @@ class WakanimPlatform : Platform() {
                     if (calendar.before(ISO8601.toCalendar1(time))) return@forEachIndexed
                     val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ")
                     val number = ts?.get(ts.size - 2)?.replace(" ", "")?.toLongOrNull()
-                    val episodeType =
+                    var episodeType =
                         if (EpisodeType.FILM.getData(countryInformation?.country?.javaClass)?.data == ts?.get(ts.size - 4)) EpisodeType.FILM else EpisodeType.EPISODE
                     if (episodeType == EpisodeType.UNKNOWN) return@forEachIndexed
                     val langType = LangType.getLangType(ts?.get(ts.size - 1)?.replace(" ", ""))
@@ -106,13 +107,15 @@ class WakanimPlatform : Platform() {
                     val wakanimType = checkUrl.split("/")[6]
 
                     val hash = Base64.getEncoder()
-                        .encodeToString("$time$anime$number$episodeType$langType".encodeToByteArray())
-                    if (hash.isNullOrBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
+                        .encodeToString("$time${anime?.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
+                    if (hash.isBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
 
                     val episodeResult = JBrowser.get(checkUrl)
 
                     val cardEpisodeElement = if (wakanimType.equals("episode", true)) {
-                        episodeResult?.getElementsByClass("currentEp")?.firstOrNull()
+                        episodeResult?.getElementsByClass("currentEp")?.firstOrNull {
+                            it.getElementsByClass("slider_item_number").text().toLongOrNull() == number
+                        }
                     } else {
                         try {
                             if (episodeResult?.getElementsByClass("NoEpisodes")
@@ -121,7 +124,7 @@ class WakanimPlatform : Platform() {
                         } catch (exception: Exception) {
                         }
 
-                        episodeResult?.getElementsByClass("slider_item")?.lastOrNull {
+                        episodeResult?.getElementsByClass("slider_item")?.firstOrNull {
                             it.hasClass("-big") && it.getElementsByClass("slider_item_number").text()
                                 .toLongOrNull() == number
                         }
@@ -139,14 +142,17 @@ class WakanimPlatform : Platform() {
                         val image = "https:${cardEpisodeElement.getElementsByTag("img").attr("src")}"
                         val cardSeason = cardEpisodeElement.getElementsByClass("slider_item_season").text()
 
-                        val season = if (cardSeason.contains(
-                                Jais.getCountryInformation(country)!!.countryHandler.season,
-                                true
-                            )
-                        ) {
+                        var season: Long? = 1L
+
+                        if (cardSeason.contains(Jais.getCountryInformation(country)!!.countryHandler.season, true)) {
                             val split = cardSeason.split(" ")
-                            split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
-                        } else 1L
+                            season =
+                                split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
+                        }
+                        // If contains OVA in title of season, it's special episode
+                        else if (cardSeason.contains("OVA", true)) {
+                            episodeType = EpisodeType.SPECIAL
+                        }
 
                         val cardDuration =
                             cardEpisodeElement.getElementsByClass("slider_item_duration").text().split(":")
@@ -191,10 +197,9 @@ class WakanimPlatform : Platform() {
                     val episode = wakanimEpisode.toEpisode() ?: return@forEachIndexed
                     list.add(episode)
 
-                    this.addCheckEpisodes(
-                        Base64.getEncoder()
-                            .encodeToString("${wakanimEpisode.releaseDate}${wakanimEpisode.anime}${wakanimEpisode.number}${wakanimEpisode.episodeType}${wakanimEpisode.langType}".encodeToByteArray())
-                    )
+                    val hash = Base64.getEncoder()
+                        .encodeToString("${wakanimEpisode.releaseDate}${wakanimEpisode.anime?.onlyLettersAndDigits()}${wakanimEpisode.number}${wakanimEpisode.langType}".encodeToByteArray())
+                    this.addCheckEpisodes(hash)
                 }
             }
         }

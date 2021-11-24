@@ -10,7 +10,7 @@ import kotlin.math.floor
 
 object PluginUtils {
     fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
-    private fun String.onlyLettersAndDigits() = this.filter { it.isLetterOrDigit() }
+    fun String.onlyLettersAndDigits() = this.filter { it.isLetterOrDigit() }
 
     private fun calculateHHMMSS(secNum: Int): String {
         val hours = floor(secNum / 3600.0)
@@ -29,9 +29,14 @@ object PluginUtils {
 
     fun getMessage(episode: Episode) = "🎉 ${episode.anime}\n" +
             "${getEpisodeTitle(episode)}\n" +
-            "${getEpisodeDataMessage(episode)} ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
+            "${
+                getEpisodeDataMessage(
+                    episode,
+                    false
+                )
+            } ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
             "${getEpisodeTimeMessage(episode)}\n" +
-            "#Anime #${episode.anime.onlyLettersAndDigits()} #${episode.platform.platformHandler.name.onlyLettersAndDigits()}"
+            "#Anime #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
 
     fun getMarkdownMessage(episode: Episode) = "**${getEpisodeTitle(episode)}**\n" +
             getEpisodeDataMessage(episode) +
@@ -42,6 +47,6 @@ object PluginUtils {
     private fun getEpisodeTimeMessage(episode: Episode) =
         "🎬 ${if (episode.duration != -1L) episode.duration.toHHMMSS() else "??:??"}"
 
-    private fun getEpisodeDataMessage(episode: Episode) =
-        "${episode.country.countryHandler.season} ${episode.season} • ${episode.episodeType.getData(episode.country.country::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}\n"
+    private fun getEpisodeDataMessage(episode: Episode, newLine: Boolean = true) =
+        "${episode.country.countryHandler.season} ${episode.season} • ${episode.episodeType.getData(episode.country.country::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
 }

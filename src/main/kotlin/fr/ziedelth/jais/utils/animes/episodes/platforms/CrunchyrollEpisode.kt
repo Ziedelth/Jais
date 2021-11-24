@@ -6,9 +6,9 @@ package fr.ziedelth.jais.utils.animes.episodes.platforms
 
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.animes.AnimeGenre
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.datas.AnimeGenre
 import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
 import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl

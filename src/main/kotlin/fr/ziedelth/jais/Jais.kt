@@ -7,6 +7,7 @@ package fr.ziedelth.jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
+import fr.ziedelth.jais.platforms.ScantradPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
@@ -39,28 +40,29 @@ object Jais {
         JLogger.info("Adding platforms...")
         this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
         this.addPlatform(CrunchyrollPlatform::class.java)
+        this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
         JThread.start({
             JLogger.info("Checking episodes...")
-            this.checkEpisodes()
+            this.checkEpisodesAndScans()
             JLogger.info("All episodes are checked!")
         }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
     }
 
-    private fun checkEpisodes(calendar: Calendar = Calendar.getInstance()) {
+    private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {
         Impl.tryCatch("Failed to fetch episodes") {
             val connection = Mapper.getConnection()
 
-            val list = this.platforms.flatMap {
+            val episodesList = this.platforms.flatMap {
                 JLogger.info("Fetch ${it.platformHandler.name} episodes...")
                 it.platform.checkEpisodes(calendar).toList()
             }
 
-            JLogger.config("Fetched episodes length: ${list.size}")
+            JLogger.config("Fetched episodes length: ${episodesList.size}")
 
-            if (list.isNotEmpty()) {
-                list.sortedBy { it.releaseDate }.forEach { episode ->
+            if (episodesList.isNotEmpty()) {
+                episodesList.sortedBy { it.releaseDate }.forEach { episode ->
                     val platformData = Mapper.insertPlatform(
                         connection,
                         episode.platform.platformHandler.name,
@@ -106,6 +108,60 @@ object Jais {
                             if (!exists && episodeData != null) Impl.tryCatch {
                                 PluginManager.plugins?.forEach {
                                     it.newEpisode(episode)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val scansList = this.platforms.flatMap {
+                JLogger.info("Fetch ${it.platformHandler.name} episodes...")
+                it.platform.checkScans(calendar).toList()
+            }
+
+            JLogger.config("Fetched scans length: ${scansList.size}")
+
+            if (scansList.isNotEmpty()) {
+                scansList.sortedBy { it.releaseDate }.forEach { scan ->
+                    val platformData = Mapper.insertPlatform(
+                        connection,
+                        scan.platform.platformHandler.name,
+                        scan.platform.platformHandler.url,
+                        scan.platform.platformHandler.image
+                    )
+                    val countryData = Mapper.insertCountry(
+                        connection,
+                        scan.country.countryHandler.name,
+                        scan.country.countryHandler.flag
+                    )
+
+                    if (platformData != null && countryData != null) {
+                        val animeData = Mapper.insertAnime(
+                            connection,
+                            countryData.id,
+                            platformData.id,
+                            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                            scan.anime,
+                            scan.animeImage,
+                            scan.animeDescription
+                        )
+
+                        if (animeData != null) {
+                            scan.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+
+                            val exists = Mapper.getScan(connection, animeData.id, scan.number.toInt()) != null
+                            val episodeData = Mapper.insertScan(
+                                connection,
+                                animeData.id,
+                                ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                                scan.number.toInt(),
+                                scan.url
+                            )
+
+                            if (!exists && episodeData != null) Impl.tryCatch {
+                                PluginManager.plugins?.forEach {
+                                    it.newScan(scan)
                                 }
                             }
                         }
