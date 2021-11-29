@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils
 
+import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.debug.JLogger
 import java.awt.image.BufferedImage
 import java.io.File
@@ -17,6 +18,8 @@ object FileImpl {
     fun exists(file: File): Boolean = file.exists() && if (file.isFile) file.readBytes().isNotEmpty() else true
     fun notExists(file: File): Boolean = !this.exists(file)
 
+    fun getFile(name: String) = File(File(Jais.javaClass.protectionDomain.codeSource.location.path).parent, name)
+
     private fun createFile(file: File) {
         if (this.notExists(file) && !file.createNewFile()) JLogger.warning("Failed to create ${file.name} file, already exists")
     }
@@ -25,8 +28,9 @@ object FileImpl {
         if (this.notExists(file) && !file.mkdirs()) JLogger.warning("Failed to create ${file.name} folder, already exists")
     }
 
-    fun directories(vararg directories: String): File {
-        val folder = File(directories.joinToString(File.separator))
+    fun directories(local: Boolean, vararg directories: String): File {
+        val folder =
+            if (local) getFile(directories.joinToString(File.separator)) else File(directories.joinToString(File.separator))
         Impl.tryCatch("Failed to create $folder folder") { this.createDirectory(folder) }
         return folder
     }

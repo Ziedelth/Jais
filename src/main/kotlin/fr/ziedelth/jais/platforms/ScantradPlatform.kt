@@ -13,7 +13,7 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.animes.AnimeGenre
+import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.scans.Scan
@@ -69,14 +69,15 @@ class ScantradPlatform : Platform() {
                     val animeLink = descriptionDocument.getElementsByTag("a").attr("href")
 
                     val document = JBrowser.get(animeLink)
-                    val animeGenre = AnimeGenre.getGenres(
+                    val animeImage = document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")
+                    val genre = Genre.getGenres(
                         document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]")?.firstOrNull()
-                            ?.getElementsByClass("snm-button")?.map { it.text() }?.toTypedArray()
-                    )
+                            ?.getElementsByClass("snm-button")?.map { it.text() })
                     val animeDescription =
                         document?.getElementsByClass("new-main")?.firstOrNull()?.getElementsByTag("p")?.text()
 
-                    scantradScan.genres = animeGenre
+                    scantradScan.animeImage = animeImage
+                    scantradScan.genres = genre
                     scantradScan.animeDescription = animeDescription
 
                     val scan = scantradScan.toScan() ?: return@forEachIndexed

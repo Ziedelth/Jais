@@ -2,26 +2,23 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes.datas
+package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
 
-enum class LangType(private val data: Array<EpisodeDataImpl>) {
+enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
     UNKNOWN(emptyArray<EpisodeDataImpl>()),
-    SUBTITLES(
-        arrayOf(
-            EpisodeDataImpl(FranceCountry::class.java, "VOSTFR"),
-            EpisodeDataImpl(FranceCountry::class.java, "VOSTF")
-        )
-    ),
-    VOICE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "VF"))),
+    CHAPTER(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
+    EPISODE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Épisode"))),
+    FILM(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Film"))),
+    SPECIAL(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
     ;
 
     fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
 
     companion object {
-        fun getLangType(string: String?): LangType {
+        fun getEpisodeType(string: String?): EpisodeType {
             for (type in values()) {
                 for (data in type.data) {
                     if (data.data.equals(string, true)) {
@@ -33,7 +30,7 @@ enum class LangType(private val data: Array<EpisodeDataImpl>) {
             return UNKNOWN
         }
 
-        fun getLangType(clazz: Class<out Country>?): LangType {
+        fun getEpisodeType(clazz: Class<out Country>?): EpisodeType {
             for (type in values()) {
                 for (data in type.data) {
                     if (data.clazz == clazz) {

@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils.debug
 
+import fr.ziedelth.jais.utils.FileImpl
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -36,9 +37,9 @@ object JLogger : Logger("ZiedLogger", null) {
         consoleHandler.formatter = jFormatter
         consoleHandler.level = Level.ALL
         this.addHandler(consoleHandler)
-        val logsFolder = File("logs")
+        val logsFolder = FileImpl.getFile("logs")
         if (!logsFolder.exists()) logsFolder.mkdirs()
-        val fileHandler = FileHandler("logs/log.log", 1 * 1024 * 1024, 5, true)
+        val fileHandler = FileHandler("${logsFolder.absolutePath}${File.separator}log.log", 5 * 1024 * 1024, 1, true)
         fileHandler.formatter = jFormatter
         fileHandler.level = Level.ALL
         this.addHandler(fileHandler)

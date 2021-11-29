@@ -4,12 +4,12 @@
 
 package fr.ziedelth.jais.utils.plugins
 
+import fr.ziedelth.jais.utils.FileImpl
 import org.pf4j.DefaultPluginManager
 import org.pf4j.PluginManager
-import java.io.File
 
 object PluginManager {
-    private val pluginManager: PluginManager = DefaultPluginManager(File("plugins").toPath())
+    private val pluginManager: PluginManager = DefaultPluginManager(FileImpl.getFile("plugins").toPath())
     var plugins: Array<JavaPlugin>? = null
 
     fun loadAll() {

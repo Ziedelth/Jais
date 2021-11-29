@@ -5,14 +5,16 @@
 package fr.ziedelth.jais.platforms
 
 import com.google.gson.Gson
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.platforms.AnimeDigitalNetworkEpisode
+import fr.ziedelth.jais.utils.Impl.toHTTPS
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.EpisodeType
+import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import java.io.InputStreamReader
@@ -28,12 +30,17 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class AnimeDigitalNetworkPlatform : Platform() {
+    private fun getDate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
+
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
+        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
+            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream = URL(
                     "https://gw.api.animedigitalnetwork.${country.checkOnEpisodesURL(this)}/video/calendar?date=${
@@ -42,30 +49,59 @@ class AnimeDigitalNetworkPlatform : Platform() {
                 ).openStream()
                 val jsonObject: JsonObject? = gson.fromJson(InputStreamReader(inputStream), JsonObject::class.java)
                 inputStream.close()
-                val episodesList = (jsonObject?.get("videos") as JsonArray?)?.filter { it != null && it.isJsonObject }
-                    ?.mapNotNull { gson.fromJson(it, AnimeDigitalNetworkEpisode::class.java) }
 
-                episodesList?.forEach {
-                    it.platformImpl = Jais.getPlatformInformation(this)
-                    it.countryImpl = Jais.getCountryInformation(country)
-                }
+                Impl.getArray(jsonObject, "videos")?.mapNotNull { Impl.toObject(it) }?.forEachIndexed { _, ejo ->
+                    val releaseDate = ISO8601.fromUTCDate(Impl.getString(ejo, "releaseDate")) ?: return@forEachIndexed
+                    if (!ISO8601.isSameDayUsingInstant(
+                            calendar,
+                            releaseDate
+                        ) || calendar.before(releaseDate)
+                    ) return@forEachIndexed
+                    val show = Impl.getObject(ejo, "show") ?: return@forEachIndexed
+                    val anime =
+                        Impl.getString(show, "shortTitle") ?: Impl.getString(show, "title") ?: return@forEachIndexed
+                    val animeImage = Impl.getString(show, "image2x")?.toHTTPS() ?: return@forEachIndexed
+                    val genresString = Impl.getArray(show, "genres")?.mapNotNull { Impl.toString(it) }
+                    if (genresString?.contains("Animation japonaise") == false) return@forEachIndexed
+                    val animeGenres = Genre.getGenres(genresString?.flatMap { it.split(" / ") })
+                    val animeDescription = Impl.getString(show, "summary")
+                    val season = Impl.getString(ejo, "season")?.toLongOrNull() ?: 1
+                    val number = Impl.getString(ejo, "shortNumber")?.toLongOrNull() ?: -1
+                    val episodeType = EpisodeType.EPISODE
+                    val langType = LangType.getLangType(Impl.toString(Impl.getArray(ejo, "languages")?.lastOrNull()))
+                    if (langType == LangType.UNKNOWN) return@forEachIndexed
+                    val episodeId = Impl.getLong(ejo, "id")?.toString() ?: return@forEachIndexed
+                    if (this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+                    val title = Impl.getString(ejo, "name")
+                    val url = Impl.getString(ejo, "url")?.toHTTPS() ?: return@forEachIndexed
+                    val image = Impl.getString(ejo, "image2x")?.toHTTPS() ?: return@forEachIndexed
+                    val duration = Impl.getLong(ejo, "duration") ?: -1
 
-                episodesList?.filter {
-                    !this.checkedEpisodes.contains(it.id.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
-                        ISO8601.fromCalendar1(it.releaseDate),
-                        ISO8601.fromCalendar(calendar)
-                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate)) && it.show?.genres?.map { g -> g.lowercase() }
-                        ?.contains("Animation japonaise".lowercase()) == true
-                }?.forEachIndexed { _, animeDigitalNetworkEpisode ->
-                    val episode = animeDigitalNetworkEpisode.toEpisode() ?: return@forEachIndexed
-                    list.add(episode)
-                    this.addCheckEpisodes(animeDigitalNetworkEpisode.id.toString())
+                    this.addCheckEpisodes(episodeId)
+                    list.add(
+                        Episode(
+                            platformImpl,
+                            countryImpl,
+                            releaseDate,
+                            anime,
+                            animeImage,
+                            animeGenres,
+                            animeDescription,
+                            season,
+                            number,
+                            episodeType,
+                            langType,
+                            episodeId,
+                            title,
+                            url,
+                            image,
+                            duration
+                        )
+                    )
                 }
             }
         }
 
         return list.toTypedArray()
     }
-
-    private fun getDate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

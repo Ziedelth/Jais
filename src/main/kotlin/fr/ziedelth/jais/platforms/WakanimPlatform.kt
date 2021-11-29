@@ -11,13 +11,13 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.animes.AnimeGenre
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.EpisodeType
+import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.countries.Country
-import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
-import fr.ziedelth.jais.utils.animes.episodes.platforms.WakanimEpisode
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
@@ -36,14 +36,9 @@ import kotlin.math.pow
     countries = [FranceCountry::class]
 )
 class WakanimPlatform : Platform() {
-    data class WakanimAnime(
-        val anime: String?,
-        val image: String?,
-        val smallSummary: String?,
-        val genres: Array<AnimeGenre>?
-    )
+    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
 
-    private val animes: Array<WakanimAnime>
+    private val wakanim: Array<Wakanim>
     private val lastCheck = mutableMapOf<Country, Long>()
     private val cElements = mutableMapOf<Country, Elements?>()
 
@@ -53,37 +48,36 @@ class WakanimPlatform : Platform() {
         val jsonArray: JsonArray? = gson.fromJson(InputStreamReader(inputStream), JsonArray::class.java)
         inputStream.close()
 
-        this.animes = jsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull { jsonElement ->
+        this.wakanim = jsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull { jsonElement ->
             val jsonObject: JsonObject? = gson.fromJson(jsonElement, JsonObject::class.java)
-            WakanimAnime(
+            Wakanim(
                 jsonObject?.get("name")?.asString?.dropLastWhile(Char::isWhitespace),
-                jsonObject?.get("imageUrl")?.asString,
+                jsonObject?.get("imageUrl")?.asString?.toHTTPS(),
                 jsonObject?.get("smallSummary")?.asString,
                 jsonObject?.get("genres")?.asJsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull {
-                    AnimeGenre.getGenre(
+                    Genre.getGenre(
                         it.asJsonObject.get("name")?.asString?.dropLastWhile(Char::isWhitespace) ?: ""
                     )
-                }?.filter { it != AnimeGenre.UNKNOWN }?.toTypedArray()
+                }?.filter { it != Genre.UNKNOWN }?.toTypedArray()
             )
         }?.toTypedArray() ?: emptyArray()
     }
 
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
+        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val date = getDate(calendar)
 
         this.getAllowedCountries().forEach { country ->
-            val countryInformation = Jais.getCountryInformation(country)
+            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                val episodesList = mutableListOf<WakanimEpisode>()
-
                 if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
                     this.lastCheck[country] = System.currentTimeMillis()
 
                     val url =
-                        "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false"
+                        "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
                     val result = JBrowser.get(url)
 
                     this.cElements[country] = result?.getElementsByClass("Calendar-ep")
@@ -92,22 +86,27 @@ class WakanimPlatform : Platform() {
                 this.cElements[country]?.forEachIndexed { _, it ->
                     val text = it?.text()
                     val ts = text?.split(" ")
-                    val time = ISO8601.fromCalendar1("${this.getISODate(calendar)}T${ts?.get(0)}:00Z")
-                    if (calendar.before(ISO8601.toCalendar1(time))) return@forEachIndexed
-                    val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ")
-                    val number = ts?.get(ts.size - 2)?.replace(" ", "")?.toLongOrNull()
+                    val releaseDate =
+                        ISO8601.fromUTCDate("${this.getISODate(calendar)}T${ts?.get(0)}:00Z") ?: return@forEachIndexed
+                    if (!ISO8601.isSameDayUsingInstant(
+                            calendar,
+                            releaseDate
+                        ) || calendar.before(releaseDate)
+                    ) return@forEachIndexed
+                    val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ") ?: return@forEachIndexed
+                    val number = ts[ts.size - 2].replace(" ", "").toLongOrNull()
                     var episodeType =
-                        if (EpisodeType.FILM.getData(countryInformation?.country?.javaClass)?.data == ts?.get(ts.size - 4)) EpisodeType.FILM else EpisodeType.EPISODE
+                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4]) EpisodeType.FILM else EpisodeType.EPISODE
                     if (episodeType == EpisodeType.UNKNOWN) return@forEachIndexed
-                    val langType = LangType.getLangType(ts?.get(ts.size - 1)?.replace(" ", ""))
+                    val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
                     val checkUrl = "https://www.wakanim.tv${
                         it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")
-                    }"
+                    }".toHTTPS()
                     val wakanimType = checkUrl.split("/")[6]
 
                     val hash = Base64.getEncoder()
-                        .encodeToString("$time${anime?.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
+                        .encodeToString("${anime.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
                     if (hash.isBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
 
                     val episodeResult = JBrowser.get(checkUrl)
@@ -123,7 +122,6 @@ class WakanimPlatform : Platform() {
                             ) return@forEachIndexed
                         } catch (exception: Exception) {
                         }
-
                         episodeResult?.getElementsByClass("slider_item")?.firstOrNull {
                             it.hasClass("-big") && it.getElementsByClass("slider_item_number").text()
                                 .toLongOrNull() == number
@@ -134,20 +132,19 @@ class WakanimPlatform : Platform() {
                         cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
 
                     if (number != null && cardNumber != null && number == cardNumber) {
-                        val cardUrl = "https://www.wakanim.tv${
+                        val url = "https://www.wakanim.tv${
                             cardEpisodeElement.getElementsByClass("slider_item_star").attr("href")
-                        }"
-                        val episodeId = cardUrl.split("/")[7]
+                        }".toHTTPS()
+                        val episodeId = url.split("/")[7]
                         if (episodeId.isBlank() || this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
-                        val image = "https:${cardEpisodeElement.getElementsByTag("img").attr("src")}"
+                        val image = "https:${cardEpisodeElement.getElementsByTag("img").attr("src")}".toHTTPS()
                         val cardSeason = cardEpisodeElement.getElementsByClass("slider_item_season").text()
 
-                        var season: Long? = 1L
+                        var season = 1L
 
-                        if (cardSeason.contains(Jais.getCountryInformation(country)!!.countryHandler.season, true)) {
+                        if (cardSeason.contains(countryImpl.countryHandler.season, true)) {
                             val split = cardSeason.split(" ")
-                            season =
-                                split[split.indexOf((Jais.getCountryInformation(country)!!.countryHandler.season)) + 1].toLongOrNull()
+                            season = split[split.indexOf((countryImpl.countryHandler.season)) + 1].toLongOrNull() ?: 1L
                         }
                         // If contains OVA in title of season, it's special episode
                         else if (cardSeason.contains("OVA", true)) {
@@ -161,45 +158,33 @@ class WakanimPlatform : Platform() {
                                 ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
                         }.sum()
 
-                        val wakanimAnime = this.animes.firstOrNull { it.anime.equals(anime, true) }
+                        val wakanim = this.wakanim.firstOrNull { it.anime.equals(anime, true) } ?: return@forEachIndexed
+                        val animeImage = wakanim.image ?: return@forEachIndexed
+                        val animeGenres = wakanim.genres ?: emptyArray()
+                        val animeDescription = wakanim.smallSummary
 
-                        episodesList.add(
-                            WakanimEpisode(
-                                releaseDate = time,
-                                anime = anime,
-                                animeImage = wakanimAnime?.image,
-                                animeGenres = wakanimAnime?.genres ?: emptyArray(),
-                                animeDescription = wakanimAnime?.smallSummary,
-                                season = season,
-                                number = number,
-                                episodeType = episodeType,
-                                langType = langType,
-                                episodeId = episodeId.toLongOrNull(),
-                                image = image,
-                                duration = duration,
-                                url = cardUrl
+                        this.addCheckEpisodes(hash)
+                        list.add(
+                            Episode(
+                                platformImpl,
+                                countryImpl,
+                                releaseDate,
+                                anime,
+                                animeImage,
+                                animeGenres,
+                                animeDescription,
+                                season,
+                                number,
+                                episodeType,
+                                langType,
+                                episodeId,
+                                null,
+                                url,
+                                image,
+                                duration
                             )
                         )
                     }
-                }
-
-                episodesList.forEach {
-                    it.platformImpl = Jais.getPlatformInformation(this)
-                    it.countryImpl = Jais.getCountryInformation(country)
-                }
-
-                episodesList.filter {
-                    !this.checkedEpisodes.contains(it.episodeId.toString()) && it.isValid() && ISO8601.isSameDayUsingISO8601(
-                        ISO8601.fromCalendar1(it.releaseDate),
-                        ISO8601.fromCalendar(calendar)
-                    ) && calendar.after(ISO8601.toCalendar1(it.releaseDate))
-                }.forEachIndexed { _, wakanimEpisode ->
-                    val episode = wakanimEpisode.toEpisode() ?: return@forEachIndexed
-                    list.add(episode)
-
-                    val hash = Base64.getEncoder()
-                        .encodeToString("${wakanimEpisode.releaseDate}${wakanimEpisode.anime?.onlyLettersAndDigits()}${wakanimEpisode.number}${wakanimEpisode.langType}".encodeToByteArray())
-                    this.addCheckEpisodes(hash)
                 }
             }
         }

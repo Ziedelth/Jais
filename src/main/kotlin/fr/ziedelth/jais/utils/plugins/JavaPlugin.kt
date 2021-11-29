@@ -4,7 +4,7 @@
 
 package fr.ziedelth.jais.utils.plugins
 
-import fr.ziedelth.jais.utils.animes.episodes.Episode
+import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.scans.Scan
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper

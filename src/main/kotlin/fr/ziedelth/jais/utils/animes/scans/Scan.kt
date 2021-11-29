@@ -6,10 +6,10 @@ package fr.ziedelth.jais.utils.animes.scans
 
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.AnimeGenre
+import fr.ziedelth.jais.utils.animes.EpisodeType
+import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
-import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
-import fr.ziedelth.jais.utils.animes.episodes.datas.LangType
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import java.awt.image.BufferedImage
 import java.net.URL
@@ -22,7 +22,7 @@ data class Scan(
     val releaseDate: Calendar,
     var anime: String,
     val animeImage: String,
-    val animeGenres: Array<AnimeGenre>,
+    val genres: Array<Genre>,
     val animeDescription: String?,
     val number: Long,
     val episodeType: EpisodeType = EpisodeType.CHAPTER,

@@ -2,23 +2,26 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.episodes.datas
+package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
 
-enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
+enum class LangType(private val data: Array<EpisodeDataImpl>) {
     UNKNOWN(emptyArray<EpisodeDataImpl>()),
-    CHAPTER(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
-    EPISODE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Épisode"))),
-    FILM(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Film"))),
-    SPECIAL(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
+    SUBTITLES(
+        arrayOf(
+            EpisodeDataImpl(FranceCountry::class.java, "VOSTFR"),
+            EpisodeDataImpl(FranceCountry::class.java, "VOSTF")
+        )
+    ),
+    VOICE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "VF"))),
     ;
 
     fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
 
     companion object {
-        fun getEpisodeType(string: String?): EpisodeType {
+        fun getLangType(string: String?): LangType {
             for (type in values()) {
                 for (data in type.data) {
                     if (data.data.equals(string, true)) {
@@ -30,7 +33,7 @@ enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
             return UNKNOWN
         }
 
-        fun getEpisodeType(clazz: Class<out Country>?): EpisodeType {
+        fun getLangType(clazz: Class<out Country>?): LangType {
             for (type in values()) {
                 for (data in type.data) {
                     if (data.clazz == clazz) {
@@ -40,6 +43,18 @@ enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
             }
 
             return UNKNOWN
+        }
+
+        fun getData(clazz: Class<out Country>?): EpisodeDataImpl? {
+            for (type in values()) {
+                for (data in type.data) {
+                    if (data.clazz == clazz) {
+                        return data
+                    }
+                }
+            }
+
+            return null
         }
     }
 }

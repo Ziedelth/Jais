@@ -137,16 +137,12 @@ object Mapper {
                 val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
 
                 val fileName = "$uuid.jpg"
-                val localFile = File(FileImpl.directories("images", "animes"), fileName)
-                val webFile = File(
-                    // FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\animes"),
-                    FileImpl.directories("/var/www/ziedelth.fr/images/animes"),
-                    fileName
-                )
+                val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
+                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
                 ImageIO.write(bufferedImage, "jpg", localFile)
                 ImageIO.write(bufferedImage, "jpg", webFile)
 
-                imagePath = localFile.path
+                imagePath = "images/animes/$fileName"
             }
 
             val sh = ScalarHandler<Long>()
@@ -229,16 +225,12 @@ object Mapper {
                 val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 640, 360)
 
                 val fileName = "$uuid.jpg"
-                val localFile = File(FileImpl.directories("images", "episodes"), fileName)
-                val webFile = File(
-                    // FileImpl.directories("C:\\Users\\watte\\OneDrive\\Documents\\Développement\\Vue\\ziedelth\\public\\images\\episodes"),
-                    FileImpl.directories("/var/www/ziedelth.fr/images/episodes"),
-                    fileName
-                )
+                val localFile = File(FileImpl.directories(true, "images", "episodes"), fileName)
+                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/episodes"), fileName)
                 ImageIO.write(bufferedImage, "jpg", localFile)
                 ImageIO.write(bufferedImage, "jpg", webFile)
 
-                imagePath = localFile.path
+                imagePath = "images/episodes/$fileName"
             }
 
             var n = number
@@ -313,17 +305,8 @@ object Mapper {
             val runner = QueryRunner()
             val query =
                 "INSERT INTO scans (id, anime_id, release_date, number, episode_type, lang_type, url) VALUES (NULL, ?, ?, ?, ?, ?, ?)"
-            val newId: Long = runner.insert(
-                connection,
-                query,
-                sh,
-                animeId,
-                releaseDate,
-                number,
-                episodeType,
-                langType,
-                url
-            )
+            val newId: Long =
+                runner.insert(connection, query, sh, animeId, releaseDate, number, episodeType, langType, url)
 
             getScan(connection, newId)
         }

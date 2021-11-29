@@ -5,21 +5,19 @@
 package fr.ziedelth.jais.utils.animes.platforms
 
 import fr.ziedelth.jais.Jais
-import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.countries.Country
-import fr.ziedelth.jais.utils.animes.episodes.Episode
 import fr.ziedelth.jais.utils.animes.scans.Scan
 import java.util.*
 
 abstract class Platform {
-    private var lastDate = Calendar.getInstance()
-    protected val checkedEpisodes = mutableListOf<String?>()
+    val checkedEpisodes = mutableListOf<String?>()
 
     fun addCheckEpisodes(id: String?) {
-        if (!ISO8601.isSameDayUsingInstant(Calendar.getInstance(), this.lastDate)) this.checkedEpisodes.clear()
         if (!this.checkedEpisodes.contains(id) && !id.isNullOrBlank() && id != "null") this.checkedEpisodes.add(id)
     }
 
+    fun getPlatformImpl() = Jais.getPlatformInformation(this)
     fun getAllowedCountries(): Array<Country> = Jais.getAllowedCountries(this)
     open fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode> = emptyArray()
     open fun checkScans(calendar: Calendar = Calendar.getInstance()): Array<Scan> = emptyArray()

@@ -27,6 +27,7 @@ import kotlin.reflect.KClass
 object Jais {
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
+    private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -43,10 +44,20 @@ object Jais {
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
+//        this.platforms.forEach { it.platform.checkEpisodes() }
+
         JThread.start({
-            JLogger.info("Checking episodes...")
+            val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+
+            if (checkDay != day) {
+                JLogger.info("Resetting checked episodes...")
+                day = checkDay
+                this.platforms.forEach { it.platform.checkedEpisodes.clear() }
+            }
+
+            JLogger.info("Checking episodes and scans...")
             this.checkEpisodesAndScans()
-            JLogger.info("All episodes are checked!")
+            JLogger.info("All episodes and scans are checked!")
         }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
     }
 
@@ -116,7 +127,7 @@ object Jais {
             }
 
             val scansList = this.platforms.flatMap {
-                JLogger.info("Fetch ${it.platformHandler.name} episodes...")
+                JLogger.info("Fetch ${it.platformHandler.name} scans...")
                 it.platform.checkScans(calendar).toList()
             }
 
@@ -148,7 +159,7 @@ object Jais {
                         )
 
                         if (animeData != null) {
-                            scan.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+                            scan.genres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
 
                             val exists = Mapper.getScan(connection, animeData.id, scan.number.toInt()) != null
                             val episodeData = Mapper.insertScan(

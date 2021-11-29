@@ -4,8 +4,8 @@
 
 package fr.ziedelth.jais.utils.plugins
 
-import fr.ziedelth.jais.utils.animes.episodes.Episode
-import fr.ziedelth.jais.utils.animes.episodes.datas.EpisodeType
+import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.scans.Scan
 import kotlin.math.floor
 

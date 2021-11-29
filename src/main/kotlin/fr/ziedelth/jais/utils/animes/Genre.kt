@@ -4,7 +4,7 @@
 
 package fr.ziedelth.jais.utils.animes
 
-enum class AnimeGenre(val string: Array<String> = arrayOf()) {
+enum class Genre(val string: Array<String> = arrayOf()) {
     UNKNOWN,
     ACTION(arrayOf("Action")),
     ADVENTURE(arrayOf("Aventure", "adventure")),
@@ -56,10 +56,10 @@ enum class AnimeGenre(val string: Array<String> = arrayOf()) {
     ;
 
     companion object {
-        fun getGenre(string: String): AnimeGenre =
+        fun getGenre(string: String): Genre =
             values().firstOrNull { v -> v.string.map { it.lowercase() }.contains(string.lowercase()) } ?: UNKNOWN
 
-        fun getGenres(array: Array<String>?): Array<AnimeGenre> =
+        fun getGenres(array: Iterable<String>?): Array<Genre> =
             array?.mapNotNull { s -> values().firstOrNull { it.string.map(String::lowercase).contains(s.lowercase()) } }
                 ?.distinct()?.toTypedArray() ?: emptyArray()
     }

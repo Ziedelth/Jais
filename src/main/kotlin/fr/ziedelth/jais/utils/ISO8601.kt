@@ -6,7 +6,6 @@ package fr.ziedelth.jais.utils
 
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
-import java.time.temporal.ChronoUnit
 import java.util.*
 
 object ISO8601 {
@@ -53,9 +52,7 @@ object ISO8601 {
     }
 
     fun isSameDayUsingInstant(calendar1: Calendar?, calendar2: Calendar?): Boolean {
-        val instant1 = calendar1?.toInstant()?.truncatedTo(ChronoUnit.DAYS)
-        val instant2 = calendar2?.toInstant()?.truncatedTo(ChronoUnit.DAYS)
-        return instant1 == instant2
+        return calendar1?.get(Calendar.DAY_OF_YEAR) == calendar2?.get(Calendar.DAY_OF_YEAR)
     }
 
     fun isSameDayUsingISO8601(iso8601string1: String?, iso8601string2: String?): Boolean {
@@ -71,7 +68,7 @@ object ISO8601 {
         if (iso8601string.isNullOrBlank()) return null
         val calendar = Calendar.getInstance()
         this.sdf3.timeZone = TimeZone.getTimeZone("UTC")
-        val date = this.sdf3.parse(iso8601string)
+        val date = this.sdf3.parse(toUTCDate(iso8601string))
         calendar.time = date
         return calendar
     }
