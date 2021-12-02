@@ -54,7 +54,7 @@ class ScantradPlatform : Platform() {
                         val titleNS = Impl.getString(scanObject, "title") ?: return@forEachIndexed
                         if (this.checkedEpisodes.contains(titleNS)) return@forEachIndexed
                         val releaseDate =
-                            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(scanObject, "pubDate")))
+                            ISO8601.fromUTCDate(ISO8601.fromCalendar4(Impl.getString(scanObject, "pubDate")))
                                 ?: return@forEachIndexed
                         if (!ISO8601.isSameDayUsingInstant(
                                 calendar,
