@@ -159,7 +159,7 @@ object Jais {
                         )
 
                         if (animeData != null) {
-                            scan.genres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+                            scan.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
 
                             val exists = Mapper.getScan(connection, animeData.id, scan.number.toInt()) != null
                             val episodeData = Mapper.insertScan(
