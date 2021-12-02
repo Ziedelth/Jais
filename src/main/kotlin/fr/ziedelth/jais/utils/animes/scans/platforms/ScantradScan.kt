@@ -40,7 +40,7 @@ data class ScantradScan(
             releaseDate = ISO8601.fromUTCDate(ISO8601.toUTCDate(ISO8601.fromCalendar(ISO8601.toCalendar2(this.pubDate))))!!,
             anime = titleSplitter!!.subList(0, titleSplitter.size - 2).joinToString(" "),
             animeImage = this.animeImage!!,
-            genres = this.genres ?: emptyArray(),
+            animeGenres = this.genres ?: emptyArray(),
             animeDescription = this.animeDescription,
             number = titleSplitter.last().toLong(),
             url = this.link!!.replace("http://", "https://")

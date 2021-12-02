@@ -44,17 +44,5 @@ enum class LangType(private val data: Array<EpisodeDataImpl>) {
 
             return UNKNOWN
         }
-
-        fun getData(clazz: Class<out Country>?): EpisodeDataImpl? {
-            for (type in values()) {
-                for (data in type.data) {
-                    if (data.clazz == clazz) {
-                        return data
-                    }
-                }
-            }
-
-            return null
-        }
     }
 }

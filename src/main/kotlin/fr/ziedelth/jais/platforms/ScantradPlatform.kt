@@ -12,12 +12,12 @@ import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.scans.Scan
-import fr.ziedelth.jais.utils.animes.scans.platforms.ScantradScan
 import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL
@@ -33,58 +33,69 @@ import java.util.*
 class ScantradPlatform : Platform() {
     @Synchronized
     override fun checkScans(calendar: Calendar): Array<Scan> {
+        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Scan>()
         val gson = GsonBuilder().setPrettyPrinting().create()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
-        val platformImpl = Jais.getPlatformInformation(this)
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country)
+            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                val inputStream =
-                    URL("https://scantrad.net/rss/").openStream()
+                val inputStream = URL("https://scantrad.net/rss/").openStream()
                 val jsonObject: JsonObject? = gson.fromJson(
                     objectMapper.writeValueAsString(xmlMapper.readTree(InputStreamReader(inputStream))),
                     JsonObject::class.java
                 )
-                inputStream.close()
-                val scansList =
-                    (jsonObject?.get("channel") as JsonObject?)?.get("item")?.asJsonArray?.filter { it != null && it.isJsonObject }
-                        ?.mapNotNull { gson.fromJson(it, ScantradScan::class.java) }
 
-                scansList?.forEach {
-                    it.platformImpl = platformImpl
-                    it.countryImpl = countryImpl
-                }
+                Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }
+                    ?.forEachIndexed { _, scanObject ->
+                        val titleNS = Impl.getString(scanObject, "title") ?: return@forEachIndexed
+                        if (this.checkedEpisodes.contains(titleNS)) return@forEachIndexed
+                        val releaseDate =
+                            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(scanObject, "pubDate")))
+                                ?: return@forEachIndexed
+                        if (!ISO8601.isSameDayUsingInstant(
+                                calendar,
+                                releaseDate
+                            ) || calendar.before(releaseDate)
+                        ) return@forEachIndexed
 
-                scansList?.filter {
-                    !this.checkedEpisodes.contains("${it.title}") && it.isValid() && ISO8601.isSameDayUsingISO8601(
-                        ISO8601.fromCalendar2(it.pubDate),
-                        ISO8601.fromCalendar(calendar)
-                    ) && calendar.after(ISO8601.toCalendar2(it.pubDate))
-                }?.forEachIndexed { _, scantradScan ->
-                    val descriptionDocument = Jsoup.parse(scantradScan.description ?: "")
-                    val animeLink = descriptionDocument.getElementsByTag("a").attr("href")
+                        val titleSplitter = titleNS.split("Scan - ")[1].split(" ")
+                        val descriptionObject = Impl.getString(scanObject, "description")
+                        val descriptionDocument = Jsoup.parse(descriptionObject ?: "")
+                        val animeLink = descriptionDocument.getElementsByTag("a").attr("href").toHTTPS()
 
-                    val document = JBrowser.get(animeLink)
-                    val animeImage = document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")
-                    val genre = Genre.getGenres(
-                        document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]")?.firstOrNull()
-                            ?.getElementsByClass("snm-button")?.map { it.text() })
-                    val animeDescription =
-                        document?.getElementsByClass("new-main")?.firstOrNull()?.getElementsByTag("p")?.text()
+                        val anime = titleSplitter.subList(0, titleSplitter.size - 2).joinToString(" ")
+                        val number = titleSplitter.lastOrNull()?.toLongOrNull() ?: return@forEachIndexed
+                        val url = Impl.getString(scanObject, "link")?.toHTTPS() ?: return@forEachIndexed
 
-                    scantradScan.animeImage = animeImage
-                    scantradScan.genres = genre
-                    scantradScan.animeDescription = animeDescription
+                        val document = JBrowser.get(animeLink)
+                        val animeImage =
+                            document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")?.toHTTPS()
+                                ?: return@forEachIndexed
+                        val animeGenres = Genre.getGenres(
+                            document.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]").firstOrNull()
+                                ?.getElementsByClass("snm-button")?.map { it.text() })
+                        val animeDescription =
+                            document.getElementsByClass("new-main").firstOrNull()?.getElementsByTag("p")?.text()
 
-                    val scan = scantradScan.toScan() ?: return@forEachIndexed
-
-                    list.add(scan)
-                    this.addCheckEpisodes("${scantradScan.title}")
-                }
+                        this.addCheckEpisodes(titleNS)
+                        list.add(
+                            Scan(
+                                platformImpl,
+                                countryImpl,
+                                releaseDate,
+                                anime,
+                                animeImage,
+                                animeGenres,
+                                animeDescription,
+                                number,
+                                url = url
+                            )
+                        )
+                    }
             }
         }
 

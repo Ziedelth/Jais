@@ -58,6 +58,10 @@ class CrunchyrollPlatform : Platform() {
 
                 Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }
                     ?.forEachIndexed { _, ejo ->
+                        val restriction = Impl.getString(Impl.getObject(ejo, "restriction"), "")?.split(" ")
+                        if (restriction?.contains(country.restrictionEpisodes(this)) != true) return@forEachIndexed
+                        val subtitles = Impl.getString(ejo, "subtitleLanguages")?.split(",")
+                        if (subtitles?.contains(country.subtitlesEpisodes(this)) != true) return@forEachIndexed
                         val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(ejo, "pubDate")))
                             ?: return@forEachIndexed
                         if (!ISO8601.isSameDayUsingInstant(
@@ -74,7 +78,7 @@ class CrunchyrollPlatform : Platform() {
                         val number = Impl.getString(ejo, "episodeNumber")?.toLongOrNull() ?: -1
                         val episodeType = if (number == -1L) EpisodeType.SPECIAL else EpisodeType.EPISODE
                         val langType = if (ejoTitle.contains(
-                                "(${LangType.getData(countryImpl.country::class.java)?.data})",
+                                "(${LangType.VOICE.getData(countryImpl.country::class.java)?.data})",
                                 true
                             )
                         ) LangType.VOICE else LangType.SUBTITLES

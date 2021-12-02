@@ -22,7 +22,7 @@ data class Scan(
     val releaseDate: Calendar,
     var anime: String,
     val animeImage: String,
-    val genres: Array<Genre>,
+    val animeGenres: Array<Genre>,
     val animeDescription: String?,
     val number: Long,
     val episodeType: EpisodeType = EpisodeType.CHAPTER,
