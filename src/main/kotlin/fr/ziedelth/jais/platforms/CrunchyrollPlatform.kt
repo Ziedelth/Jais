@@ -132,7 +132,7 @@ class CrunchyrollPlatform : Platform() {
                                 duration
                             )
                         )
-                }
+                    }
             }
         }
 

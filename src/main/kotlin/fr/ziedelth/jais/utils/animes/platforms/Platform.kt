@@ -6,8 +6,8 @@ package fr.ziedelth.jais.utils.animes.platforms
 
 import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.Country
-import fr.ziedelth.jais.utils.animes.scans.Scan
 import java.util.*
 
 abstract class Platform {

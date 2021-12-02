@@ -15,9 +15,9 @@ import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
 import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import fr.ziedelth.jais.utils.animes.scans.Scan
 import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL

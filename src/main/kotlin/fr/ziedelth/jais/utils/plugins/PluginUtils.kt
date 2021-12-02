@@ -6,7 +6,7 @@ package fr.ziedelth.jais.utils.plugins
 
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
-import fr.ziedelth.jais.utils.animes.scans.Scan
+import fr.ziedelth.jais.utils.animes.Scan
 import kotlin.math.floor
 
 object PluginUtils {
