@@ -4,7 +4,9 @@
 
 package fr.ziedelth.jais.utils.animes.sql.handlers
 
-import fr.ziedelth.jais.utils.animes.sql.data.*
+import fr.ziedelth.jais.utils.animes.sql.data.AnimeData
+import fr.ziedelth.jais.utils.animes.sql.data.CountryData
+import fr.ziedelth.jais.utils.animes.sql.data.PlatformData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.QueryRunner
@@ -31,8 +33,8 @@ class AnimeHandler(private val connection: Connection?) :
         val blhC = BeanListHandler(CountryData::class.java)
         val blhP = BeanListHandler(PlatformData::class.java)
         val animeGenreHandler = AnimeGenreHandler()
-        val blhE = BeanListHandler(EpisodeData::class.java)
-        val blhS = BeanListHandler(ScanData::class.java)
+        val episodeHandler = EpisodeHandler()
+        val scanHandler = ScanHandler()
 
         val queryCountry = "SELECT * FROM countries WHERE id = ?"
         val queryPlatform = "SELECT * FROM platforms WHERE id = ?"
@@ -47,9 +49,9 @@ class AnimeHandler(private val connection: Connection?) :
             it.platform = platform
             val genres = runner.query(this.connection, queryGenres, animeGenreHandler, it.id)
             it.genres = genres
-            val episodes = runner.query(this.connection, queryEpisodes, blhE, it.id)
+            val episodes = runner.query(this.connection, queryEpisodes, episodeHandler, it.id)
             it.episodes = episodes
-            val scans = runner.query(this.connection, queryScans, blhS, it.id)
+            val scans = runner.query(this.connection, queryScans, scanHandler, it.id)
             it.scans = scans
         }
 

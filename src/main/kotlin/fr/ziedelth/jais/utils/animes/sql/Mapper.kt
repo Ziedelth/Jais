@@ -9,6 +9,8 @@ import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.sql.data.*
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.EpisodeHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.ScanHandler
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
 import org.apache.commons.dbutils.handlers.ScalarHandler
@@ -21,8 +23,10 @@ import javax.imageio.ImageIO
 
 
 object Mapper {
-    fun getConnection(): Connection? =
-        DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "&Jf&Rn7loUIv")
+    fun getConnection(): Connection? {
+        val configuration = Configuration.load() ?: return null
+        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
+    }
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -182,21 +186,22 @@ object Mapper {
     }
 
     fun getEpisodes(connection: Connection?): MutableList<EpisodeData> {
-        val blh = BeanListHandler(EpisodeData::class.java)
+        val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM episodes", blh)
+        return runner.query(connection, "SELECT * FROM episodes", episodeHandler)
     }
 
     fun getEpisode(connection: Connection?, id: Long): EpisodeData? {
-        val blh = BeanListHandler(EpisodeData::class.java)
+        val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", blh, id).firstOrNull()
+        return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", episodeHandler, id).firstOrNull()
     }
 
     fun getEpisode(connection: Connection?, episodeId: String): EpisodeData? {
-        val blh = BeanListHandler(EpisodeData::class.java)
+        val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM episodes WHERE episode_id = ?", blh, episodeId).firstOrNull()
+        return runner.query(connection, "SELECT * FROM episodes WHERE episode_id = ?", episodeHandler, episodeId)
+            .firstOrNull()
     }
 
 
@@ -239,7 +244,7 @@ object Mapper {
                 val lastNumber = this.getAnime(
                     connection,
                     animeId
-                )?.episodes?.filter { it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == it.langType }
+                )?.episodes?.filter { it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == langType }
                     ?.maxByOrNull { it.number }?.number
                 n = (lastNumber ?: 0) + 1
             }
@@ -270,21 +275,27 @@ object Mapper {
     }
 
     fun getScans(connection: Connection?): MutableList<ScanData> {
-        val blh = BeanListHandler(ScanData::class.java)
+        val scanHandler = ScanHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM scans", blh)
+        return runner.query(connection, "SELECT * FROM scans", scanHandler)
     }
 
     fun getScan(connection: Connection?, id: Long): ScanData? {
-        val blh = BeanListHandler(ScanData::class.java)
+        val scanHandler = ScanHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM scans WHERE id = ?", blh, id).firstOrNull()
+        return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
     }
 
     fun getScan(connection: Connection?, animeId: Long, number: Int): ScanData? {
-        val blh = BeanListHandler(ScanData::class.java)
+        val scanHandler = ScanHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM scans WHERE anime_id = ? AND number = ?", blh, animeId, number)
+        return runner.query(
+            connection,
+            "SELECT * FROM scans WHERE anime_id = ? AND number = ?",
+            scanHandler,
+            animeId,
+            number
+        )
             .firstOrNull()
     }
 
