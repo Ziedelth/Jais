@@ -45,6 +45,7 @@ object Jais {
         this.addPlatform(WakanimPlatform::class.java)
 
 //        this.platforms.forEach { it.platform.checkEpisodes() }
+//        this.platforms.forEach { it.platform.checkScans() }
 
         JThread.start({
             val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)

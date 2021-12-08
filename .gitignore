@@ -25,3 +25,5 @@
 /episodes.minimize.json
 /tokens/
 /database.json
+/browser/node_modules/
+/browser/package-lock.json

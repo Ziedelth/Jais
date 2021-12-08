@@ -21,6 +21,7 @@ import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
+import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import java.io.InputStreamReader
 import java.net.URL
@@ -93,11 +94,10 @@ class WakanimPlatform : Platform() {
                             releaseDate
                         ) || calendar.before(releaseDate)
                     ) return@forEachIndexed
-                    val anime = ts?.subList(1, ts.size - 5)?.joinToString(" ") ?: return@forEachIndexed
+                    val anime = ts?.subList(1, ts.indexOf("Séries"))?.joinToString(" ") ?: return@forEachIndexed
                     val number = ts[ts.size - 2].replace(" ", "").toLongOrNull()
                     var episodeType =
                         if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4]) EpisodeType.FILM else EpisodeType.EPISODE
-                    if (episodeType == EpisodeType.UNKNOWN) return@forEachIndexed
                     val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
                     val checkUrl = "https://www.wakanim.tv${
@@ -116,12 +116,7 @@ class WakanimPlatform : Platform() {
                             it.getElementsByClass("slider_item_number").text().toLongOrNull() == number
                         }
                     } else {
-                        try {
-                            if (episodeResult?.getElementsByClass("NoEpisodes")
-                                    ?.firstOrNull() != null
-                            ) return@forEachIndexed
-                        } catch (exception: Exception) {
-                        }
+                        if (!hasEpisodes(episodeResult)) return@forEachIndexed
                         episodeResult?.getElementsByClass("slider_item")?.firstOrNull {
                             it.hasClass("-big") && it.getElementsByClass("slider_item_number").text()
                                 .toLongOrNull() == number
@@ -149,6 +144,14 @@ class WakanimPlatform : Platform() {
                         // If contains OVA in title of season, it's special episode
                         else if (cardSeason.contains("OVA", true)) {
                             episodeType = EpisodeType.SPECIAL
+                        }
+                        // If contains film in title of season, it's a film
+                        else if (cardSeason.contains(
+                                "${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}",
+                                true
+                            )
+                        ) {
+                            episodeType = EpisodeType.FILM
                         }
 
                         val cardDuration =
@@ -190,6 +193,15 @@ class WakanimPlatform : Platform() {
         }
 
         return list.toTypedArray()
+    }
+
+    private fun hasEpisodes(episodeResult: Document?): Boolean {
+        try {
+            if (episodeResult?.getElementsByClass("NoEpisodes")?.firstOrNull() != null) return false
+        } catch (_: Exception) {
+        }
+
+        return true
     }
 
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
