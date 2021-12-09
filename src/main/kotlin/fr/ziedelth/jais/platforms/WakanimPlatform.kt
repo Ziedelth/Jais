@@ -156,10 +156,11 @@ class WakanimPlatform : Platform() {
 
                         val cardDuration =
                             cardEpisodeElement.getElementsByClass("slider_item_duration").text().split(":")
-                        val duration = cardDuration.mapIndexed { index, t ->
+                        var duration = cardDuration.mapIndexed { index, t ->
                             (t.ifEmpty { "0" }.toLongOrNull()
                                 ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
                         }.sum()
+                        if (duration <= 0) duration = -1
 
                         val wakanim = this.wakanim.firstOrNull { it.anime.equals(anime, true) } ?: return@forEachIndexed
                         val animeImage = wakanim.image ?: return@forEachIndexed

@@ -219,10 +219,39 @@ object Mapper {
         image: String,
         duration: Long
     ): EpisodeData? {
-        val episode = getEpisode(connection, episodeId)
+        var episode = getEpisode(connection, episodeId)
 
-        return if (episode != null) episode
-        else {
+        return if (episode != null) {
+            if (episode.title?.equals(title, true) == false) {
+                val runner = QueryRunner()
+                val query = "UPDATE episodes SET title = ? WHERE id = ?"
+                runner.update(connection, query, title, episode.id)
+                episode = getEpisode(connection, episode.id)
+            }
+
+            if (episode != null && !episode.url.equals(url, true)) {
+                val runner = QueryRunner()
+                val query = "UPDATE episodes SET url = ? WHERE id = ?"
+                runner.update(connection, query, url, episode.id)
+                episode = getEpisode(connection, episode.id)
+            }
+
+            if (episode != null && !episode.image.equals(url, true)) {
+                val runner = QueryRunner()
+                val query = "UPDATE episodes SET image = ? WHERE id = ?"
+                runner.update(connection, query, image, episode.id)
+                episode = getEpisode(connection, episode.id)
+            }
+
+            if (episode != null && episode.duration != duration) {
+                val runner = QueryRunner()
+                val query = "UPDATE episodes SET duration = ? WHERE id = ?"
+                runner.update(connection, query, duration, episode.id)
+                episode = getEpisode(connection, episode.id)
+            }
+
+            episode
+        } else {
             var imagePath = image
 
             Impl.tryCatch("Failed to create episode image file") {
@@ -295,8 +324,7 @@ object Mapper {
             scanHandler,
             animeId,
             number
-        )
-            .firstOrNull()
+        ).firstOrNull()
     }
 
     fun insertScan(

@@ -53,7 +53,7 @@ object Jais {
             if (checkDay != day) {
                 JLogger.info("Resetting checked episodes...")
                 day = checkDay
-                this.platforms.forEach { it.platform.checkedEpisodes.clear() }
+                this.platforms.forEach { it.platform.checkedEpisodes.clear(); it.platform.checkedData.clear() }
             }
 
             JLogger.info("Checking episodes and scans...")

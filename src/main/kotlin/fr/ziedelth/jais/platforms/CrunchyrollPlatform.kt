@@ -34,7 +34,7 @@ import java.util.*
 class CrunchyrollPlatform : Platform() {
     data class Crunchyroll(val anime: String?, val image: String?, val description: String?)
 
-    private val crunchyroll: MutableList<Crunchyroll> = emptyArray<Crunchyroll>().toMutableList()
+    private val crunchyroll: MutableList<Crunchyroll> = mutableListOf()
 
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
@@ -83,7 +83,7 @@ class CrunchyrollPlatform : Platform() {
                             )
                         ) LangType.VOICE else LangType.SUBTITLES
                         val episodeId = Impl.getString(ejo, "mediaId") ?: return@forEachIndexed
-                        if (this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+
                         val title = Impl.getString(ejo, "episodeTitle")
                         val url = Impl.getString(ejo, "link")?.toHTTPS() ?: return@forEachIndexed
                         val image = Impl.getString(Impl.getArray(ejo, "thumbnail")?.mapNotNull { Impl.toObject(it) }
@@ -111,26 +111,24 @@ class CrunchyrollPlatform : Platform() {
                         val animeImage = crunchyroll.image ?: return@forEachIndexed
                         val animeDescription = crunchyroll.description
 
-                        this.addCheckEpisodes(episodeId)
-                        list.add(
-                            Episode(
-                                platformImpl,
-                                countryImpl,
-                                releaseDate,
-                                anime,
-                                animeImage,
-                                animeGenres,
-                                animeDescription,
-                                season,
-                                number,
-                                episodeType,
-                                langType,
-                                episodeId,
-                                title,
-                                url,
-                                image,
-                                duration
-                            )
+                        this.addEpisode(
+                            title,
+                            url,
+                            image,
+                            duration,
+                            episodeId,
+                            list,
+                            platformImpl,
+                            countryImpl,
+                            releaseDate,
+                            anime,
+                            animeImage,
+                            animeGenres,
+                            animeDescription,
+                            season,
+                            number,
+                            episodeType,
+                            langType
                         )
                     }
             }

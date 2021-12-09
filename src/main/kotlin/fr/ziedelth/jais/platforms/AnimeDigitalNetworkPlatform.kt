@@ -71,32 +71,30 @@ class AnimeDigitalNetworkPlatform : Platform() {
                     val langType = LangType.getLangType(Impl.toString(Impl.getArray(ejo, "languages")?.lastOrNull()))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
                     val episodeId = Impl.getLong(ejo, "id")?.toString() ?: return@forEachIndexed
-                    if (this.checkedEpisodes.contains(episodeId)) return@forEachIndexed
+
                     val title = Impl.getString(ejo, "name")
                     val url = Impl.getString(ejo, "url")?.toHTTPS() ?: return@forEachIndexed
                     val image = Impl.getString(ejo, "image2x")?.toHTTPS() ?: return@forEachIndexed
                     val duration = Impl.getLong(ejo, "duration") ?: -1
 
-                    this.addCheckEpisodes(episodeId)
-                    list.add(
-                        Episode(
-                            platformImpl,
-                            countryImpl,
-                            releaseDate,
-                            anime,
-                            animeImage,
-                            animeGenres,
-                            animeDescription,
-                            season,
-                            number,
-                            episodeType,
-                            langType,
-                            episodeId,
-                            title,
-                            url,
-                            image,
-                            duration
-                        )
+                    this.addEpisode(
+                        title,
+                        url,
+                        image,
+                        duration,
+                        episodeId,
+                        list,
+                        platformImpl,
+                        countryImpl,
+                        releaseDate,
+                        anime,
+                        animeImage,
+                        animeGenres,
+                        animeDescription,
+                        season,
+                        number,
+                        episodeType,
+                        langType
                     )
                 }
             }

@@ -31,6 +31,10 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class ScantradPlatform : Platform() {
+    data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?)
+
+    private val scantrad: MutableList<Scantrad> = mutableListOf()
+
     @Synchronized
     override fun checkScans(calendar: Calendar): Array<Scan> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -71,15 +75,23 @@ class ScantradPlatform : Platform() {
                         val number = titleSplitter.lastOrNull()?.toLongOrNull() ?: return@forEachIndexed
                         val url = Impl.getString(scanObject, "link")?.toHTTPS() ?: return@forEachIndexed
 
-                        val document = JBrowser.get(animeLink)
-                        val animeImage =
-                            document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")?.toHTTPS()
-                                ?: return@forEachIndexed
-                        val animeGenres = Genre.getGenres(
-                            document.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]").firstOrNull()
-                                ?.getElementsByClass("snm-button")?.map { it.text() })
-                        val animeDescription =
-                            document.getElementsByClass("new-main").firstOrNull()?.getElementsByTag("p")?.text()
+                        if (!this.scantrad.any { it.anime.equals(anime, true) }) {
+                            val document = JBrowser.get(animeLink)
+                            val animeImage =
+                                document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")?.toHTTPS()
+                                    ?: return@forEachIndexed
+                            val animeGenres = Genre.getGenres(
+                                document.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]").firstOrNull()
+                                    ?.getElementsByClass("snm-button")?.map { it.text() })
+                            val animeDescription =
+                                document.getElementsByClass("new-main").firstOrNull()?.getElementsByTag("p")?.text()
+                            this.scantrad.add(Scantrad(anime, animeImage, animeGenres, animeDescription))
+                        }
+
+                        val scantrad = this.scantrad.find { it.anime.equals(anime, true) } ?: return@forEachIndexed
+                        val animeImage = scantrad.image ?: return@forEachIndexed
+                        val animeGenres = scantrad.genres ?: emptyArray()
+                        val animeDescription = scantrad.description
 
                         this.addCheckEpisodes(titleNS)
                         list.add(
