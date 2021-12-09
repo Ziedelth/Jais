@@ -18,7 +18,7 @@ abstract class Platform {
         if (!this.checkedEpisodes.contains(id) && !id.isNullOrBlank() && id != "null") this.checkedEpisodes.add(id)
     }
 
-    fun addCheckData(id: String?, data: String) {
+    private fun addCheckData(id: String?, data: String) {
         val list = this.checkedData.getOrDefault(id, mutableListOf())
         list.add(data)
         this.checkedData[id] = list
@@ -43,7 +43,7 @@ abstract class Platform {
         episodeType: EpisodeType,
         langType: LangType
     ) {
-        val data = "$title$url$image$duration"
+        val data = "$title$url$duration"
         if (this.checkedEpisodes.contains(episodeId) && this.checkedData.getOrDefault(episodeId, mutableListOf())
                 .contains(data)
         ) return

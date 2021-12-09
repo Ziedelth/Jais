@@ -236,13 +236,6 @@ object Mapper {
                 episode = getEpisode(connection, episode.id)
             }
 
-            if (episode != null && !episode.image.equals(url, true)) {
-                val runner = QueryRunner()
-                val query = "UPDATE episodes SET image = ? WHERE id = ?"
-                runner.update(connection, query, image, episode.id)
-                episode = getEpisode(connection, episode.id)
-            }
-
             if (episode != null && episode.duration != duration) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET duration = ? WHERE id = ?"
