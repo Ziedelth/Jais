@@ -71,9 +71,7 @@ class CrunchyrollPlatform : Platform() {
                         ) return@forEachIndexed
                         val ejoTitle = Impl.getString(ejo, "title") ?: return@forEachIndexed
                         val anime = Impl.getString(ejo, "seriesTitle") ?: return@forEachIndexed
-                        val animeGenres =
-                            Genre.getGenres(Impl.getArray(ejo, "keywords")?.mapNotNull { Impl.toString(it) }
-                                ?.flatMap { it.split(", ") })
+                        val animeGenres = Genre.getGenres(Impl.getString(ejo, "keywords")?.split(", "))
                         val season = Impl.getString(ejo, "season")?.toLongOrNull() ?: 1
                         val number = Impl.getString(ejo, "episodeNumber")?.toLongOrNull() ?: -1
                         val episodeType = if (number == -1L) EpisodeType.SPECIAL else EpisodeType.EPISODE

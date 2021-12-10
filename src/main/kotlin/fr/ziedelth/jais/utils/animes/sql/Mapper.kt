@@ -222,14 +222,14 @@ object Mapper {
         var episode = getEpisode(connection, episodeId)
 
         return if (episode != null) {
-            if (episode.title?.equals(title, true) == false) {
+            if (episode.title.isNullOrBlank() || !episode.title.equals(title, true)) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET title = ? WHERE id = ?"
                 runner.update(connection, query, title, episode.id)
                 episode = getEpisode(connection, episode.id)
             }
 
-            if (episode != null && !episode.url.equals(url, true)) {
+            if (episode != null && (episode.url.isBlank() || !episode.url.equals(url, true))) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET url = ? WHERE id = ?"
                 runner.update(connection, query, url, episode.id)
