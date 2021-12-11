@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.data
+package fr.ziedelth.jais.utils.animes.sql.deprecated.data
 
 class AnimeData {
     var id: Long = -1

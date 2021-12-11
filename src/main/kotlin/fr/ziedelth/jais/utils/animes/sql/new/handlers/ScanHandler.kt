@@ -2,9 +2,9 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.handlers
+package fr.ziedelth.jais.utils.animes.sql.new.handlers
 
-import fr.ziedelth.jais.utils.animes.sql.data.ScanData
+import fr.ziedelth.jais.utils.animes.sql.new.data.ScanData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.handlers.BeanListHandler
@@ -14,6 +14,7 @@ class ScanHandler :
     companion object {
         fun getColumnsToFieldsMap(): Map<String, String> {
             val map = mutableMapOf<String, String>()
+            map["platform_id"] = "platformId"
             map["anime_id"] = "animeId"
             map["release_date"] = "releaseDate"
             map["episode_type"] = "episodeType"

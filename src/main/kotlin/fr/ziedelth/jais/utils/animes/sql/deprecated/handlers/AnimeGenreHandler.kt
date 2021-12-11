@@ -2,9 +2,9 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.handlers
+package fr.ziedelth.jais.utils.animes.sql.deprecated.handlers
 
-import fr.ziedelth.jais.utils.animes.sql.data.AnimeGenreData
+import fr.ziedelth.jais.utils.animes.sql.deprecated.data.AnimeGenreData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.handlers.BeanListHandler

@@ -17,7 +17,7 @@ import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
-import fr.ziedelth.jais.utils.animes.sql.Mapper
+import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.debug.JLogger
 import fr.ziedelth.jais.utils.debug.JThread
 import fr.ziedelth.jais.utils.plugins.PluginManager
@@ -64,7 +64,7 @@ object Jais {
 
     private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {
         Impl.tryCatch("Failed to fetch episodes") {
-            val connection = Mapper.getConnection()
+            val connection = JMapper.getConnection()
 
             val episodesList = this.platforms.flatMap {
                 JLogger.info("Fetch ${it.platformHandler.name} episodes...")
@@ -75,23 +75,23 @@ object Jais {
 
             if (episodesList.isNotEmpty()) {
                 episodesList.sortedBy { it.releaseDate }.forEach { episode ->
-                    val platformData = Mapper.insertPlatform(
+                    val platformData = JMapper.insertPlatform(
                         connection,
                         episode.platform.platformHandler.name,
                         episode.platform.platformHandler.url,
-                        episode.platform.platformHandler.image
+                        episode.platform.platformHandler.image,
+                        episode.platform.platformHandler.color
                     )
-                    val countryData = Mapper.insertCountry(
+                    val countryData = JMapper.insertCountry(
                         connection,
                         episode.country.countryHandler.name,
                         episode.country.countryHandler.flag
                     )
 
                     if (platformData != null && countryData != null) {
-                        val animeData = Mapper.insertAnime(
+                        val animeData = JMapper.insertAnime(
                             connection,
                             countryData.id,
-                            platformData.id,
                             ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
                             episode.anime,
                             episode.animeImage,
@@ -99,11 +99,15 @@ object Jais {
                         )
 
                         if (animeData != null) {
-                            episode.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+                            episode.animeGenres.forEach {
+                                val genre = JMapper.getGenre(connection, it.name)
+                                if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
+                            }
 
-                            val exists = Mapper.getEpisode(connection, episode.episodeId) != null
-                            val episodeData = Mapper.insertEpisode(
+                            val exists = JMapper.getEpisode(connection, episode.episodeId) != null
+                            val episodeData = JMapper.insertEpisode(
                                 connection,
+                                platformData.id,
                                 animeData.id,
                                 ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
                                 episode.season.toInt(),
@@ -136,23 +140,23 @@ object Jais {
 
             if (scansList.isNotEmpty()) {
                 scansList.sortedBy { it.releaseDate }.forEach { scan ->
-                    val platformData = Mapper.insertPlatform(
+                    val platformData = JMapper.insertPlatform(
                         connection,
                         scan.platform.platformHandler.name,
                         scan.platform.platformHandler.url,
-                        scan.platform.platformHandler.image
+                        scan.platform.platformHandler.image,
+                        scan.platform.platformHandler.color
                     )
-                    val countryData = Mapper.insertCountry(
+                    val countryData = JMapper.insertCountry(
                         connection,
                         scan.country.countryHandler.name,
                         scan.country.countryHandler.flag
                     )
 
                     if (platformData != null && countryData != null) {
-                        val animeData = Mapper.insertAnime(
+                        val animeData = JMapper.insertAnime(
                             connection,
                             countryData.id,
-                            platformData.id,
                             ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
                             scan.anime,
                             scan.animeImage,
@@ -160,11 +164,16 @@ object Jais {
                         )
 
                         if (animeData != null) {
-                            scan.animeGenres.forEach { Mapper.insertAnimeGenre(connection, animeData.id, it.name) }
+                            scan.animeGenres.forEach {
+                                val genre = JMapper.getGenre(connection, it.name)
+                                if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
+                            }
 
-                            val exists = Mapper.getScan(connection, animeData.id, scan.number.toInt()) != null
-                            val episodeData = Mapper.insertScan(
+                            val exists =
+                                JMapper.getScan(connection, platformData.id, animeData.id, scan.number.toInt()) != null
+                            val episodeData = JMapper.insertScan(
                                 connection,
+                                platformData.id,
                                 animeData.id,
                                 ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
                                 scan.number.toInt(),

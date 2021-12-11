@@ -38,4 +38,13 @@ object Impl {
             if (!errorMessage.isNullOrEmpty()) JLogger.log(Level.WARNING, errorMessage, exception)
         }
     }
+
+    fun tryCatch(action: () -> Unit, errorAction: () -> Unit) {
+        try {
+            action.invoke()
+        } catch (exception: Exception) {
+            JLogger.log(Level.WARNING, "Error on try / catch", exception)
+            errorAction.invoke()
+        }
+    }
 }

@@ -5,12 +5,14 @@
 package fr.ziedelth.jais.utils.animes.sql
 
 import fr.ziedelth.jais.utils.FileImpl
+import fr.ziedelth.jais.utils.HashUtils
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.sql.deprecated.data.*
-import fr.ziedelth.jais.utils.animes.sql.deprecated.handlers.AnimeGenreHandler
-import fr.ziedelth.jais.utils.animes.sql.deprecated.handlers.AnimeHandler
-import fr.ziedelth.jais.utils.animes.sql.deprecated.handlers.EpisodeHandler
-import fr.ziedelth.jais.utils.animes.sql.deprecated.handlers.ScanHandler
+import fr.ziedelth.jais.utils.animes.sql.new.data.*
+import fr.ziedelth.jais.utils.animes.sql.new.handlers.AnimeGenreHandler
+import fr.ziedelth.jais.utils.animes.sql.new.handlers.AnimeHandler
+import fr.ziedelth.jais.utils.animes.sql.new.handlers.EpisodeHandler
+import fr.ziedelth.jais.utils.animes.sql.new.handlers.ScanHandler
+import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
 import org.apache.commons.dbutils.handlers.ScalarHandler
@@ -21,15 +23,13 @@ import java.sql.DriverManager
 import java.util.*
 import javax.imageio.ImageIO
 
-@Deprecated(message = "Old format database", replaceWith = ReplaceWith("JMapper"))
-object Mapper {
-//    fun getConnection(): Connection? {
-//        val configuration = Configuration.load() ?: return null
-//        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
-//    }
+object JMapper {
+    fun getConnection(): Connection? {
+        val configuration = Configuration.load() ?: return null
+        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
+    }
 
-    fun getConnection(): Connection? =
-        DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth.old", "root", "")
+//    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "")
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -56,7 +56,7 @@ object Mapper {
         else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
-            val query = "INSERT INTO countries (id, name, flag) VALUES (NULL, ?, ?)"
+            val query = "INSERT INTO countries (name, flag) VALUES (?, ?)"
             val newId: Long = runner.insert(connection, query, sh, name, flag).toLong()
             getCountry(connection, newId)
         }
@@ -80,16 +80,47 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM platforms WHERE name = ?", blh, name).firstOrNull()
     }
 
-    fun insertPlatform(connection: Connection?, name: String, url: String, image: String): PlatformData? {
+    fun insertPlatform(connection: Connection?, name: String, url: String, image: String, color: Int): PlatformData? {
         val platform = getPlatform(connection, name)
 
         return if (platform != null) platform
         else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
-            val query = "INSERT INTO platforms (id, name, url, image) VALUES (NULL, ?, ?, ?)"
-            val newId: Long = runner.insert(connection, query, sh, name, url, image).toLong()
+            val query = "INSERT INTO platforms (name, url, image, color) VALUES (?, ?, ?, ?)"
+            val newId: Long = runner.insert(connection, query, sh, name, url, image, color).toLong()
             getPlatform(connection, newId)
+        }
+    }
+
+    fun getGenres(connection: Connection?): MutableList<GenreData> {
+        val blh = BeanListHandler(GenreData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM genres", blh)
+    }
+
+    fun getGenre(connection: Connection?, id: Long): GenreData? {
+        val blh = BeanListHandler(GenreData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM genres WHERE id = ?", blh, id).firstOrNull()
+    }
+
+    fun getGenre(connection: Connection?, name: String): GenreData? {
+        val blh = BeanListHandler(GenreData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM genres WHERE `name` = ?", blh, name).firstOrNull()
+    }
+
+    fun insertGenre(connection: Connection?, name: String): GenreData? {
+        val genre = getGenre(connection, name)
+
+        return if (genre != null) genre
+        else {
+            val sh = ScalarHandler<Long>()
+            val runner = QueryRunner()
+            val query = "INSERT INTO genres (name) VALUES (?)"
+            val newId: Long = runner.insert(connection, query, sh, name).toLong()
+            getGenre(connection, newId)
         }
     }
 
@@ -105,29 +136,25 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    fun getAnime(connection: Connection?, countryId: Long, platformId: Long, name: String): AnimeData? {
+    fun getAnime(connection: Connection?, countryId: Long, name: String): AnimeData? {
+        val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
+
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
-        return runner.query(
-            connection,
-            "SELECT * FROM animes WHERE country_id = ? AND platform_id = ? AND name = ?",
-            ah,
-            countryId,
-            platformId,
-            name
-        ).firstOrNull()
+        return runner.query(connection, "SELECT * FROM animes WHERE country_id = ? AND code = ?", ah, countryId, code)
+            .firstOrNull()
     }
 
     fun insertAnime(
         connection: Connection?,
         countryId: Long,
-        platformId: Long,
         releaseDate: String,
         name: String,
-        image: String,
-        description: String?
+        image: String?,
+        description: String?,
+        saveImage: Boolean = true
     ): AnimeData? {
-        val anime = getAnime(connection, countryId, platformId, name)
+        val anime = getAnime(connection, countryId, name)
 
         return if (anime != null) {
             if (anime.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
@@ -137,27 +164,30 @@ object Mapper {
                 getAnime(connection, anime.id)
             } else anime
         } else {
+            val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
             var imagePath = image
 
-            Impl.tryCatch("Failed to create anime image file") {
-                val uuid = UUID.randomUUID()
-                val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
+            if (saveImage) {
+                Impl.tryCatch("Failed to create anime image file") {
+                    val uuid = UUID.randomUUID()
+                    val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
 
-                val fileName = "$uuid.jpg"
-                val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
-                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
-                ImageIO.write(bufferedImage, "jpg", localFile)
-                ImageIO.write(bufferedImage, "jpg", webFile)
+                    val fileName = "$uuid.jpg"
+                    val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
+                    val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
+                    ImageIO.write(bufferedImage, "jpg", localFile)
+                    ImageIO.write(bufferedImage, "jpg", webFile)
 
-                imagePath = "images/animes/$fileName"
+                    imagePath = "images/animes/$fileName"
+                }
             }
 
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO animes (id, country_id, platform_id, release_date, name, image, description) VALUES (NULL, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO animes (country_id, release_date, code, name, image, description) VALUES (?, ?, ?, ?, ?, ?)"
             val newId: Long =
-                runner.insert(connection, query, sh, countryId, platformId, releaseDate, name, imagePath, description)
+                runner.insert(connection, query, sh, countryId, releaseDate, code, name, imagePath, description)
                     .toLong()
             getAnime(connection, newId)
         }
@@ -166,25 +196,30 @@ object Mapper {
     fun getAnimeGenres(connection: Connection?): MutableList<AnimeGenreData> {
         val agh = AnimeGenreHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM genres", agh)
+        return runner.query(connection, "SELECT * FROM anime_genres", agh)
     }
 
-    fun getAnimeGenres(connection: Connection?, animeId: Long, genre: String): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
         val agh = AnimeGenreHandler()
         val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM genres WHERE anime_id = ? AND genre = ?", agh, animeId, genre)
-            .firstOrNull()
+        return runner.query(
+            connection,
+            "SELECT * FROM anime_genres WHERE anime_id = ? AND genre_id = ?",
+            agh,
+            animeId,
+            genreId
+        ).firstOrNull()
     }
 
-    fun insertAnimeGenre(connection: Connection?, animeId: Long, genre: String): AnimeGenreData? {
-        val animeGenre = getAnimeGenres(connection, animeId, genre)
+    fun insertAnimeGenre(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
+        val animeGenre = getAnimeGenres(connection, animeId, genreId)
 
         return if (animeGenre != null) animeGenre
         else {
             val runner = QueryRunner()
-            val query = "INSERT INTO genres (anime_id, genre) VALUES (?, ?)"
-            runner.update(connection, query, animeId, genre)
-            return getAnimeGenres(connection, animeId, genre)
+            val query = "INSERT INTO anime_genres (anime_id, genre_id) VALUES (?, ?)"
+            runner.update(connection, query, animeId, genreId)
+            return getAnimeGenres(connection, animeId, genreId)
         }
     }
 
@@ -207,9 +242,9 @@ object Mapper {
             .firstOrNull()
     }
 
-
     fun insertEpisode(
         connection: Connection?,
+        platformId: Long,
         animeId: Long,
         releaseDate: String,
         season: Int,
@@ -220,7 +255,8 @@ object Mapper {
         title: String?,
         url: String,
         image: String,
-        duration: Long
+        duration: Long,
+        saveImage: Boolean = true
     ): EpisodeData? {
         var episode = getEpisode(connection, episodeId)
 
@@ -250,17 +286,19 @@ object Mapper {
         } else {
             var imagePath = image
 
-            Impl.tryCatch("Failed to create episode image file") {
-                val uuid = UUID.randomUUID()
-                val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 640, 360)
+            if (saveImage) {
+                Impl.tryCatch("Failed to create episode image file") {
+                    val uuid = UUID.randomUUID()
+                    val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 640, 360)
 
-                val fileName = "$uuid.jpg"
-                val localFile = File(FileImpl.directories(true, "images", "episodes"), fileName)
-                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/episodes"), fileName)
-                ImageIO.write(bufferedImage, "jpg", localFile)
-                ImageIO.write(bufferedImage, "jpg", webFile)
+                    val fileName = "$uuid.jpg"
+                    val localFile = File(FileImpl.directories(true, "images", "episodes"), fileName)
+                    val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/episodes"), fileName)
+                    ImageIO.write(bufferedImage, "jpg", localFile)
+                    ImageIO.write(bufferedImage, "jpg", webFile)
 
-                imagePath = "images/episodes/$fileName"
+                    imagePath = "images/episodes/$fileName"
+                }
             }
 
             var n = number
@@ -269,7 +307,7 @@ object Mapper {
                 val lastNumber = this.getAnime(
                     connection,
                     animeId
-                )?.episodes?.filter { it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == langType }
+                )?.episodes?.filter { it.platformId == platformId && it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == langType }
                     ?.maxByOrNull { it.number }?.number
                 n = (lastNumber ?: 0) + 1
             }
@@ -277,11 +315,12 @@ object Mapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO episodes (id, anime_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO episodes (platform_id, anime_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
                 sh,
+                platformId,
                 animeId,
                 releaseDate,
                 season,
@@ -311,13 +350,14 @@ object Mapper {
         return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
     }
 
-    fun getScan(connection: Connection?, animeId: Long, number: Int): ScanData? {
+    fun getScan(connection: Connection?, platformId: Long, animeId: Long, number: Int): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(
             connection,
-            "SELECT * FROM scans WHERE anime_id = ? AND number = ?",
+            "SELECT * FROM scans WHERE platform_id = ? AND anime_id = ? AND number = ?",
             scanHandler,
+            platformId,
             animeId,
             number
         ).firstOrNull()
@@ -325,6 +365,7 @@ object Mapper {
 
     fun insertScan(
         connection: Connection?,
+        platformId: Long,
         animeId: Long,
         releaseDate: String,
         number: Int,
@@ -332,16 +373,26 @@ object Mapper {
         langType: String,
         url: String,
     ): ScanData? {
-        val scan = getScan(connection, animeId, number)
+        val scan = getScan(connection, platformId, animeId, number)
 
         return if (scan != null) scan
         else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO scans (id, anime_id, release_date, number, episode_type, lang_type, url) VALUES (NULL, ?, ?, ?, ?, ?, ?)"
-            val newId: Long =
-                runner.insert(connection, query, sh, animeId, releaseDate, number, episodeType, langType, url)
+                "INSERT INTO scans (platform_id, anime_id, release_date, number, episode_type, lang_type, url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            val newId: Long = runner.insert(
+                connection,
+                query,
+                sh,
+                platformId,
+                animeId,
+                releaseDate,
+                number,
+                episodeType,
+                langType,
+                url
+            )
 
             getScan(connection, newId)
         }

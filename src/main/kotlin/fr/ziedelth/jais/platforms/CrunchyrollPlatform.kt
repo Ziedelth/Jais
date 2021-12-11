@@ -60,8 +60,14 @@ class CrunchyrollPlatform : Platform() {
                     ?.forEachIndexed { _, ejo ->
                         val restriction = Impl.getString(Impl.getObject(ejo, "restriction"), "")?.split(" ")
                         if (restriction?.contains(country.restrictionEpisodes(this)) != true) return@forEachIndexed
+                        val ejoTitle = Impl.getString(ejo, "title") ?: return@forEachIndexed
+                        val langType = if (ejoTitle.contains(
+                                "(${LangType.VOICE.getData(countryImpl.country::class.java)?.data})",
+                                true
+                            )
+                        ) LangType.VOICE else LangType.SUBTITLES
                         val subtitles = Impl.getString(ejo, "subtitleLanguages")?.split(",")
-                        if (subtitles?.contains(country.subtitlesEpisodes(this)) != true) return@forEachIndexed
+                        if (langType == LangType.SUBTITLES && subtitles?.contains(country.subtitlesEpisodes(this)) != true) return@forEachIndexed
                         val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(ejo, "pubDate")))
                             ?: return@forEachIndexed
                         if (!ISO8601.isSameDayUsingInstant(
@@ -69,17 +75,11 @@ class CrunchyrollPlatform : Platform() {
                                 releaseDate
                             ) || calendar.before(releaseDate)
                         ) return@forEachIndexed
-                        val ejoTitle = Impl.getString(ejo, "title") ?: return@forEachIndexed
                         val anime = Impl.getString(ejo, "seriesTitle") ?: return@forEachIndexed
                         val animeGenres = Genre.getGenres(Impl.getString(ejo, "keywords")?.split(", "))
                         val season = Impl.getString(ejo, "season")?.toLongOrNull() ?: 1
                         val number = Impl.getString(ejo, "episodeNumber")?.toLongOrNull() ?: -1
                         val episodeType = if (number == -1L) EpisodeType.SPECIAL else EpisodeType.EPISODE
-                        val langType = if (ejoTitle.contains(
-                                "(${LangType.VOICE.getData(countryImpl.country::class.java)?.data})",
-                                true
-                            )
-                        ) LangType.VOICE else LangType.SUBTITLES
                         val episodeId = Impl.getString(ejo, "mediaId") ?: return@forEachIndexed
 
                         val title = Impl.getString(ejo, "episodeTitle")
