@@ -35,7 +35,7 @@ abstract class Platform {
         countryImpl: CountryImpl,
         releaseDate: Calendar,
         anime: String,
-        animeImage: String,
+        animeImage: String?,
         animeGenres: Array<Genre>,
         animeDescription: String?,
         season: Long,

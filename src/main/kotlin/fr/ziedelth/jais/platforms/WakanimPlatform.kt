@@ -39,36 +39,16 @@ import kotlin.math.pow
 class WakanimPlatform : Platform() {
     data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
 
-    private val wakanim: Array<Wakanim>
+    private val wakanim: MutableList<Wakanim> = mutableListOf()
     private val lastCheck = mutableMapOf<Country, Long>()
     private val cElements = mutableMapOf<Country, Elements?>()
-
-    init {
-        val gson = Gson()
-        val inputStream = URL("https://account.wakanim.tv/api/catalogue").openStream()
-        val jsonArray: JsonArray? = gson.fromJson(InputStreamReader(inputStream), JsonArray::class.java)
-        inputStream.close()
-
-        this.wakanim = jsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull { jsonElement ->
-            val jsonObject: JsonObject? = gson.fromJson(jsonElement, JsonObject::class.java)
-            Wakanim(
-                jsonObject?.get("name")?.asString?.dropLastWhile(Char::isWhitespace),
-                jsonObject?.get("imageUrl")?.asString?.toHTTPS(),
-                jsonObject?.get("smallSummary")?.asString,
-                jsonObject?.get("genres")?.asJsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull {
-                    Genre.getGenre(
-                        it.asJsonObject.get("name")?.asString?.dropLastWhile(Char::isWhitespace) ?: ""
-                    )
-                }?.filter { it != Genre.UNKNOWN }?.toTypedArray()
-            )
-        }?.toTypedArray() ?: emptyArray()
-    }
 
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val date = getDate(calendar)
+        val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
             val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
@@ -80,8 +60,28 @@ class WakanimPlatform : Platform() {
                     val url =
                         "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
                     val result = JBrowser.get(url)
-
                     this.cElements[country] = result?.getElementsByClass("Calendar-ep")
+
+                    val inputStream = URL("https://account.wakanim.tv/api/catalogue").openStream()
+                    val jsonArray: JsonArray? = gson.fromJson(InputStreamReader(inputStream), JsonArray::class.java)
+                    inputStream.close()
+
+                    this.wakanim.clear()
+
+                    this.wakanim.addAll(jsonArray?.filter { it != null && it.isJsonObject }?.mapNotNull { jsonElement ->
+                        val jsonObject: JsonObject? = gson.fromJson(jsonElement, JsonObject::class.java)
+                        Wakanim(
+                            jsonObject?.get("name")?.asString?.dropLastWhile(Char::isWhitespace),
+                            jsonObject?.get("imageUrl")?.asString?.toHTTPS(),
+                            jsonObject?.get("smallSummary")?.asString,
+                            jsonObject?.get("genres")?.asJsonArray?.filter { it != null && it.isJsonObject }
+                                ?.mapNotNull {
+                                    Genre.getGenre(
+                                        it.asJsonObject.get("name")?.asString?.dropLastWhile(Char::isWhitespace) ?: ""
+                                    )
+                                }?.filter { it != Genre.UNKNOWN }?.toTypedArray()
+                        )
+                    }?.toTypedArray() ?: emptyArray())
                 }
 
                 this.cElements[country]?.forEachIndexed { _, it ->
@@ -163,7 +163,7 @@ class WakanimPlatform : Platform() {
                         if (duration <= 0) duration = -1
 
                         val wakanim = this.wakanim.firstOrNull { it.anime.equals(anime, true) } ?: return@forEachIndexed
-                        val animeImage = wakanim.image ?: return@forEachIndexed
+                        val animeImage = wakanim.image
                         val animeGenres = wakanim.genres ?: emptyArray()
                         val animeDescription = wakanim.smallSummary
 

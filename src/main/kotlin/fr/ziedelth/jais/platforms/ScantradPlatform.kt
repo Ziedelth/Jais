@@ -79,17 +79,16 @@ class ScantradPlatform : Platform() {
                             val document = JBrowser.get(animeLink)
                             val animeImage =
                                 document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[1]/img")?.attr("src")?.toHTTPS()
-                                    ?: return@forEachIndexed
                             val animeGenres = Genre.getGenres(
-                                document.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]").firstOrNull()
-                                    ?.getElementsByClass("snm-button")?.map { it.text() })
+                                document?.selectXpath("//*[@id=\"chap-top\"]/div[1]/div[2]/div[2]/div[2]")
+                                    ?.firstOrNull()?.getElementsByClass("snm-button")?.map { it.text() })
                             val animeDescription =
-                                document.getElementsByClass("new-main").firstOrNull()?.getElementsByTag("p")?.text()
+                                document?.getElementsByClass("new-main")?.firstOrNull()?.getElementsByTag("p")?.text()
                             this.scantrad.add(Scantrad(anime, animeImage, animeGenres, animeDescription))
                         }
 
                         val scantrad = this.scantrad.find { it.anime.equals(anime, true) } ?: return@forEachIndexed
-                        val animeImage = scantrad.image ?: return@forEachIndexed
+                        val animeImage = scantrad.image
                         val animeGenres = scantrad.genres ?: emptyArray()
                         val animeDescription = scantrad.description
 

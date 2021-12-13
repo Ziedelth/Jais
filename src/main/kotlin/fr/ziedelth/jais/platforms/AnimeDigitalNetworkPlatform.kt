@@ -60,7 +60,7 @@ class AnimeDigitalNetworkPlatform : Platform() {
                     val show = Impl.getObject(ejo, "show") ?: return@forEachIndexed
                     val anime =
                         Impl.getString(show, "shortTitle") ?: Impl.getString(show, "title") ?: return@forEachIndexed
-                    val animeImage = Impl.getString(show, "image2x")?.toHTTPS() ?: return@forEachIndexed
+                    val animeImage = Impl.getString(show, "image2x")?.toHTTPS()
                     val genresString = Impl.getArray(show, "genres")?.mapNotNull { Impl.toString(it) }
                     if (genresString?.contains("Animation japonaise") == false) return@forEachIndexed
                     val animeGenres = Genre.getGenres(genresString?.flatMap { it.split(" / ") })

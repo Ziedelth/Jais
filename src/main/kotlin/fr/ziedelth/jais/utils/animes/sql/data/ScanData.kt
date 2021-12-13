@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.new.data
+package fr.ziedelth.jais.utils.animes.sql.data
 
 class ScanData {
     var id: Long = -1

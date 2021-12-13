@@ -18,7 +18,7 @@ data class Episode(
     val country: CountryImpl,
     val releaseDate: Calendar,
     var anime: String,
-    val animeImage: String,
+    val animeImage: String?,
     val animeGenres: Array<Genre>,
     val animeDescription: String?,
     val season: Long,

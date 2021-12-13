@@ -2,9 +2,9 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.new.handlers
+package fr.ziedelth.jais.utils.animes.sql.handlers
 
-import fr.ziedelth.jais.utils.animes.sql.new.data.ScanData
+import fr.ziedelth.jais.utils.animes.sql.data.ScanData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.handlers.BeanListHandler

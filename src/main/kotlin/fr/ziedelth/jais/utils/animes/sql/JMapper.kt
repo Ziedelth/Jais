@@ -7,11 +7,11 @@ package fr.ziedelth.jais.utils.animes.sql
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.HashUtils
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.sql.new.data.*
-import fr.ziedelth.jais.utils.animes.sql.new.handlers.AnimeGenreHandler
-import fr.ziedelth.jais.utils.animes.sql.new.handlers.AnimeHandler
-import fr.ziedelth.jais.utils.animes.sql.new.handlers.EpisodeHandler
-import fr.ziedelth.jais.utils.animes.sql.new.handlers.ScanHandler
+import fr.ziedelth.jais.utils.animes.sql.data.*
+import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.EpisodeHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.ScanHandler
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler

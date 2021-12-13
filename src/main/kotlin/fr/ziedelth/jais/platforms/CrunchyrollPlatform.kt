@@ -95,18 +95,17 @@ class CrunchyrollPlatform : Platform() {
                             val animeId = url.split("/")[4]
                             val result =
                                 JBrowser.get("${platformImpl.platformHandler.url}${country.restrictionEpisodes(this)}/$animeId")
-                                    ?: return@forEachIndexed
                             val animeImage =
-                                result.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img").attr("src").toHTTPS()
-                            var animeDescription = result.getElementsByClass("more").first()?.text()
+                                result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")?.toHTTPS()
+                            var animeDescription = result?.getElementsByClass("more")?.first()?.text()
                             if (animeDescription.isNullOrBlank()) animeDescription =
-                                result.getElementsByClass("trunc-desc").text()
+                                result?.getElementsByClass("trunc-desc")?.text()
                             this.crunchyroll.add(Crunchyroll(anime, animeImage, animeDescription))
                         }
 
                         val crunchyroll =
                             this.crunchyroll.find { it.anime.equals(anime, true) } ?: return@forEachIndexed
-                        val animeImage = crunchyroll.image ?: return@forEachIndexed
+                        val animeImage = crunchyroll.image
                         val animeDescription = crunchyroll.description
 
                         this.addEpisode(

@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.animes.sql.deprecated.data
+package fr.ziedelth.jais.utils.animes.sql.data
 
 class CountryData {
     var id: Long = -1
