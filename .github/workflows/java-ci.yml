@@ -9,6 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          script: whoami
+
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2
         with:
