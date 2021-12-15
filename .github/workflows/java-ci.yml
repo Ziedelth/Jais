@@ -14,7 +14,7 @@ jobs:
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           name: id_rsa
-          known_hosts: unnecessary
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
           if_key_exists: fail
 
       - name: Hello, World via SSH
