@@ -17,9 +17,6 @@ jobs:
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
           if_key_exists: fail
 
-      - name: Hello, World via SSH
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'Hello, World!' >> test"
-
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
@@ -27,3 +24,13 @@ jobs:
 
       - name: Build with Maven
         run: mvn -B clean package -DskipTests
+
+      - name: Deploy to server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: "-rltgoDzvO"
+          SOURCE: "target/Jaïs-jar-with-dependencies.jar"
+          REMOTE_HOST: ${{ secrets.HOST }}
+          REMOTE_USER: ${{ secrets.USER }}
+          TARGET: "/home/pi/"
