@@ -4,13 +4,19 @@
 
 package fr.ziedelth.jais
 
+import com.google.auth.oauth2.GoogleCredentials
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
+import com.google.firebase.messaging.AndroidConfig
+import com.google.firebase.messaging.AndroidNotification
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.Message
 import fr.ziedelth.jais.countries.FranceCountry
-import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
-import fr.ziedelth.jais.platforms.CrunchyrollPlatform
-import fr.ziedelth.jais.platforms.ScantradPlatform
-import fr.ziedelth.jais.platforms.WakanimPlatform
+import fr.ziedelth.jais.platforms.*
+import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
@@ -21,6 +27,8 @@ import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.debug.JLogger
 import fr.ziedelth.jais.utils.debug.JThread
 import fr.ziedelth.jais.utils.plugins.PluginManager
+import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
+import java.io.FileInputStream
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -33,7 +41,29 @@ object Jais {
     fun main(args: Array<String>) {
         JLogger.info("Init...")
 
+        JLogger.info("Setup FCM...")
+        val options = FirebaseOptions.builder()
+            .setCredentials(GoogleCredentials.fromStream(FileInputStream(FileImpl.getFile("firebase_key.json"))))
+            .setProjectId("866259759032").build()
+        FirebaseApp.initializeApp(options)
+
+        JLogger.info("Setup all plugins...")
         PluginManager.loadAll()
+
+        JLogger.info("Adding anime genres...")
+        Impl.tryCatch {
+            val connection = JMapper.getConnection()
+            connection?.autoCommit = false
+
+            Impl.tryCatch({
+                Genre.values().forEach { JMapper.insertGenre(connection, it.name, it.fr) }
+                connection?.commit()
+            }, {
+                connection?.rollback()
+            })
+
+            connection?.close()
+        }
 
         JLogger.info("Adding countries...")
         this.addCountry(FranceCountry::class.java)
@@ -41,11 +71,14 @@ object Jais {
         JLogger.info("Adding platforms...")
         this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
         this.addPlatform(CrunchyrollPlatform::class.java)
+        this.addPlatform(NetflixPlatform::class.java)
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
-//        this.platforms.forEach { it.platform.checkEpisodes() }
+//        this.platforms.forEach { platform -> platform.platform.checkEpisodes().forEach { JLogger.config(it.toString()) } }
 //        this.platforms.forEach { it.platform.checkScans() }
+
+        JLogger.info("Starting...")
 
         JThread.start({
             val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
@@ -56,22 +89,16 @@ object Jais {
                 this.platforms.forEach { it.platform.checkedEpisodes.clear(); it.platform.checkedData.clear() }
             }
 
-            JLogger.info("Checking episodes and scans...")
             this.checkEpisodesAndScans()
-            JLogger.info("All episodes and scans are checked!")
         }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
     }
 
     private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {
         Impl.tryCatch("Failed to fetch episodes") {
+            val animes = mutableMapOf<String, String>()
             val connection = JMapper.getConnection()
 
-            val episodesList = this.platforms.flatMap {
-                JLogger.info("Fetch ${it.platformHandler.name} episodes...")
-                it.platform.checkEpisodes(calendar).toList()
-            }
-
-            JLogger.config("Fetched episodes length: ${episodesList.size}")
+            val episodesList = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
 
             if (episodesList.isNotEmpty()) {
                 episodesList.sortedBy { it.releaseDate }.forEach { episode ->
@@ -100,7 +127,7 @@ object Jais {
 
                         if (animeData != null) {
                             episode.animeGenres.forEach {
-                                val genre = JMapper.getGenre(connection, it.name)
+                                val genre = JMapper.insertGenre(connection, it.name, it.fr)
                                 if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
                             }
 
@@ -121,9 +148,14 @@ object Jais {
                                 episode.duration
                             )
 
-                            if (!exists && episodeData != null) Impl.tryCatch {
-                                PluginManager.plugins?.forEach {
-                                    it.newEpisode(episode)
+                            if (!exists && episodeData != null) {
+                                if (!animes.contains(episode.anime.onlyLettersAndDigits()))
+                                    animes[episode.anime.onlyLettersAndDigits()] = episode.anime
+
+                                Impl.tryCatch {
+                                    PluginManager.plugins?.forEach {
+                                        it.newEpisode(episode)
+                                    }
                                 }
                             }
                         }
@@ -131,12 +163,7 @@ object Jais {
                 }
             }
 
-            val scansList = this.platforms.flatMap {
-                JLogger.info("Fetch ${it.platformHandler.name} scans...")
-                it.platform.checkScans(calendar).toList()
-            }
-
-            JLogger.config("Fetched scans length: ${scansList.size}")
+            val scansList = this.platforms.flatMap { it.platform.checkScans(calendar).toList() }
 
             if (scansList.isNotEmpty()) {
                 scansList.sortedBy { it.releaseDate }.forEach { scan ->
@@ -165,7 +192,7 @@ object Jais {
 
                         if (animeData != null) {
                             scan.animeGenres.forEach {
-                                val genre = JMapper.getGenre(connection, it.name)
+                                val genre = JMapper.insertGenre(connection, it.name, it.fr)
                                 if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
                             }
 
@@ -182,9 +209,14 @@ object Jais {
                                 scan.url
                             )
 
-                            if (!exists && episodeData != null) Impl.tryCatch {
-                                PluginManager.plugins?.forEach {
-                                    it.newScan(scan)
+                            if (!exists && episodeData != null) {
+                                if (!animes.contains(scan.anime.onlyLettersAndDigits()))
+                                    animes[scan.anime.onlyLettersAndDigits()] = scan.anime
+
+                                Impl.tryCatch {
+                                    PluginManager.plugins?.forEach {
+                                        it.newScan(scan)
+                                    }
                                 }
                             }
                         }
@@ -193,7 +225,23 @@ object Jais {
             }
 
             connection?.close()
+
+            if (animes.isNotEmpty()) {
+                val animeRelease = animes.values.joinToString(", ") { it }
+                this.sendMessage("Nouvelle(s) sortie(s)", animeRelease)
+                JLogger.info("New release: $animeRelease")
+            }
         }
+    }
+
+    private fun sendMessage(title: String, description: String, image: String? = null) {
+        FirebaseMessaging.getInstance().send(
+            Message.builder().setAndroidConfig(
+                AndroidConfig.builder().setNotification(
+                    AndroidNotification.builder().setTitle(title).setBody(description).setImage(image).build()
+                ).build()
+            ).setTopic("animes").build()
+        )
     }
 
     private fun addCountry(country: Class<out Country>) {
@@ -218,15 +266,6 @@ object Jais {
         } else JLogger.warning("Failed to add ${platform.simpleName}")
     }
 
-    fun getCountryInformation(country: String?): CountryImpl? {
-        return if (!country.isNullOrBlank()) this.countries.firstOrNull {
-            it.countryHandler.name.equals(
-                country,
-                true
-            )
-        } else null
-    }
-
     fun getCountryInformation(country: Country?): CountryImpl? {
         return if (country != null) this.countries.firstOrNull { it.country::class.java == country::class.java } else null
     }
@@ -237,15 +276,6 @@ object Jais {
 
     fun getPlatformInformation(platform: Platform?): PlatformImpl? {
         return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
-    }
-
-    fun getPlatformInformation(platform: String?): PlatformImpl? {
-        return if (!platform.isNullOrBlank()) this.platforms.firstOrNull {
-            it.platformHandler.name.equals(
-                platform,
-                true
-            )
-        } else null
     }
 
     fun getAllowedCountries(platform: Platform?): Array<Country> {

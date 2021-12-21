@@ -27,3 +27,4 @@
 /database.json
 /browser/node_modules/
 /browser/package-lock.json
+/firebase_key.json

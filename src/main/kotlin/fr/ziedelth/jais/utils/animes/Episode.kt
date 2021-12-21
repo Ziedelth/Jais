@@ -93,4 +93,8 @@ data class Episode(
         result = 31 * result + (episodeBufferedImage?.hashCode() ?: 0)
         return result
     }
+
+    override fun toString(): String {
+        return "Episode(platform=$platform, country=$country, releaseDate=$releaseDate, anime='$anime', animeImage=$animeImage, animeGenres=${animeGenres.contentToString()}, animeDescription=$animeDescription, season=$season, number=$number, episodeType=$episodeType, langType=$langType, episodeId='$episodeId', title=$title, url='$url', image='$image', duration=$duration, animeBufferedImage=$animeBufferedImage, episodeBufferedImage=$episodeBufferedImage)"
+    }
 }

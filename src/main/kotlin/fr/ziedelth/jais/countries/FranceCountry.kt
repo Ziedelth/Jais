@@ -6,6 +6,7 @@ package fr.ziedelth.jais.countries
 
 import fr.ziedelth.jais.platforms.AnimeDigitalNetworkPlatform
 import fr.ziedelth.jais.platforms.CrunchyrollPlatform
+import fr.ziedelth.jais.platforms.NetflixPlatform
 import fr.ziedelth.jais.platforms.WakanimPlatform
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
@@ -26,9 +27,8 @@ class FranceCountry : Country {
 
     override fun checkOnEpisodesURL(platform: Platform?): String? {
         return when (platform?.javaClass) {
-            AnimeDigitalNetworkPlatform::class.java -> "fr"
+            AnimeDigitalNetworkPlatform::class.java, NetflixPlatform::checkEpisodes, WakanimPlatform::class.java -> "fr"
             CrunchyrollPlatform::class.java -> "frFR"
-            WakanimPlatform::class.java -> "fr"
             else -> null
         }
     }

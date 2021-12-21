@@ -99,7 +99,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM genres", blh)
     }
 
-    fun getGenre(connection: Connection?, id: Long): GenreData? {
+    private fun getGenre(connection: Connection?, id: Long): GenreData? {
         val blh = BeanListHandler(GenreData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE id = ?", blh, id).firstOrNull()
@@ -111,15 +111,21 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM genres WHERE `name` = ?", blh, name).firstOrNull()
     }
 
-    fun insertGenre(connection: Connection?, name: String): GenreData? {
+    fun insertGenre(connection: Connection?, name: String, fr: String): GenreData? {
         val genre = getGenre(connection, name)
 
-        return if (genre != null) genre
-        else {
+        return if (genre != null) {
+            if (genre.fr.isEmpty() && fr.isNotEmpty()) {
+                val runner = QueryRunner()
+                val query = "UPDATE genres SET fr = ? WHERE id = ?"
+                runner.update(connection, query, fr, genre.id)
+                getGenre(connection, genre.id)
+            } else genre
+        } else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
-            val query = "INSERT INTO genres (name) VALUES (?)"
-            val newId: Long = runner.insert(connection, query, sh, name).toLong()
+            val query = "INSERT INTO genres (name, fr) VALUES (?, ?)"
+            val newId: Long = runner.insert(connection, query, sh, name, fr).toLong()
             getGenre(connection, newId)
         }
     }
