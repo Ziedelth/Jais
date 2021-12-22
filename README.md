@@ -14,7 +14,7 @@ _Version de développement, pas encore accès au public_
 ## Réseaux sociaux
 
 - [x] [Discord](https://discord.com/)
-- [x] [Twitter](https://twitter.com/Jaiss_B_)
+- [x] [Twitter](https://twitter.com/Jaiss___)
 - [x] [Instagram](https://www.instagram.com/jais_zie/)
 - [ ] Reddit
 
@@ -24,3 +24,4 @@ _Version de développement, pas encore accès au public_
 - [x] [Crunchyroll](https://www.crunchyroll.com/)
 - [x] [Scantrad](https://scantrad.net/)
 - [x] [Wakanim](https://www.wakanim.tv/)
+- [x] [Netflix](https://www.netflix.com/)
