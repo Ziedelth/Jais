@@ -13,6 +13,7 @@ import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 @CountryHandler(
+    tag = "fr",
     name = "France",
     flag = "\uD83C\uDDEB\uD83C\uDDF7",
     season = "Saison"

@@ -16,7 +16,9 @@ import fr.ziedelth.jais.platforms.*
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
@@ -32,13 +34,12 @@ import java.io.FileInputStream
 import java.util.*
 import kotlin.reflect.KClass
 
-object Jais {
+class Jais {
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
-    @JvmStatic
-    fun main(args: Array<String>) {
+    init {
         JLogger.info("Init...")
 
         JLogger.info("Setup FCM...")
@@ -56,7 +57,9 @@ object Jais {
             connection?.autoCommit = false
 
             Impl.tryCatch({
-                Genre.values().forEach { JMapper.insertGenre(connection, it.name, it.fr) }
+                Genre.values().forEach { JMapper.insertGenre(connection, it) }
+                EpisodeType.values().forEach { JMapper.insertEpisodeType(connection, it) }
+                LangType.values().forEach { JMapper.insertLangType(connection, it) }
                 connection?.commit()
             }, {
                 connection?.rollback()
@@ -104,15 +107,11 @@ object Jais {
                 episodesList.sortedBy { it.releaseDate }.forEach { episode ->
                     val platformData = JMapper.insertPlatform(
                         connection,
-                        episode.platform.platformHandler.name,
-                        episode.platform.platformHandler.url,
-                        episode.platform.platformHandler.image,
-                        episode.platform.platformHandler.color
+                        episode.platform.platformHandler
                     )
                     val countryData = JMapper.insertCountry(
                         connection,
-                        episode.country.countryHandler.name,
-                        episode.country.countryHandler.flag
+                        episode.country.countryHandler
                     )
 
                     if (platformData != null && countryData != null) {
@@ -127,34 +126,39 @@ object Jais {
 
                         if (animeData != null) {
                             episode.animeGenres.forEach {
-                                val genre = JMapper.insertGenre(connection, it.name, it.fr)
+                                val genre = JMapper.insertGenre(connection, it)
                                 if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
                             }
 
-                            val exists = JMapper.getEpisode(connection, episode.episodeId) != null
-                            val episodeData = JMapper.insertEpisode(
-                                connection,
-                                platformData.id,
-                                animeData.id,
-                                ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                                episode.season.toInt(),
-                                episode.number.toInt(),
-                                episode.episodeType.name,
-                                episode.langType.name,
-                                episode.episodeId,
-                                episode.title,
-                                episode.url,
-                                episode.image,
-                                episode.duration
-                            )
+                            val etd = JMapper.insertEpisodeType(connection, episode.episodeType)
+                            val ltd = JMapper.insertLangType(connection, episode.langType)
 
-                            if (!exists && episodeData != null) {
-                                if (!animes.contains(episode.anime.onlyLettersAndDigits()))
-                                    animes[episode.anime.onlyLettersAndDigits()] = episode.anime
+                            if (etd != null && ltd != null) {
+                                val exists = JMapper.getEpisode(connection, episode.episodeId) != null
+                                val episodeData = JMapper.insertEpisode(
+                                    connection,
+                                    platformData.id,
+                                    animeData.id,
+                                    etd.id,
+                                    ltd.id,
+                                    ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+                                    episode.season.toInt(),
+                                    episode.number.toInt(),
+                                    episode.episodeId,
+                                    episode.title,
+                                    episode.url,
+                                    episode.image,
+                                    episode.duration
+                                )
 
-                                Impl.tryCatch {
-                                    PluginManager.plugins?.forEach {
-                                        it.newEpisode(episode)
+                                if (!exists && episodeData != null) {
+                                    if (!animes.contains(episode.anime.onlyLettersAndDigits()))
+                                        animes[episode.anime.onlyLettersAndDigits()] = episode.anime
+
+                                    Impl.tryCatch {
+                                        PluginManager.plugins?.forEach {
+                                            it.newEpisode(episode)
+                                        }
                                     }
                                 }
                             }
@@ -169,15 +173,11 @@ object Jais {
                 scansList.sortedBy { it.releaseDate }.forEach { scan ->
                     val platformData = JMapper.insertPlatform(
                         connection,
-                        scan.platform.platformHandler.name,
-                        scan.platform.platformHandler.url,
-                        scan.platform.platformHandler.image,
-                        scan.platform.platformHandler.color
+                        scan.platform.platformHandler
                     )
                     val countryData = JMapper.insertCountry(
                         connection,
-                        scan.country.countryHandler.name,
-                        scan.country.countryHandler.flag
+                        scan.country.countryHandler
                     )
 
                     if (platformData != null && countryData != null) {
@@ -192,30 +192,40 @@ object Jais {
 
                         if (animeData != null) {
                             scan.animeGenres.forEach {
-                                val genre = JMapper.insertGenre(connection, it.name, it.fr)
+                                val genre = JMapper.insertGenre(connection, it)
                                 if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
                             }
 
-                            val exists =
-                                JMapper.getScan(connection, platformData.id, animeData.id, scan.number.toInt()) != null
-                            val episodeData = JMapper.insertScan(
-                                connection,
-                                platformData.id,
-                                animeData.id,
-                                ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-                                scan.number.toInt(),
-                                scan.episodeType.name,
-                                scan.langType.name,
-                                scan.url
-                            )
+                            val etd = JMapper.insertEpisodeType(connection, scan.episodeType)
+                            val ltd = JMapper.insertLangType(connection, scan.langType)
 
-                            if (!exists && episodeData != null) {
-                                if (!animes.contains(scan.anime.onlyLettersAndDigits()))
-                                    animes[scan.anime.onlyLettersAndDigits()] = scan.anime
+                            if (etd != null && ltd != null) {
+                                val exists =
+                                    JMapper.getScan(
+                                        connection,
+                                        platformData.id,
+                                        animeData.id,
+                                        scan.number.toInt()
+                                    ) != null
+                                val episodeData = JMapper.insertScan(
+                                    connection,
+                                    platformData.id,
+                                    animeData.id,
+                                    etd.id,
+                                    ltd.id,
+                                    ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                                    scan.number.toInt(),
+                                    scan.url
+                                )
 
-                                Impl.tryCatch {
-                                    PluginManager.plugins?.forEach {
-                                        it.newScan(scan)
+                                if (!exists && episodeData != null) {
+                                    if (!animes.contains(scan.anime.onlyLettersAndDigits()))
+                                        animes[scan.anime.onlyLettersAndDigits()] = scan.anime
+
+                                    Impl.tryCatch {
+                                        PluginManager.plugins?.forEach {
+                                            it.newScan(scan)
+                                        }
                                     }
                                 }
                             }

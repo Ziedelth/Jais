@@ -16,9 +16,9 @@ class ScanHandler :
             val map = mutableMapOf<String, String>()
             map["platform_id"] = "platformId"
             map["anime_id"] = "animeId"
+            map["id_episode_type"] = "idEpisodeType"
+            map["id_lang_type"] = "idLangType"
             map["release_date"] = "releaseDate"
-            map["episode_type"] = "episodeType"
-            map["lang_type"] = "langType"
             return map
         }
     }

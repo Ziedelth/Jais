@@ -7,12 +7,12 @@ package fr.ziedelth.jais.utils.animes
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
 
-enum class EpisodeType(private val data: Array<EpisodeDataImpl>) {
-    UNKNOWN(emptyArray<EpisodeDataImpl>()),
-    CHAPTER(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
-    EPISODE(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Épisode"))),
-    FILM(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Film"))),
-    SPECIAL(arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
+enum class EpisodeType(val fr: String, private val data: Array<EpisodeDataImpl>) {
+    UNKNOWN("Inconnu", emptyArray<EpisodeDataImpl>()),
+    CHAPTER("Chapitre", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
+    EPISODE("Épisode", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Épisode"))),
+    FILM("Film", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Film"))),
+    SPECIAL("Spécial", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
     ;
 
     fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }

@@ -4,10 +4,8 @@
 
 package fr.ziedelth.jais.utils.animes.sql.data
 
-class CountryData {
+class LangTypeData {
     var id: Long = -1
-    lateinit var tag: String
     lateinit var name: String
-    lateinit var flag: String
-    lateinit var season: String
+    lateinit var fr: String
 }
