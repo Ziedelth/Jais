@@ -61,11 +61,15 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                         val restriction = Impl.getString(Impl.getObject(ejo, "restriction"), "")?.split(" ")
                         if (restriction?.contains(country.restrictionEpisodes(this)) != true) return@forEachIndexed
                         val ejoTitle = Impl.getString(ejo, "title") ?: return@forEachIndexed
-                        val langType = if (ejoTitle.contains(
-                                "(${LangType.VOICE.getData(countryImpl.country::class.java)?.data})",
-                                true
-                            )
-                        ) LangType.VOICE else LangType.SUBTITLES
+                        var langType = LangType.SUBTITLES
+
+                        for (d in LangType.VOICE.getDatas(countryImpl.country::class.java)) {
+                            if (ejoTitle.contains("(${d.data})", true)) {
+                                langType = LangType.VOICE
+                                break
+                            }
+                        }
+
                         val subtitles = Impl.getString(ejo, "subtitleLanguages")?.split(",")
                         if (langType == LangType.SUBTITLES && subtitles?.contains(country.subtitlesEpisodes(this)) != true) return@forEachIndexed
                         val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(ejo, "pubDate")))
