@@ -16,7 +16,12 @@ enum class LangType(val fr: String, val datas: Array<EpisodeDataImpl>) {
             EpisodeDataImpl(FranceCountry::class.java, "VOSTF")
         )
     ),
-    VOICE("VF", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "VF"))),
+    VOICE(
+        "VF", arrayOf(
+            EpisodeDataImpl(FranceCountry::class.java, "VF"),
+            EpisodeDataImpl(FranceCountry::class.java, "French Dub")
+        )
+    ),
     ;
 
     fun getDatas(clazz: Class<out Country>?): List<EpisodeDataImpl> = this.datas.filter { it.clazz == clazz }
