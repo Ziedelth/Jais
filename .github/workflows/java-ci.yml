@@ -34,9 +34,4 @@ jobs:
           java-version: 11
 
       - name: Build with Maven
-        run: mvn -B clean package -DskipTests
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Jaïs
-          path: target/Jaïs-jar-with-dependencies.jar
+        run: mvn -B clean package test

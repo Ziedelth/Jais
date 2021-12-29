@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.debug
+package fr.ziedelth.jais.utils
 
 import kotlin.math.max
 

@@ -7,7 +7,6 @@ package fr.ziedelth.jais.utils
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import fr.ziedelth.jais.utils.debug.JLogger
 import java.util.logging.Level
 
 object Impl {

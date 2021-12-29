@@ -31,7 +31,7 @@ import java.util.*
     color = 0xFF6C00,
     countries = [FranceCountry::class]
 )
-class CrunchyrollPlatform : Platform() {
+class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
     data class Crunchyroll(val anime: String?, val image: String?, val description: String?)
 
     private val crunchyroll: MutableList<Crunchyroll> = mutableListOf()
@@ -45,7 +45,7 @@ class CrunchyrollPlatform : Platform() {
         val objectMapper = ObjectMapper()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream =

@@ -10,13 +10,13 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import fr.ziedelth.jais.utils.debug.JLogger
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,14 +27,14 @@ import java.util.*
     color = 0xE50914,
     countries = [FranceCountry::class]
 )
-class NetflixPlatform : Platform() {
+class NetflixPlatform(jais: Jais) : Platform(jais) {
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 JLogger.info("Checking configuration...")

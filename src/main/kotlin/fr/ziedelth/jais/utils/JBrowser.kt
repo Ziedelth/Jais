@@ -4,7 +4,6 @@
 
 package fr.ziedelth.jais.utils
 
-import fr.ziedelth.jais.utils.debug.JLogger
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.File

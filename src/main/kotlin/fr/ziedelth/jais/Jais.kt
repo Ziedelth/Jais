@@ -13,9 +13,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.*
-import fr.ziedelth.jais.utils.FileImpl
-import fr.ziedelth.jais.utils.ISO8601
-import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.*
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.LangType
@@ -26,8 +24,6 @@ import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
-import fr.ziedelth.jais.utils.debug.JLogger
-import fr.ziedelth.jais.utils.debug.JThread
 import fr.ziedelth.jais.utils.plugins.PluginManager
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream

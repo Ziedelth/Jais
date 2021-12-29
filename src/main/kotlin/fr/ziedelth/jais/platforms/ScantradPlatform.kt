@@ -30,7 +30,7 @@ import java.util.*
     color = 0xF05A28,
     countries = [FranceCountry::class]
 )
-class ScantradPlatform : Platform() {
+class ScantradPlatform(jais: Jais) : Platform(jais) {
     data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?)
 
     private val scantrad: MutableList<Scantrad> = mutableListOf()
@@ -44,7 +44,7 @@ class ScantradPlatform : Platform() {
         val objectMapper = ObjectMapper()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream = URL("https://scantrad.net/rss/").openStream()

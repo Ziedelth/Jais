@@ -36,7 +36,7 @@ import kotlin.math.pow
     color = 0xE3474B,
     countries = [FranceCountry::class]
 )
-class WakanimPlatform : Platform() {
+class WakanimPlatform(jais: Jais) : Platform(jais) {
     data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
 
     private val wakanim: MutableList<Wakanim> = mutableListOf()
@@ -51,7 +51,7 @@ class WakanimPlatform : Platform() {
         val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
