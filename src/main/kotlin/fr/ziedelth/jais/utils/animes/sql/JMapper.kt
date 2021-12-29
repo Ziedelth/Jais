@@ -13,10 +13,15 @@ import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
+import fr.ziedelth.jais.utils.animes.sql.data.old.OldCountryData
+import fr.ziedelth.jais.utils.animes.sql.data.old.OldEpisodeData
+import fr.ziedelth.jais.utils.animes.sql.data.old.OldScanData
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.EpisodeHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.ScanHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.old.OldEpisodeHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.old.OldScanHandler
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
@@ -29,9 +34,22 @@ import java.util.*
 import javax.imageio.ImageIO
 
 object JMapper {
-    fun getConnection(): Connection? {
-        val configuration = Configuration.load() ?: return null
-        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
+//    fun getConnection(): Connection? {
+//        val configuration = Configuration.load() ?: return null
+//        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
+//    }
+
+    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+
+    @Deprecated("")
+    fun getOldConnection(): Connection? =
+        DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais.old", "root", "")
+
+    @Deprecated("")
+    fun getOldCountries(connection: Connection?): MutableList<OldCountryData> {
+        val blh = BeanListHandler(OldCountryData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM countries", blh)
     }
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
@@ -40,20 +58,36 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM countries", blh)
     }
 
+    @Deprecated("")
+    fun getOldCountry(connection: Connection?, id: Long?): OldCountryData? {
+        val blh = BeanListHandler(OldCountryData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM countries WHERE id = ?", blh, id).firstOrNull()
+    }
+
     fun getCountry(connection: Connection?, id: Long): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getCountry(connection: Connection?, tag: String): CountryData? {
+    fun getCountryByTag(connection: Connection?, tag: String): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE tag = ?", blh, tag).firstOrNull()
     }
 
-    fun insertCountry(connection: Connection?, countryHandler: CountryHandler): CountryData? {
-        val country = getCountry(connection, countryHandler.tag)
+    fun getCountryByName(connection: Connection?, name: String?): CountryData? {
+        val blh = BeanListHandler(CountryData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM countries WHERE name = ?", blh, name).firstOrNull()
+    }
+
+    fun insertCountry(connection: Connection?, countryHandler: CountryHandler): CountryData? =
+        insertCountry(connection, countryHandler.tag, countryHandler.name, countryHandler.flag, countryHandler.season)
+
+    fun insertCountry(connection: Connection?, tag: String, name: String, flag: String, season: String): CountryData? {
+        val country = getCountryByTag(connection, tag)
 
         return if (country != null) country
         else {
@@ -64,10 +98,10 @@ object JMapper {
                 connection,
                 query,
                 sh,
-                countryHandler.tag,
-                countryHandler.name,
-                countryHandler.flag,
-                countryHandler.season
+                tag,
+                name,
+                flag,
+                season
             ).toLong()
             getCountry(connection, newId)
         }
@@ -85,14 +119,22 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM platforms WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getPlatform(connection: Connection?, name: String): PlatformData? {
+    fun getPlatform(connection: Connection?, name: String?): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE name = ?", blh, name).firstOrNull()
     }
 
-    fun insertPlatform(connection: Connection?, platformHandler: PlatformHandler): PlatformData? {
-        val platform = getPlatform(connection, platformHandler.name)
+    fun insertPlatform(connection: Connection?, platformHandler: PlatformHandler): PlatformData? = insertPlatform(
+        connection,
+        platformHandler.name,
+        platformHandler.url,
+        platformHandler.image,
+        platformHandler.color
+    )
+
+    fun insertPlatform(connection: Connection?, name: String, url: String, image: String, color: Int): PlatformData? {
+        val platform = getPlatform(connection, name)
 
         return if (platform != null) platform
         else {
@@ -103,10 +145,10 @@ object JMapper {
                 connection,
                 query,
                 sh,
-                platformHandler.name,
-                platformHandler.url,
-                platformHandler.image,
-                platformHandler.color
+                name,
+                url,
+                image,
+                color
             ).toLong()
             getPlatform(connection, newId)
         }
@@ -118,13 +160,13 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM genres", blh)
     }
 
-    private fun getGenre(connection: Connection?, id: Long): GenreData? {
+    fun getGenre(connection: Connection?, id: Long): GenreData? {
         val blh = BeanListHandler(GenreData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getGenre(connection: Connection?, name: String): GenreData? {
+    fun getGenre(connection: Connection?, name: String?): GenreData? {
         val blh = BeanListHandler(GenreData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE `name` = ?", blh, name).firstOrNull()
@@ -229,14 +271,14 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM animes", ah)
     }
 
-    fun getAnime(connection: Connection?, id: Long): AnimeData? {
+    fun getAnime(connection: Connection?, id: Long?): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    fun getAnime(connection: Connection?, countryId: Long, name: String): AnimeData? {
-        val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
+    fun getAnime(connection: Connection?, countryId: Long?, name: String?): AnimeData? {
+        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
 
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
@@ -246,9 +288,9 @@ object JMapper {
 
     fun insertAnime(
         connection: Connection?,
-        countryId: Long,
-        releaseDate: String,
-        name: String,
+        countryId: Long?,
+        releaseDate: String?,
+        name: String?,
         image: String?,
         description: String?,
         saveImage: Boolean = true
@@ -263,7 +305,7 @@ object JMapper {
                 getAnime(connection, anime.id)
             } else anime
         } else {
-            val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
+            val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
             var imagePath = image
 
             if (saveImage) {
@@ -298,7 +340,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM anime_genres", agh)
     }
 
-    fun getAnimeGenres(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long?, genreId: Long?): AnimeGenreData? {
         val agh = AnimeGenreHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -310,7 +352,18 @@ object JMapper {
         ).firstOrNull()
     }
 
-    fun insertAnimeGenre(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long?): MutableList<AnimeGenreData>? {
+        val agh = AnimeGenreHandler()
+        val runner = QueryRunner()
+        return runner.query(
+            connection,
+            "SELECT * FROM anime_genres WHERE anime_id = ?",
+            agh,
+            animeId
+        )
+    }
+
+    fun insertAnimeGenre(connection: Connection?, animeId: Long?, genreId: Long?): AnimeGenreData? {
         val animeGenre = getAnimeGenres(connection, animeId, genreId)
 
         return if (animeGenre != null) animeGenre
@@ -320,6 +373,13 @@ object JMapper {
             runner.update(connection, query, animeId, genreId)
             return getAnimeGenres(connection, animeId, genreId)
         }
+    }
+
+    @Deprecated("")
+    fun getOldEpisodes(connection: Connection?): MutableList<OldEpisodeData> {
+        val episodeHandler = OldEpisodeHandler()
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM episodes", episodeHandler)
     }
 
     fun getEpisodes(connection: Connection?): MutableList<EpisodeData> {
@@ -343,10 +403,10 @@ object JMapper {
 
     fun insertEpisode(
         connection: Connection?,
-        platformId: Long,
-        animeId: Long,
-        idEpisodeType: Long,
-        idLangType: Long,
+        platformId: Long?,
+        animeId: Long?,
+        idEpisodeType: Long?,
+        idLangType: Long?,
         releaseDate: String,
         season: Int,
         number: Int,
@@ -437,6 +497,13 @@ object JMapper {
         }
     }
 
+    @Deprecated("")
+    fun getOldScans(connection: Connection?): MutableList<OldScanData> {
+        val episodeHandler = OldScanHandler()
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM scans", episodeHandler)
+    }
+
     fun getScans(connection: Connection?): MutableList<ScanData> {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
@@ -449,7 +516,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
     }
 
-    fun getScan(connection: Connection?, platformId: Long, animeId: Long, number: Int): ScanData? {
+    fun getScan(connection: Connection?, platformId: Long?, animeId: Long?, number: Int): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -464,10 +531,10 @@ object JMapper {
 
     fun insertScan(
         connection: Connection?,
-        platformId: Long,
-        animeId: Long,
-        idEpisodeType: Long,
-        idLangType: Long,
+        platformId: Long?,
+        animeId: Long?,
+        idEpisodeType: Long?,
+        idLangType: Long?,
         releaseDate: String,
         number: Int,
         url: String,

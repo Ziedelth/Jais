@@ -4,13 +4,16 @@
 
 package fr.ziedelth.jais.utils.animes.sql.handlers.old
 
-import fr.ziedelth.jais.utils.animes.sql.data.ScanData
+import fr.ziedelth.jais.utils.animes.sql.data.old.OldEpisodeData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.handlers.BeanListHandler
 
-class ScanHandler :
-    BeanListHandler<ScanData>(ScanData::class.java, BasicRowProcessor(BeanProcessor(getColumnsToFieldsMap()))) {
+class OldEpisodeHandler :
+    BeanListHandler<OldEpisodeData>(
+        OldEpisodeData::class.java,
+        BasicRowProcessor(BeanProcessor(getColumnsToFieldsMap()))
+    ) {
     companion object {
         fun getColumnsToFieldsMap(): Map<String, String> {
             val map = mutableMapOf<String, String>()
@@ -19,6 +22,7 @@ class ScanHandler :
             map["release_date"] = "releaseDate"
             map["episode_type"] = "episodeType"
             map["lang_type"] = "langType"
+            map["episode_id"] = "episodeId"
             return map
         }
     }
