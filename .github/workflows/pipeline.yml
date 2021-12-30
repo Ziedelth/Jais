@@ -3,7 +3,7 @@ name: Build & Deploy
 on: [ push ]
 
 jobs:
-  build:
+  build-java:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,15 +16,48 @@ jobs:
 
       - name: Build with Maven
         run: mvn -B clean package test
+
+      - name: Upload Actifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Jaïs
+          path: ./target/Jaïs-jar-with-dependencies.jar
+
+  build-node:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up NodeJS 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Build with NodeJS
+        run: |
+          cd ./browser
+          npm i
+
+      - name: Upload Actifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Browser
+          path: ./browser/
+
   deploy:
     runs-on: ubuntu-latest
 
     needs:
-      - build
+      - build-java
+      - build-node
 
     steps:
-      - name: LS Target folder
-        run: ls ./target/
+      - name: Download all workflow run actifacts
+        uses: actions/download-artifact@v2
+
+      - name: LS
+        run: ls
 #      - name: Install SSH KEY
 #        uses: shimataro/ssh-key-action@v2
 #        with:
