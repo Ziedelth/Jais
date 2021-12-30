@@ -65,21 +65,24 @@ jobs:
           ls Browser
           ls Jaïs
 
-#      - name: Install SSH KEY
-#        uses: shimataro/ssh-key-action@v2
-#        with:
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
-#
-#      - name: Adding Known Hosts
-#        run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-#
-#      - name: executing remote ssh commands using ssh key
-#        uses: appleboy/ssh-action@master
-#        with:
-#          host: ${{ secrets.SSH_HOST }}
-#          username: pi
-#          key: ${{ secrets.SSH_PRIVATE_KEY }}
-#          script: |
-#            whoami
-#            ls -al
+      - name: Install SSH KEY
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
+
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Testing SSH
+        run: ssh -C pi@${{ secrets.SSH_HOST }} "echo 'Hello, World!' >> test-deploy.txt"
+
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: pi
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            whoami
+            ls -al
