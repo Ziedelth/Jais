@@ -76,6 +76,6 @@ jobs:
 
       - name: SSH Commands
         run: |
-               scp Jaïs/Jaïs-jar-with-dependencies.jar pi@${{ secrets.SSH_HOST }}:/home/pi/Jais_Debug/Jaïs-jar-with-dependencies.jar
-               scp Browser/index.js pi@${{ secrets.SSH_HOST }}:/home/pi/Jais_Debug/browser/index.js
-               scp Browser/package.json pi@${{ secrets.SSH_HOST }}:/home/pi/Jais_Debug/browser/package.json
+          ssh -C pi@${{ secrets.SSH_HOST }} "mkdir ~/Jais_Debug && mkdir ~/Jais_Debug/browser"
+          scp Jaïs/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug
+          scp Browser/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug/browser
