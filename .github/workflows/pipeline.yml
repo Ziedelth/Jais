@@ -74,15 +74,8 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Testing SSH
-        run: ssh -C pi@${{ secrets.SSH_HOST }} "echo 'Hello, World!' >> test-deploy.txt"
-
-      - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: pi
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            whoami
-            ls -al
+      - name: SSH Commands
+        run: |
+          #          ssh -C pi@${{ secrets.SSH_HOST }} "sh ./Jais/stop.sh"
+               scp Jaïs/* pi@${{ secrets.SSH_HOST }}:/home/pi/Jais_Debug/
+               scp Browser/* pi@${{ secrets.SSH_HOST }}:/home/pi/Jais_Debug/browser/
