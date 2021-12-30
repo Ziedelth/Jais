@@ -60,7 +60,11 @@ jobs:
         uses: actions/download-artifact@v2
 
       - name: LS
-        run: ls
+        run: |
+          ls
+          ls Browser
+          ls Jaïs
+
 #      - name: Install SSH KEY
 #        uses: shimataro/ssh-key-action@v2
 #        with:
