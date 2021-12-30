@@ -35,7 +35,7 @@ class Jais {
     private val platforms = mutableListOf<PlatformImpl>()
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
-    init {
+    fun init() {
         JLogger.info("Init...")
 
         JLogger.info("Adding countries...")
@@ -182,6 +182,7 @@ class Jais {
             val connection = JMapper.getConnection()
 
             val episodesList = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
+            // TODO: MULTI THREAD
 
             if (episodesList.isNotEmpty()) {
                 episodesList.sortedBy { it.releaseDate }.forEach { episode ->
@@ -334,26 +335,34 @@ class Jais {
         )
     }
 
-    private fun addCountry(country: Class<out Country>) {
-        if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(CountryHandler::class.java)) {
+    fun addCountry(country: Class<out Country>): Boolean {
+        return if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(
+                CountryHandler::class.java
+            )) {
             this.countries.add(
                 CountryImpl(
                     countryHandler = country.getAnnotation(CountryHandler::class.java),
                     country = country.getConstructor().newInstance()
                 )
             )
-        } else JLogger.warning("Failed to add ${country.simpleName}")
+
+            true
+        } else false
     }
 
-    private fun addPlatform(platform: Class<out Platform>) {
-        if (this.platforms.none { it.platform::class.java == platform } && platform.isAnnotationPresent(PlatformHandler::class.java)) {
+    fun addPlatform(platform: Class<out Platform>): Boolean {
+        return if (this.platforms.none { it.platform::class.java == platform } && platform.isAnnotationPresent(
+                PlatformHandler::class.java
+            )) {
             this.platforms.add(
                 PlatformImpl(
                     platformHandler = platform.getAnnotation(PlatformHandler::class.java),
                     platform = platform.getConstructor(Jais::class.java).newInstance(this)
                 )
             )
-        } else JLogger.warning("Failed to add ${platform.simpleName}")
+
+            true
+        } else false
     }
 
     fun getCountryInformation(country: Country?): CountryImpl? {
