@@ -38,12 +38,15 @@ jobs:
         run: |
           cd ./browser
           npm i
+          npm run test
 
       - name: Upload Actifact
         uses: actions/upload-artifact@v2
         with:
           name: Browser
-          path: ./browser/
+          path: |
+            ./browser/index.js
+            ./browser/package.json
 
   deploy:
     runs-on: ubuntu-latest

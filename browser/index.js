@@ -20,7 +20,7 @@ const fs = require('fs');
     console.log('Init...');
     const browser = await puppeteer.launch({
         headless: true,
-        executablePath: 'chromium-browser',
+        // executablePath: 'chromium-browser',
         ignoreHTTPSErrors: true,
         slowMo: 0,
         args: [

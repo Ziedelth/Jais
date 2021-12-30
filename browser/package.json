@@ -1,12 +1,11 @@
 {
   "name": "jais",
   "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "test": "node index.js https://www.google.com/"
+  },
   "dependencies": {
-    "puppeteer": "^11.0.0",
+    "puppeteer": "^13.0.1",
     "puppeteer-extra": "^3.2.3",
     "puppeteer-extra-plugin-stealth": "^2.9.0"
   }
