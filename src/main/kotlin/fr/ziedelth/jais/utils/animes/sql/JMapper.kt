@@ -34,12 +34,12 @@ import java.util.*
 import javax.imageio.ImageIO
 
 object JMapper {
-//    fun getConnection(): Connection? {
-//        val configuration = Configuration.load() ?: return null
-//        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
-//    }
+    fun getConnection(): Connection? {
+        val configuration = Configuration.load() ?: return null
+        return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
+    }
 
-    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+//    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
 
     @Deprecated("")
     fun getOldConnection(): Connection? =

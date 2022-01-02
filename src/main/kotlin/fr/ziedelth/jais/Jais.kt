@@ -50,110 +50,110 @@ class Jais {
 
 //        this.platforms.forEach { platformImpl -> platformImpl.platform.checkEpisodes().forEach { println(it) } }
 
-        Impl.tryCatch("Error on merge") {
-            val connection = JMapper.getConnection()
-            val oldConnection = JMapper.getOldConnection()
-            val oldEpisodes = JMapper.getOldEpisodes(oldConnection)
-            val oldScans = JMapper.getOldScans(oldConnection)
-
-            connection?.autoCommit = false
-
-            Impl.tryCatch({
-                this.countries.forEach { JMapper.insertCountry(connection, it.countryHandler) }
-                this.platforms.forEach { JMapper.insertPlatform(connection, it.platformHandler) }
-                Genre.values().forEach { JMapper.insertGenre(connection, it) }
-                EpisodeType.values().forEach { JMapper.insertEpisodeType(connection, it) }
-                LangType.values().forEach { JMapper.insertLangType(connection, it) }
-
-                oldEpisodes.forEach { oldEpisode ->
-                    val oldPlatform = JMapper.getPlatform(oldConnection, oldEpisode.platformId)
-                    val oldAnime = JMapper.getAnime(oldConnection, oldEpisode.animeId)
-                    val oldAnimeGenres = JMapper.getAnimeGenres(oldConnection, oldAnime?.id)
-                    val oldCountry = JMapper.getOldCountry(oldConnection, oldAnime?.countryId)
-
-                    val newCountry = JMapper.getCountryByName(connection, oldCountry?.name)
-                    val newPlatform = JMapper.getPlatform(connection, oldPlatform?.name)
-                    val newAnime = JMapper.insertAnime(
-                        connection,
-                        newCountry?.id,
-                        oldAnime?.releaseDate,
-                        oldAnime?.name,
-                        oldAnime?.image,
-                        oldAnime?.description,
-                        false
-                    )
-                    val newEpisodeType = JMapper.getEpisodeType(connection, oldEpisode.episodeType)
-                    val newLangType = JMapper.getLangType(connection, oldEpisode.langType)
-
-                    oldAnimeGenres?.forEach { animeGenres ->
-                        val oldGenre = JMapper.getGenre(oldConnection, animeGenres.genreId)
-                        val newGenre = JMapper.getGenre(connection, oldGenre?.name)
-                        JMapper.insertAnimeGenre(connection, newAnime?.id, newGenre?.id)
-                    }
-
-                    JMapper.insertEpisode(
-                        connection,
-                        newPlatform?.id,
-                        newAnime?.id,
-                        newEpisodeType?.id,
-                        newLangType?.id,
-                        oldEpisode.releaseDate,
-                        oldEpisode.season,
-                        oldEpisode.number,
-                        oldEpisode.episodeId,
-                        oldEpisode.title,
-                        oldEpisode.url,
-                        oldEpisode.image,
-                        oldEpisode.duration,
-                        false
-                    )
-                }
-
-                oldScans.forEach { oldScan ->
-                    val oldPlatform = JMapper.getPlatform(oldConnection, oldScan.platformId)
-                    val oldAnime = JMapper.getAnime(oldConnection, oldScan.animeId)
-                    val oldAnimeGenres = JMapper.getAnimeGenres(oldConnection, oldAnime?.id)
-                    val oldCountry = JMapper.getOldCountry(oldConnection, oldAnime?.countryId)
-
-                    val newCountry = JMapper.getCountryByName(connection, oldCountry?.name)
-                    val newPlatform = JMapper.getPlatform(connection, oldPlatform?.name)
-                    val newAnime = JMapper.insertAnime(
-                        connection,
-                        newCountry?.id,
-                        oldAnime?.releaseDate,
-                        oldAnime?.name,
-                        oldAnime?.image,
-                        oldAnime?.description,
-                        false
-                    )
-                    val newEpisodeType = JMapper.getEpisodeType(connection, oldScan.episodeType)
-                    val newLangType = JMapper.getLangType(connection, oldScan.langType)
-
-                    oldAnimeGenres?.forEach { animeGenres ->
-                        val oldGenre = JMapper.getGenre(oldConnection, animeGenres.genreId)
-                        val newGenre = JMapper.getGenre(connection, oldGenre?.name)
-                        JMapper.insertAnimeGenre(connection, newAnime?.id, newGenre?.id)
-                    }
-
-                    JMapper.insertScan(
-                        connection,
-                        newPlatform?.id,
-                        newAnime?.id,
-                        newEpisodeType?.id,
-                        newLangType?.id,
-                        oldScan.releaseDate,
-                        oldScan.number,
-                        oldScan.url
-                    )
-                }
-
-                connection?.commit()
-            }, {
-                connection?.rollback()
-            })
-
-            connection?.close()
-        }
+//        Impl.tryCatch("Error on merge") {
+//            val connection = JMapper.getConnection()
+//            val oldConnection = JMapper.getOldConnection()
+//            val oldEpisodes = JMapper.getOldEpisodes(oldConnection)
+//            val oldScans = JMapper.getOldScans(oldConnection)
+//
+//            connection?.autoCommit = false
+//
+//            Impl.tryCatch({
+//                this.countries.forEach { JMapper.insertCountry(connection, it.countryHandler) }
+//                this.platforms.forEach { JMapper.insertPlatform(connection, it.platformHandler) }
+//                Genre.values().forEach { JMapper.insertGenre(connection, it) }
+//                EpisodeType.values().forEach { JMapper.insertEpisodeType(connection, it) }
+//                LangType.values().forEach { JMapper.insertLangType(connection, it) }
+//
+//                oldEpisodes.forEach { oldEpisode ->
+//                    val oldPlatform = JMapper.getPlatform(oldConnection, oldEpisode.platformId)
+//                    val oldAnime = JMapper.getAnime(oldConnection, oldEpisode.animeId)
+//                    val oldAnimeGenres = JMapper.getAnimeGenres(oldConnection, oldAnime?.id)
+//                    val oldCountry = JMapper.getOldCountry(oldConnection, oldAnime?.countryId)
+//
+//                    val newCountry = JMapper.getCountryByName(connection, oldCountry?.name)
+//                    val newPlatform = JMapper.getPlatform(connection, oldPlatform?.name)
+//                    val newAnime = JMapper.insertAnime(
+//                        connection,
+//                        newCountry?.id,
+//                        oldAnime?.releaseDate,
+//                        oldAnime?.name,
+//                        oldAnime?.image,
+//                        oldAnime?.description,
+//                        false
+//                    )
+//                    val newEpisodeType = JMapper.getEpisodeType(connection, oldEpisode.episodeType)
+//                    val newLangType = JMapper.getLangType(connection, oldEpisode.langType)
+//
+//                    oldAnimeGenres?.forEach { animeGenres ->
+//                        val oldGenre = JMapper.getGenre(oldConnection, animeGenres.genreId)
+//                        val newGenre = JMapper.getGenre(connection, oldGenre?.name)
+//                        JMapper.insertAnimeGenre(connection, newAnime?.id, newGenre?.id)
+//                    }
+//
+//                    JMapper.insertEpisode(
+//                        connection,
+//                        newPlatform?.id,
+//                        newAnime?.id,
+//                        newEpisodeType?.id,
+//                        newLangType?.id,
+//                        oldEpisode.releaseDate,
+//                        oldEpisode.season,
+//                        oldEpisode.number,
+//                        oldEpisode.episodeId,
+//                        oldEpisode.title,
+//                        oldEpisode.url,
+//                        oldEpisode.image,
+//                        oldEpisode.duration,
+//                        false
+//                    )
+//                }
+//
+//                oldScans.forEach { oldScan ->
+//                    val oldPlatform = JMapper.getPlatform(oldConnection, oldScan.platformId)
+//                    val oldAnime = JMapper.getAnime(oldConnection, oldScan.animeId)
+//                    val oldAnimeGenres = JMapper.getAnimeGenres(oldConnection, oldAnime?.id)
+//                    val oldCountry = JMapper.getOldCountry(oldConnection, oldAnime?.countryId)
+//
+//                    val newCountry = JMapper.getCountryByName(connection, oldCountry?.name)
+//                    val newPlatform = JMapper.getPlatform(connection, oldPlatform?.name)
+//                    val newAnime = JMapper.insertAnime(
+//                        connection,
+//                        newCountry?.id,
+//                        oldAnime?.releaseDate,
+//                        oldAnime?.name,
+//                        oldAnime?.image,
+//                        oldAnime?.description,
+//                        false
+//                    )
+//                    val newEpisodeType = JMapper.getEpisodeType(connection, oldScan.episodeType)
+//                    val newLangType = JMapper.getLangType(connection, oldScan.langType)
+//
+//                    oldAnimeGenres?.forEach { animeGenres ->
+//                        val oldGenre = JMapper.getGenre(oldConnection, animeGenres.genreId)
+//                        val newGenre = JMapper.getGenre(connection, oldGenre?.name)
+//                        JMapper.insertAnimeGenre(connection, newAnime?.id, newGenre?.id)
+//                    }
+//
+//                    JMapper.insertScan(
+//                        connection,
+//                        newPlatform?.id,
+//                        newAnime?.id,
+//                        newEpisodeType?.id,
+//                        newLangType?.id,
+//                        oldScan.releaseDate,
+//                        oldScan.number,
+//                        oldScan.url
+//                    )
+//                }
+//
+//                connection?.commit()
+//            }, {
+//                connection?.rollback()
+//            })
+//
+//            connection?.close()
+//        }
 
         JLogger.info("Setup FCM...")
         val options = FirebaseOptions.builder()

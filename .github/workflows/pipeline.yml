@@ -76,6 +76,6 @@ jobs:
 
       - name: SSH Commands
         run: |
-          ssh -C pi@${{ secrets.SSH_HOST }} "mkdir ~/Jais_Debug && mkdir ~/Jais_Debug/browser"
+          ssh -C pi@${{ secrets.SSH_HOST }} "rm -rf ~/Jais_Debug && mkdir ~/Jais_Debug && mkdir ~/Jais_Debug/browser"
           scp Jaïs/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug
           scp Browser/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug/browser
