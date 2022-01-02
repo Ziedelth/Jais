@@ -96,8 +96,17 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     ) return@forEachIndexed
                     val anime = ts?.subList(1, ts.indexOf("Séries"))?.joinToString(" ") ?: return@forEachIndexed
                     val number = ts[ts.size - 2].replace(" ", "").toLongOrNull()
+
                     var episodeType =
-                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4]) EpisodeType.FILM else EpisodeType.EPISODE
+                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4])
+                            EpisodeType.FILM
+                        else if (ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
+                                .contains("${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}", true)
+                        )
+                            EpisodeType.SPECIAL
+                        else
+                            EpisodeType.EPISODE
+
                     val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
                     val checkUrl = "https://www.wakanim.tv${

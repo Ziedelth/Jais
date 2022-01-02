@@ -48,6 +48,8 @@ class Jais {
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
+//        this.platforms.forEach { platformImpl -> platformImpl.platform.checkEpisodes().forEach { println(it) } }
+
         Impl.tryCatch("Error on merge") {
             val connection = JMapper.getConnection()
             val oldConnection = JMapper.getOldConnection()
@@ -180,140 +182,145 @@ class Jais {
         Impl.tryCatch("Failed to fetch episodes") {
             val animes = mutableMapOf<String, String>()
             val connection = JMapper.getConnection()
+            val startTime = System.currentTimeMillis()
 
-            val episodesList = this.platforms.flatMap { it.platform.checkEpisodes(calendar).toList() }
-            // TODO: MULTI THREAD
+            JThread.startMultiThreads(this.platforms.map { platformImpl ->
+                {
+                    JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
+                    val episodes = platformImpl.platform.checkEpisodes(calendar)
+                    JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
+                    val scans = platformImpl.platform.checkScans(calendar)
+                    JLogger.info("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
 
-            if (episodesList.isNotEmpty()) {
-                episodesList.sortedBy { it.releaseDate }.forEach { episode ->
-                    val platformData = JMapper.insertPlatform(
-                        connection,
-                        episode.platform.platformHandler
-                    )
-                    val countryData = JMapper.insertCountry(
-                        connection,
-                        episode.country.countryHandler
-                    )
+                    if (episodes.isNotEmpty()) {
+                        JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
 
-                    if (platformData != null && countryData != null) {
-                        val animeData = JMapper.insertAnime(
-                            connection,
-                            countryData.id,
-                            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                            episode.anime,
-                            episode.animeImage,
-                            episode.animeDescription
-                        )
+                        val platformData = JMapper.insertPlatform(connection, platformImpl.platformHandler)
 
-                        if (animeData != null) {
-                            episode.animeGenres.forEach {
-                                val genre = JMapper.insertGenre(connection, it)
-                                if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
-                            }
+                        episodes.sortedBy { it.releaseDate }.forEach { episode ->
+                            val countryData = JMapper.insertCountry(connection, episode.country.countryHandler)
 
-                            val etd = JMapper.insertEpisodeType(connection, episode.episodeType)
-                            val ltd = JMapper.insertLangType(connection, episode.langType)
-
-                            if (etd != null && ltd != null) {
-                                val exists = JMapper.getEpisode(connection, episode.episodeId) != null
-                                val episodeData = JMapper.insertEpisode(
+                            if (platformData != null && countryData != null) {
+                                val animeData = JMapper.insertAnime(
                                     connection,
-                                    platformData.id,
-                                    animeData.id,
-                                    etd.id,
-                                    ltd.id,
+                                    countryData.id,
                                     ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                                    episode.season.toInt(),
-                                    episode.number.toInt(),
-                                    episode.episodeId,
-                                    episode.title,
-                                    episode.url,
-                                    episode.image,
-                                    episode.duration
+                                    episode.anime,
+                                    episode.animeImage,
+                                    episode.animeDescription
                                 )
 
-                                if (!exists && episodeData != null) {
-                                    if (!animes.contains(episode.anime.onlyLettersAndDigits()))
-                                        animes[episode.anime.onlyLettersAndDigits()] = episode.anime
+                                if (animeData != null) {
+                                    episode.animeGenres.forEach {
+                                        val genre = JMapper.insertGenre(connection, it)
+                                        if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
+                                    }
 
-                                    Impl.tryCatch {
-                                        PluginManager.plugins?.forEach {
-                                            it.newEpisode(episode)
+                                    val etd = JMapper.insertEpisodeType(connection, episode.episodeType)
+                                    val ltd = JMapper.insertLangType(connection, episode.langType)
+
+                                    if (etd != null && ltd != null) {
+                                        val exists = JMapper.getEpisode(connection, episode.episodeId) != null
+                                        val episodeData = JMapper.insertEpisode(
+                                            connection,
+                                            platformData.id,
+                                            animeData.id,
+                                            etd.id,
+                                            ltd.id,
+                                            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+                                            episode.season.toInt(),
+                                            episode.number.toInt(),
+                                            episode.episodeId,
+                                            episode.title,
+                                            episode.url,
+                                            episode.image,
+                                            episode.duration
+                                        )
+
+                                        if (!exists && episodeData != null) {
+                                            if (!animes.contains(episode.anime.onlyLettersAndDigits())) animes[episode.anime.onlyLettersAndDigits()] =
+                                                episode.anime
+
+                                            Impl.tryCatch {
+                                                PluginManager.plugins?.forEach {
+                                                    it.newEpisode(episode)
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
                     }
-                }
-            }
 
-            val scansList = this.platforms.flatMap { it.platform.checkScans(calendar).toList() }
+                    if (scans.isNotEmpty()) {
+                        JLogger.info("[${platformImpl.platformHandler.name}] Insert all scans...")
+                        val platformData = JMapper.insertPlatform(connection, platformImpl.platformHandler)
 
-            if (scansList.isNotEmpty()) {
-                scansList.sortedBy { it.releaseDate }.forEach { scan ->
-                    val platformData = JMapper.insertPlatform(
-                        connection,
-                        scan.platform.platformHandler
-                    )
-                    val countryData = JMapper.insertCountry(
-                        connection,
-                        scan.country.countryHandler
-                    )
+                        scans.sortedBy { it.releaseDate }.forEach { scan ->
+                            val countryData = JMapper.insertCountry(connection, scan.country.countryHandler)
 
-                    if (platformData != null && countryData != null) {
-                        val animeData = JMapper.insertAnime(
-                            connection,
-                            countryData.id,
-                            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-                            scan.anime,
-                            scan.animeImage,
-                            scan.animeDescription
-                        )
-
-                        if (animeData != null) {
-                            scan.animeGenres.forEach {
-                                val genre = JMapper.insertGenre(connection, it)
-                                if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
-                            }
-
-                            val etd = JMapper.insertEpisodeType(connection, scan.episodeType)
-                            val ltd = JMapper.insertLangType(connection, scan.langType)
-
-                            if (etd != null && ltd != null) {
-                                val exists =
-                                    JMapper.getScan(
-                                        connection,
-                                        platformData.id,
-                                        animeData.id,
-                                        scan.number.toInt()
-                                    ) != null
-                                val episodeData = JMapper.insertScan(
+                            if (platformData != null && countryData != null) {
+                                val animeData = JMapper.insertAnime(
                                     connection,
-                                    platformData.id,
-                                    animeData.id,
-                                    etd.id,
-                                    ltd.id,
+                                    countryData.id,
                                     ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-                                    scan.number.toInt(),
-                                    scan.url
+                                    scan.anime,
+                                    scan.animeImage,
+                                    scan.animeDescription
                                 )
 
-                                if (!exists && episodeData != null) {
-                                    if (!animes.contains(scan.anime.onlyLettersAndDigits()))
-                                        animes[scan.anime.onlyLettersAndDigits()] = scan.anime
+                                if (animeData != null) {
+                                    scan.animeGenres.forEach {
+                                        val genre = JMapper.insertGenre(connection, it)
+                                        if (genre != null) JMapper.insertAnimeGenre(connection, animeData.id, genre.id)
+                                    }
 
-                                    Impl.tryCatch {
-                                        PluginManager.plugins?.forEach {
-                                            it.newScan(scan)
+                                    val etd = JMapper.insertEpisodeType(connection, scan.episodeType)
+                                    val ltd = JMapper.insertLangType(connection, scan.langType)
+
+                                    if (etd != null && ltd != null) {
+                                        val exists = JMapper.getScan(
+                                            connection,
+                                            platformData.id,
+                                            animeData.id,
+                                            scan.number.toInt()
+                                        ) != null
+                                        val scanData = JMapper.insertScan(
+                                            connection,
+                                            platformData.id,
+                                            animeData.id,
+                                            etd.id,
+                                            ltd.id,
+                                            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                                            scan.number.toInt(),
+                                            scan.url
+                                        )
+
+                                        if (!exists && scanData != null) {
+                                            if (!animes.contains(scan.anime.onlyLettersAndDigits())) animes[scan.anime.onlyLettersAndDigits()] =
+                                                scan.anime
+
+                                            Impl.tryCatch {
+                                                PluginManager.plugins?.forEach {
+                                                    it.newScan(scan)
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        JLogger.info("[${platformImpl.platformHandler.name}] All scans has been inserted!")
                     }
                 }
-            }
+            })
+
+            val endTime = System.currentTimeMillis()
+            JLogger.info("All platforms has been checked in ${endTime - startTime}ms!")
 
             connection?.close()
 

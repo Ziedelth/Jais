@@ -49,7 +49,7 @@ object JThread {
         return id
     }
 
-    fun startMultiThread(vararg actions: () -> Unit): MutableList<Future<Unit>> =
+    fun startMultiThreads(actions: Iterable<() -> Unit>): MutableList<Future<Unit>> =
         this.pool.invokeAll(actions.map { Callable(it) })
 
     fun stop(id: Int) {
