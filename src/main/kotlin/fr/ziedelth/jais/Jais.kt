@@ -82,7 +82,7 @@ class Jais {
                         val episodes = platformImpl.platform.checkEpisodes(calendar)
                         JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
                         val scans = platformImpl.platform.checkScans(calendar)
-                        JLogger.info("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
+                        JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
 
                         if (episodes.isNotEmpty()) {
                             JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")

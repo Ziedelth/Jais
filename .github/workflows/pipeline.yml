@@ -59,12 +59,6 @@ jobs:
       - name: Download all workflow run actifacts
         uses: actions/download-artifact@v2
 
-      - name: LS
-        run: |
-          ls
-          ls Browser
-          ls Jaïs
-
       - name: Install SSH KEY
         uses: shimataro/ssh-key-action@v2
         with:
@@ -76,6 +70,7 @@ jobs:
 
       - name: SSH Commands
         run: |
-          ssh -C pi@${{ secrets.SSH_HOST }} "rm -rf ~/Jais_Debug && mkdir ~/Jais_Debug && mkdir ~/Jais_Debug/browser"
-          scp Jaïs/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug
-          scp Browser/* pi@${{ secrets.SSH_HOST }}:~/Jais_Debug/browser
+          ssh -C pi@${{ secrets.SSH_HOST }} "sh ~/Jais/stop.sh && rm -rf ~/Jais/Jaïs-jar-with-dependencies.jar && rm -rf ~/Jais/browser/index.js && rm -rf ~/Jais/browser/package.json"
+          scp Jaïs/* pi@${{ secrets.SSH_HOST }}:~/Jais
+          scp Browser/* pi@${{ secrets.SSH_HOST }}:~/Jais/browser
+          ssh -C pi@${{ secrets.SSH_HOST }} "sh ~/Jais/start.sh"
