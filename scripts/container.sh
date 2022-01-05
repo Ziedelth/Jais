@@ -3,20 +3,24 @@
 # Variables
 folder=container
 commands="/bin/bash /bin/ls /bin/touch /bin/cat /bin/mkdir /bin/hostname /bin/sleep /bin/clear"
-cpu_limit=10
-memory_limit=10485760
+cpu_limit=512
+memory_limit=10485760 # 10 Mio
 
 # Création des dossiers
 mkdir $folder
 mkdir $folder/bin
 echo '#!/bin/bash
-sleep 10s' > $folder/bin/mycommand
+for i in {1..10000} ; do
+  sleep 10s &
+done' > $folder/bin/mycommand
 chmod +111 $folder/bin/mycommand
 mkdir $folder/lib
 mkdir $folder/lib/x86_64-linux-gnu
 mkdir $folder/lib64
 mkdir $folder/tmp
 mkdir $folder/media
+mkdir $folder/dev
+touch $folder/dev/null
 
 # Ajout des commands necéssaires dans le conteneur
 for command in $commands ; do
