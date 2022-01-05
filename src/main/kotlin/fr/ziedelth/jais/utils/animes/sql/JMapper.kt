@@ -272,43 +272,57 @@ object JMapper {
         description: String?,
         saveImage: Boolean = true
     ): AnimeData? {
-        val anime = getAnime(connection, countryId, name)
+        var anime = getAnime(connection, countryId, name)
 
         return if (anime != null) {
             if (anime.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
                 val runner = QueryRunner()
                 val query = "UPDATE animes SET description = ? WHERE id = ?"
                 runner.update(connection, query, description, anime.id)
-                getAnime(connection, anime.id)
-            } else anime
+                anime = getAnime(connection, anime.id)
+            }
+
+            if (anime?.image.isNullOrEmpty() && !image.isNullOrEmpty()) {
+                val runner = QueryRunner()
+                val query = "UPDATE animes SET image = ? WHERE id = ?"
+                runner.update(connection, query, saveAnimeImage(image, saveImage), anime?.id)
+                anime = getAnime(connection, anime?.id)
+            }
+
+            anime
         } else {
             val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
-            var imagePath = image
-
-            if (saveImage) {
-                Impl.tryCatch("Failed to create anime image file") {
-                    val uuid = UUID.randomUUID()
-                    val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
-
-                    val fileName = "$uuid.jpg"
-                    val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
-                    val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
-                    ImageIO.write(bufferedImage, "jpg", localFile)
-                    ImageIO.write(bufferedImage, "jpg", webFile)
-
-                    imagePath = "images/animes/$fileName"
-                }
-            }
 
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
                 "INSERT INTO animes (country_id, release_date, code, name, image, description) VALUES (?, ?, ?, ?, ?, ?)"
             val newId: Long =
-                runner.insert(connection, query, sh, countryId, releaseDate, code, name, imagePath, description)
+                runner.insert(connection, query, sh, countryId, releaseDate, code, name, saveAnimeImage(image, saveImage), description)
                     .toLong()
             getAnime(connection, newId)
         }
+    }
+
+    private fun saveAnimeImage(image: String?, save: Boolean): String? {
+        var imagePath = image
+
+        if (save) {
+            Impl.tryCatch("Failed to create anime image file") {
+                val uuid = UUID.randomUUID()
+                val bufferedImage = FileImpl.resizeImage(ImageIO.read(URL(image)), 350, 500)
+
+                val fileName = "$uuid.jpg"
+                val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
+                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
+                ImageIO.write(bufferedImage, "jpg", localFile)
+                ImageIO.write(bufferedImage, "jpg", webFile)
+
+                imagePath = "images/animes/$fileName"
+            }
+        }
+
+        return imagePath
     }
 
     fun getAnimeGenres(connection: Connection?): MutableList<AnimeGenreData> {
