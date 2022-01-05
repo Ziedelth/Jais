@@ -10,7 +10,7 @@ const fs = require('fs');
     const myArgs = process.argv.slice(2);
     console.log('myArgs: ', myArgs);
 
-    if (myArgs.length !== 1) {
+    if (myArgs.length !== 2) {
         process.exit(0);
         return;
     }
@@ -38,7 +38,7 @@ const fs = require('fs');
     await page.goto(myArgs[0], {waitUntil: 'load', timeout: 0});
 
     console.log('Writing file...');
-    await fs.writeFile('result.html', (await page.content()), async function (err) {
+    await fs.writeFile('result-' + myArgs[1] + '.html', '<!-- ' + myArgs[0] + ' -->\n' + (await page.content()), async function (err) {
         if (err) throw err;
         console.log('Done!');
         process.exit(0);

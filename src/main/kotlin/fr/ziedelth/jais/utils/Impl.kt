@@ -7,8 +7,9 @@ package fr.ziedelth.jais.utils
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import fr.ziedelth.jais.utils.debug.JLogger
+import java.net.URL
 import java.util.logging.Level
+
 
 object Impl {
     fun String.toHTTPS() = this.replace("http://", "https://")
@@ -45,6 +46,15 @@ object Impl {
         } catch (exception: Exception) {
             JLogger.log(Level.WARNING, "Error on try / catch", exception)
             errorAction.invoke()
+        }
+    }
+
+    fun hasInternet(): Boolean {
+        return try {
+            URL("https://www.google.com").openConnection().connect()
+            true
+        } catch (exception: Exception) {
+            false
         }
     }
 }

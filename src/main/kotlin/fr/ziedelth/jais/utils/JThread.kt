@@ -2,12 +2,16 @@
  * Copyright (c) 2021. Ziedelth
  */
 
-package fr.ziedelth.jais.utils.debug
+package fr.ziedelth.jais.utils
 
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.math.max
 
 object JThread {
     private var count = 0
+    private val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private val threads = mutableMapOf<Int, Thread>()
 
     fun start(action: () -> Unit, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
@@ -20,7 +24,7 @@ object JThread {
         thread.start()
 
         val id = count++
-        threads[id] = thread
+        this.threads[id] = thread
         return id
     }
 
@@ -41,16 +45,20 @@ object JThread {
         thread.start()
 
         val id = count++
-        threads[id] = thread
+        this.threads[id] = thread
         return id
     }
 
+    fun startMultiThreads(actions: Iterable<() -> Unit>): MutableList<Future<Unit>> =
+        this.pool.invokeAll(actions.map { Callable(it) })
+
     fun stop(id: Int) {
-        threads[id]?.interrupt()
-        threads.remove(id)
+        this.threads[id]?.interrupt()
+        this.threads.remove(id)
     }
 
     fun stopAll() {
-        threads.forEach { it.value.interrupt() }
+        this.threads.forEach { it.value.interrupt() }
+        this.pool.shutdown()
     }
 }

@@ -36,7 +36,7 @@ import kotlin.math.pow
     color = 0xE3474B,
     countries = [FranceCountry::class]
 )
-class WakanimPlatform : Platform() {
+class WakanimPlatform(jais: Jais) : Platform(jais) {
     data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
 
     private val wakanim: MutableList<Wakanim> = mutableListOf()
@@ -51,7 +51,7 @@ class WakanimPlatform : Platform() {
         val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
@@ -96,8 +96,17 @@ class WakanimPlatform : Platform() {
                     ) return@forEachIndexed
                     val anime = ts?.subList(1, ts.indexOf("Séries"))?.joinToString(" ") ?: return@forEachIndexed
                     val number = ts[ts.size - 2].replace(" ", "").toLongOrNull()
+
                     var episodeType =
-                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4]) EpisodeType.FILM else EpisodeType.EPISODE
+                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4])
+                            EpisodeType.FILM
+                        else if (ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
+                                .contains("${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}", true)
+                        )
+                            EpisodeType.SPECIAL
+                        else
+                            EpisodeType.EPISODE
+
                     val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
                     val checkUrl = "https://www.wakanim.tv${

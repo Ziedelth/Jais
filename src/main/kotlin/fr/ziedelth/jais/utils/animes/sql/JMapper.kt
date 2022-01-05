@@ -7,6 +7,11 @@ package fr.ziedelth.jais.utils.animes.sql
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.HashUtils
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.animes.EpisodeType
+import fr.ziedelth.jais.utils.animes.Genre
+import fr.ziedelth.jais.utils.animes.LangType
+import fr.ziedelth.jais.utils.animes.countries.CountryHandler
+import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
@@ -29,7 +34,7 @@ object JMapper {
         return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
     }
 
-//    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/ziedelth", "root", "")
+//    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -43,21 +48,38 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM countries WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getCountry(connection: Connection?, name: String): CountryData? {
+    fun getCountryByTag(connection: Connection?, tag: String): CountryData? {
+        val blh = BeanListHandler(CountryData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM countries WHERE tag = ?", blh, tag).firstOrNull()
+    }
+
+    fun getCountryByName(connection: Connection?, name: String?): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE name = ?", blh, name).firstOrNull()
     }
 
-    fun insertCountry(connection: Connection?, name: String, flag: String): CountryData? {
-        val country = getCountry(connection, name)
+    fun insertCountry(connection: Connection?, countryHandler: CountryHandler): CountryData? =
+        insertCountry(connection, countryHandler.tag, countryHandler.name, countryHandler.flag, countryHandler.season)
+
+    fun insertCountry(connection: Connection?, tag: String, name: String, flag: String, season: String): CountryData? {
+        val country = getCountryByTag(connection, tag)
 
         return if (country != null) country
         else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
-            val query = "INSERT INTO countries (name, flag) VALUES (?, ?)"
-            val newId: Long = runner.insert(connection, query, sh, name, flag).toLong()
+            val query = "INSERT INTO countries (tag, name, flag, season) VALUES (?, ?, ?, ?)"
+            val newId: Long = runner.insert(
+                connection,
+                query,
+                sh,
+                tag,
+                name,
+                flag,
+                season
+            ).toLong()
             getCountry(connection, newId)
         }
     }
@@ -74,11 +96,19 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM platforms WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getPlatform(connection: Connection?, name: String): PlatformData? {
+    fun getPlatform(connection: Connection?, name: String?): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE name = ?", blh, name).firstOrNull()
     }
+
+    fun insertPlatform(connection: Connection?, platformHandler: PlatformHandler): PlatformData? = insertPlatform(
+        connection,
+        platformHandler.name,
+        platformHandler.url,
+        platformHandler.image,
+        platformHandler.color
+    )
 
     fun insertPlatform(connection: Connection?, name: String, url: String, image: String, color: Int): PlatformData? {
         val platform = getPlatform(connection, name)
@@ -88,7 +118,15 @@ object JMapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query = "INSERT INTO platforms (name, url, image, color) VALUES (?, ?, ?, ?)"
-            val newId: Long = runner.insert(connection, query, sh, name, url, image, color).toLong()
+            val newId: Long = runner.insert(
+                connection,
+                query,
+                sh,
+                name,
+                url,
+                image,
+                color
+            ).toLong()
             getPlatform(connection, newId)
         }
     }
@@ -99,34 +137,108 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM genres", blh)
     }
 
-    private fun getGenre(connection: Connection?, id: Long): GenreData? {
+    fun getGenre(connection: Connection?, id: Long): GenreData? {
         val blh = BeanListHandler(GenreData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE id = ?", blh, id).firstOrNull()
     }
 
-    fun getGenre(connection: Connection?, name: String): GenreData? {
+    fun getGenre(connection: Connection?, name: String?): GenreData? {
         val blh = BeanListHandler(GenreData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM genres WHERE `name` = ?", blh, name).firstOrNull()
     }
 
-    fun insertGenre(connection: Connection?, name: String, fr: String): GenreData? {
-        val genre = getGenre(connection, name)
+    fun insertGenre(connection: Connection?, agenre: Genre): GenreData? {
+        val genre = getGenre(connection, agenre.name)
 
         return if (genre != null) {
-            if (genre.fr.isEmpty() && fr.isNotEmpty()) {
+            if (genre.fr.isEmpty() && agenre.fr.isNotEmpty()) {
                 val runner = QueryRunner()
                 val query = "UPDATE genres SET fr = ? WHERE id = ?"
-                runner.update(connection, query, fr, genre.id)
+                runner.update(connection, query, agenre.fr, genre.id)
                 getGenre(connection, genre.id)
             } else genre
         } else {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query = "INSERT INTO genres (name, fr) VALUES (?, ?)"
-            val newId: Long = runner.insert(connection, query, sh, name, fr).toLong()
+            val newId: Long = runner.insert(connection, query, sh, agenre.name, agenre.fr).toLong()
             getGenre(connection, newId)
+        }
+    }
+
+    fun getEpisodeTypes(connection: Connection?): MutableList<EpisodeTypeData> {
+        val blh = BeanListHandler(EpisodeTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM episode_types", blh)
+    }
+
+    private fun getEpisodeType(connection: Connection?, id: Long): EpisodeTypeData? {
+        val blh = BeanListHandler(EpisodeTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM episode_types WHERE id = ?", blh, id).firstOrNull()
+    }
+
+    fun getEpisodeType(connection: Connection?, name: String): EpisodeTypeData? {
+        val blh = BeanListHandler(EpisodeTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM episode_types WHERE `name` = ?", blh, name).firstOrNull()
+    }
+
+    fun insertEpisodeType(connection: Connection?, aepisodeType: EpisodeType): EpisodeTypeData? {
+        val episodeType = getEpisodeType(connection, aepisodeType.name)
+
+        return if (episodeType != null) {
+            if (episodeType.fr.isEmpty() && aepisodeType.fr.isNotEmpty()) {
+                val runner = QueryRunner()
+                val query = "UPDATE episode_types SET fr = ? WHERE id = ?"
+                runner.update(connection, query, aepisodeType.fr, episodeType.id)
+                getEpisodeType(connection, episodeType.id)
+            } else episodeType
+        } else {
+            val sh = ScalarHandler<Long>()
+            val runner = QueryRunner()
+            val query = "INSERT INTO episode_types (name, fr) VALUES (?, ?)"
+            val newId: Long = runner.insert(connection, query, sh, aepisodeType.name, aepisodeType.fr).toLong()
+            getEpisodeType(connection, newId)
+        }
+    }
+
+    fun getLangTypes(connection: Connection?): MutableList<LangTypeData> {
+        val blh = BeanListHandler(LangTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM lang_types", blh)
+    }
+
+    private fun getLangType(connection: Connection?, id: Long): LangTypeData? {
+        val blh = BeanListHandler(LangTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM lang_types WHERE id = ?", blh, id).firstOrNull()
+    }
+
+    fun getLangType(connection: Connection?, name: String): LangTypeData? {
+        val blh = BeanListHandler(LangTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM lang_types WHERE `name` = ?", blh, name).firstOrNull()
+    }
+
+    fun insertLangType(connection: Connection?, alangType: LangType): LangTypeData? {
+        val langType = getLangType(connection, alangType.name)
+
+        return if (langType != null) {
+            if (langType.fr.isEmpty() && alangType.fr.isNotEmpty()) {
+                val runner = QueryRunner()
+                val query = "UPDATE lang_types SET fr = ? WHERE id = ?"
+                runner.update(connection, query, alangType.fr, langType.id)
+                getLangType(connection, langType.id)
+            } else langType
+        } else {
+            val sh = ScalarHandler<Long>()
+            val runner = QueryRunner()
+            val query = "INSERT INTO lang_types (name, fr) VALUES (?, ?)"
+            val newId: Long = runner.insert(connection, query, sh, alangType.name, alangType.fr).toLong()
+            getLangType(connection, newId)
         }
     }
 
@@ -136,14 +248,14 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM animes", ah)
     }
 
-    fun getAnime(connection: Connection?, id: Long): AnimeData? {
+    fun getAnime(connection: Connection?, id: Long?): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    fun getAnime(connection: Connection?, countryId: Long, name: String): AnimeData? {
-        val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
+    fun getAnime(connection: Connection?, countryId: Long?, name: String?): AnimeData? {
+        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
 
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
@@ -153,9 +265,9 @@ object JMapper {
 
     fun insertAnime(
         connection: Connection?,
-        countryId: Long,
-        releaseDate: String,
-        name: String,
+        countryId: Long?,
+        releaseDate: String?,
+        name: String?,
         image: String?,
         description: String?,
         saveImage: Boolean = true
@@ -170,7 +282,7 @@ object JMapper {
                 getAnime(connection, anime.id)
             } else anime
         } else {
-            val code = HashUtils.sha512(name.lowercase().onlyLettersAndDigits())
+            val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
             var imagePath = image
 
             if (saveImage) {
@@ -205,7 +317,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM anime_genres", agh)
     }
 
-    fun getAnimeGenres(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long?, genreId: Long?): AnimeGenreData? {
         val agh = AnimeGenreHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -217,7 +329,18 @@ object JMapper {
         ).firstOrNull()
     }
 
-    fun insertAnimeGenre(connection: Connection?, animeId: Long, genreId: Long): AnimeGenreData? {
+    fun getAnimeGenres(connection: Connection?, animeId: Long?): MutableList<AnimeGenreData>? {
+        val agh = AnimeGenreHandler()
+        val runner = QueryRunner()
+        return runner.query(
+            connection,
+            "SELECT * FROM anime_genres WHERE anime_id = ?",
+            agh,
+            animeId
+        )
+    }
+
+    fun insertAnimeGenre(connection: Connection?, animeId: Long?, genreId: Long?): AnimeGenreData? {
         val animeGenre = getAnimeGenres(connection, animeId, genreId)
 
         return if (animeGenre != null) animeGenre
@@ -250,13 +373,13 @@ object JMapper {
 
     fun insertEpisode(
         connection: Connection?,
-        platformId: Long,
-        animeId: Long,
+        platformId: Long?,
+        animeId: Long?,
+        idEpisodeType: Long?,
+        idLangType: Long?,
         releaseDate: String,
         season: Int,
         number: Int,
-        episodeType: String,
-        langType: String,
         episodeId: String,
         title: String?,
         url: String,
@@ -313,7 +436,7 @@ object JMapper {
                 val lastNumber = this.getAnime(
                     connection,
                     animeId
-                )?.episodes?.filter { it.platformId == platformId && it.animeId == animeId && it.season == season && it.episodeType == episodeType && it.langType == langType }
+                )?.episodes?.filter { it.platformId == platformId && it.animeId == animeId && it.season == season && it.idEpisodeType == idEpisodeType && it.idLangType == idLangType }
                     ?.maxByOrNull { it.number }?.number
                 n = (lastNumber ?: 0) + 1
             }
@@ -321,18 +444,18 @@ object JMapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO episodes (platform_id, anime_id, release_date, season, number, episode_type, lang_type, episode_id, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO episodes (platform_id, anime_id, id_episode_type, id_lang_type, release_date, season, number, episode_id, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
                 sh,
                 platformId,
                 animeId,
+                idEpisodeType,
+                idLangType,
                 releaseDate,
                 season,
                 n,
-                episodeType,
-                langType,
                 episodeId,
                 title,
                 url,
@@ -356,7 +479,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
     }
 
-    fun getScan(connection: Connection?, platformId: Long, animeId: Long, number: Int): ScanData? {
+    fun getScan(connection: Connection?, platformId: Long?, animeId: Long?, number: Int): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -371,12 +494,12 @@ object JMapper {
 
     fun insertScan(
         connection: Connection?,
-        platformId: Long,
-        animeId: Long,
+        platformId: Long?,
+        animeId: Long?,
+        idEpisodeType: Long?,
+        idLangType: Long?,
         releaseDate: String,
         number: Int,
-        episodeType: String,
-        langType: String,
         url: String,
     ): ScanData? {
         val scan = getScan(connection, platformId, animeId, number)
@@ -386,17 +509,17 @@ object JMapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO scans (platform_id, anime_id, release_date, number, episode_type, lang_type, url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO scans (platform_id, anime_id, id_episode_type, id_lang_type, release_date, number, url) VALUES (?, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
                 sh,
                 platformId,
                 animeId,
+                idEpisodeType,
+                idLangType,
                 releaseDate,
                 number,
-                episodeType,
-                langType,
                 url
             )
 

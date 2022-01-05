@@ -13,6 +13,7 @@ import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 
 @CountryHandler(
+    tag = "fr",
     name = "France",
     flag = "\uD83C\uDDEB\uD83C\uDDF7",
     season = "Saison"
@@ -27,7 +28,7 @@ class FranceCountry : Country {
 
     override fun checkOnEpisodesURL(platform: Platform?): String? {
         return when (platform?.javaClass) {
-            AnimeDigitalNetworkPlatform::class.java, NetflixPlatform::checkEpisodes, WakanimPlatform::class.java -> "fr"
+            AnimeDigitalNetworkPlatform::class.java, NetflixPlatform::class.java, WakanimPlatform::class.java -> "fr"
             CrunchyrollPlatform::class.java -> "frFR"
             else -> null
         }

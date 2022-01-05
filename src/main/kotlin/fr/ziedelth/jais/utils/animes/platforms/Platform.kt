@@ -10,7 +10,7 @@ import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import java.util.*
 
-abstract class Platform {
+abstract class Platform(val jais: Jais) {
     val checkedEpisodes = mutableListOf<String?>()
     val checkedData = mutableMapOf<String?, MutableList<String>>()
 
@@ -72,8 +72,8 @@ abstract class Platform {
         )
     }
 
-    fun getPlatformImpl() = Jais.getPlatformInformation(this)
-    fun getAllowedCountries(): Array<Country> = Jais.getAllowedCountries(this)
+    fun getPlatformImpl() = this.jais.getPlatformInformation(this)
+    fun getAllowedCountries(): Array<Country> = this.jais.getAllowedCountries(this)
     open fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode> = emptyArray()
     open fun checkScans(calendar: Calendar = Calendar.getInstance()): Array<Scan> = emptyArray()
 }

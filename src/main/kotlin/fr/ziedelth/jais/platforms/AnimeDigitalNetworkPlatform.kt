@@ -29,7 +29,7 @@ import java.util.*
     color = 0x0096FF,
     countries = [FranceCountry::class]
 )
-class AnimeDigitalNetworkPlatform : Platform() {
+class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 
     @Synchronized
@@ -39,7 +39,7 @@ class AnimeDigitalNetworkPlatform : Platform() {
         val gson = Gson()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val inputStream = URL(

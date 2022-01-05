@@ -26,36 +26,35 @@ import java.util.*
     color = 0xE50914,
     countries = [FranceCountry::class]
 )
-class NetflixPlatform : Platform() {
+class NetflixPlatform(jais: Jais) : Platform(jais) {
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
 
         this.getAllowedCountries().forEach { country ->
-            val countryImpl = Jais.getCountryInformation(country) ?: return@forEach
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 if (calendar.get(Calendar.DAY_OF_WEEK) == 5) {
                     // Komi can't communicate
                     val id = 81228573
                     val url = "https://www.netflix.com/${country.checkOnEpisodesURL(this)}/title/$id"
-                    val releaseDate = ISO8601.fromUTCDate("${getISODate(calendar)}T08:00:00Z")
-
+                    val releaseDate = ISO8601.fromUTCDate("${getISODate(calendar)}T08:01:00Z")
                     if (!this.checkedEpisodes.contains(id.toString()) && ISO8601.isSameDayUsingInstant(
                             calendar,
                             releaseDate
                         ) && calendar.after(releaseDate)
                     ) {
-                        val document = JBrowser.get(url)
+                        val document = JBrowser.get(url) ?: return@tryCatch
                         // val style = document?.selectXpath("//*[@id=\"section-hero\"]/div[1]/div[2]/div[1]")?.attr("style")
-                        val latestEpisode = document?.getElementsByClass("episode")?.maxByOrNull {
+                        val latestEpisode = document.getElementsByClass("episode").maxByOrNull {
                             it?.getElementsByClass("episode-title")?.text()?.split(". ")?.get(0)?.toLongOrNull() ?: -1
                         }
                         val fet = latestEpisode?.getElementsByClass("episode-title")?.text()
 
                         val anime =
-                            document?.selectXpath("//*[@id=\"section-seasons-and-episodes\"]/div[1]/h2[2]")?.text()
+                            document.selectXpath("//*[@id=\"section-seasons-and-episodes\"]/div[1]/h2[2]").text()
                                 ?: return@tryCatch
                         // val animeImage = style?.split("(\"")?.get(1)?.replace("\")", "")?.toHTTPS()
                         val animeImage =
@@ -67,7 +66,8 @@ class NetflixPlatform : Platform() {
                         val animeDescription =
                             document.selectXpath("//*[@id=\"seasons-and-episodes-list-container\"]/div/div[1]/p").text()
                         val season =
-                            document.getElementsByClass("select-label").text().split(" ")[1].toLongOrNull() ?: 1
+                            document.getElementsByClass("select-label").text().split(" ").lastOrNull()?.toLongOrNull()
+                                ?: 1
                         val number = fet?.split(". ")?.get(0)?.toLongOrNull() ?: -1
                         val episodeType = EpisodeType.EPISODE
                         val langType = LangType.SUBTITLES

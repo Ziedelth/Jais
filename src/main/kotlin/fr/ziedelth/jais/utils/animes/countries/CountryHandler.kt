@@ -8,6 +8,7 @@ package fr.ziedelth.jais.utils.animes.countries
 @Retention(AnnotationRetention.RUNTIME)
 annotation class CountryHandler(
     val name: String,
+    val tag: String,
     val flag: String,
     val season: String
 )
