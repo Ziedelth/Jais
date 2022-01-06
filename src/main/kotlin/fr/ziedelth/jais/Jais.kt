@@ -55,7 +55,7 @@ class Jais {
         PluginManager.loadAll()
 
         JLogger.info("Starting...")
-        JThread.start({
+        JThread.startExactly({
             val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
             if (checkDay != day) {

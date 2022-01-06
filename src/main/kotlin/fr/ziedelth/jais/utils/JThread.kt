@@ -28,7 +28,7 @@ object JThread {
         return id
     }
 
-    fun start(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
+    fun startExactly(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
         val thread = Thread {
             val currentThread = Thread.currentThread()
 
@@ -37,6 +37,25 @@ object JThread {
                 action.invoke()
                 val end = System.currentTimeMillis()
                 currentThread.join(max(1, (delay - (end - start))))
+            }
+        }
+
+        thread.isDaemon = daemon
+        thread.priority = priority
+        thread.start()
+
+        val id = count++
+        this.threads[id] = thread
+        return id
+    }
+
+    fun start(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
+        val thread = Thread {
+            val currentThread = Thread.currentThread()
+
+            while (!currentThread.isInterrupted) {
+                action.invoke()
+                currentThread.join(delay)
             }
         }
 
