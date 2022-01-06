@@ -13,10 +13,7 @@ import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
-import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
-import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeHandler
-import fr.ziedelth.jais.utils.animes.sql.handlers.EpisodeHandler
-import fr.ziedelth.jais.utils.animes.sql.handlers.ScanHandler
+import fr.ziedelth.jais.utils.animes.sql.handlers.*
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
@@ -34,7 +31,7 @@ object JMapper {
         return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
     }
 
-//    fun getConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+    fun getDebugConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -539,5 +536,17 @@ object JMapper {
 
             getScan(connection, newId)
         }
+    }
+
+    fun getOpsEndsTypes(connection: Connection?): MutableList<OpsEndsTypeData> {
+        val episodeHandler = BeanListHandler(OpsEndsTypeData::class.java)
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM ops_ends_types", episodeHandler)
+    }
+
+    fun getOpsEnds(connection: Connection?): MutableList<OpsEndsData> {
+        val episodeHandler = OpsEndsHandler()
+        val runner = QueryRunner()
+        return runner.query(connection, "SELECT * FROM ops_ends", episodeHandler)
     }
 }
