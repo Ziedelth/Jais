@@ -86,10 +86,7 @@ class Jais {
                     Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
                 }
 
-                val episodesSaved =
-                    (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-
-
+                val episodesSaved = (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
                 val connection = JMapper.getConnection()
                 val startTime = System.currentTimeMillis()
 
@@ -211,11 +208,12 @@ class Jais {
 
                 connection?.close()
 
-                if (animes.isNotEmpty()) {
-                    val animeRelease = animes.values.joinToString(", ") { it }
-                    this.sendMessage("Nouvelle(s) sortie(s)", animeRelease)
-                    JLogger.info("New release: $animeRelease")
-                }
+                // TODO: New notification system
+//                if (animes.isNotEmpty()) {
+//                    val animeRelease = animes.values.joinToString(", ") { it }
+//                    this.sendMessage("Nouvelle(s) sortie(s)", animeRelease)
+//                    JLogger.info("New release: $animeRelease")
+//                }
             }
         }
     }
