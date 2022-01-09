@@ -4,9 +4,8 @@
 
 package fr.ziedelth.jais.utils.animes.sql
 
-import fr.ziedelth.jais.utils.FileImpl
-import fr.ziedelth.jais.utils.HashUtils
-import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.*
+import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.LangType
@@ -14,6 +13,7 @@ import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
 import fr.ziedelth.jais.utils.animes.sql.handlers.*
+import fr.ziedelth.jais.utils.plugins.PluginManager
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
@@ -548,5 +548,53 @@ object JMapper {
         val episodeHandler = OpsEndsHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM ops_ends", episodeHandler)
+    }
+
+    fun insertEpisode(connection: Connection?, episode: Episode) {
+        val platformData = insertPlatform(connection, episode.platform.platformHandler)
+        val countryData = insertCountry(connection, episode.country.countryHandler)
+
+        if (platformData != null && countryData != null) {
+            val animeData = insertAnime(
+                connection,
+                countryData.id,
+                ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+                episode.anime,
+                episode.animeImage,
+                episode.animeDescription
+            )
+
+            if (animeData != null) {
+                episode.animeGenres.forEach {
+                    val genre = insertGenre(connection, it)
+                    if (genre != null) insertAnimeGenre(
+                        connection,
+                        animeData.id,
+                        genre.id
+                    )
+                }
+
+                val etd = insertEpisodeType(connection, episode.episodeType)
+                val ltd = insertLangType(connection, episode.langType)
+
+                if (etd != null && ltd != null) {
+                     insertEpisode(
+                        connection,
+                        platformData.id,
+                        animeData.id,
+                        etd.id,
+                        ltd.id,
+                        ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+                        episode.season.toInt(),
+                        episode.number.toInt(),
+                        episode.episodeId,
+                        episode.title,
+                        episode.url,
+                        episode.image,
+                        episode.duration
+                    )
+                }
+            }
+        }
     }
 }

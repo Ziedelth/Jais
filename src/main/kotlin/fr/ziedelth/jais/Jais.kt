@@ -11,6 +11,9 @@ import com.google.firebase.messaging.AndroidConfig
 import com.google.firebase.messaging.AndroidNotification
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
+import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.*
 import fr.ziedelth.jais.utils.*
@@ -22,8 +25,12 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.plugins.PluginManager
+import fr.ziedelth.jais.utils.plugins.PluginUtils
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.FileReader
+import java.nio.file.Files
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -72,6 +79,16 @@ class Jais {
         Impl.tryCatch("Failed to fetch episodes") {
             JLogger.info("Check if has Internet...")
             if (Impl.hasInternet()) {
+                val gson = Gson()
+                val file = FileImpl.getFile("episodes.json")
+
+                if (!file.exists()) {
+                    file.createNewFile()
+                    Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
+                }
+
+                val episodesSaved = (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+
                 val animes = mutableMapOf<String, String>()
                 val connection = JMapper.getConnection()
                 val startTime = System.currentTimeMillis()
@@ -88,78 +105,21 @@ class Jais {
                             JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
 
                             Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
-                                JLogger.config("Insert platform data...")
-                                val platformData = JMapper.insertPlatform(connection, platformImpl.platformHandler)
 
                                 episodes.sortedBy { it.releaseDate }.forEach { episode ->
-                                    JLogger.config("Insert country data...")
-                                    val countryData = JMapper.insertCountry(connection, episode.country.countryHandler)
+                                    if (!episodesSaved.contains(episode.episodeId)) {
+                                        episodesSaved.add(episode.episodeId)
 
-                                    if (platformData != null && countryData != null) {
-                                        JLogger.config("Insert anime data...")
-                                        val animeData = JMapper.insertAnime(
-                                            connection,
-                                            countryData.id,
-                                            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                                            episode.anime,
-                                            episode.animeImage,
-                                            episode.animeDescription
-                                        )
-
-                                        if (animeData != null) {
-                                            JLogger.config("Insert anime genres data...")
-                                            episode.animeGenres.forEach {
-                                                val genre = JMapper.insertGenre(connection, it)
-                                                if (genre != null) JMapper.insertAnimeGenre(
-                                                    connection,
-                                                    animeData.id,
-                                                    genre.id
-                                                )
-                                            }
-
-                                            JLogger.config("Insert episode type data...")
-                                            val etd = JMapper.insertEpisodeType(connection, episode.episodeType)
-                                            JLogger.config("Insert lang type data...")
-                                            val ltd = JMapper.insertLangType(connection, episode.langType)
-
-                                            if (etd != null && ltd != null) {
-                                                val exists = JMapper.getEpisode(connection, episode.episodeId) != null
-                                                JLogger.config("Insert episode data...")
-                                                val episodeData = JMapper.insertEpisode(
-                                                    connection,
-                                                    platformData.id,
-                                                    animeData.id,
-                                                    etd.id,
-                                                    ltd.id,
-                                                    ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                                                    episode.season.toInt(),
-                                                    episode.number.toInt(),
-                                                    episode.episodeId,
-                                                    episode.title,
-                                                    episode.url,
-                                                    episode.image,
-                                                    episode.duration
-                                                )
-
-                                                if (!exists && episodeData != null) {
-                                                    JLogger.config("Episode don't exists before, send to plugins...")
-                                                    if (!animes.contains(episode.anime.onlyLettersAndDigits())) animes[episode.anime.onlyLettersAndDigits()] =
-                                                        episode.anime
-
-                                                    Impl.tryCatch {
-                                                        PluginManager.plugins?.forEach {
-                                                            it.newEpisode(episode)
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                        Impl.tryCatch {
+                                            PluginManager.plugins?.forEach { it.newEpisode(episode) }
                                         }
                                     }
-                                }
 
-                                JLogger.config("Ok!")
+                                    JMapper.insertEpisode(connection, episode)
+                                }
                             }
 
+                            Files.write(file.toPath(), gson.toJson(episodesSaved).toByteArray())
                             JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
                         }
 
