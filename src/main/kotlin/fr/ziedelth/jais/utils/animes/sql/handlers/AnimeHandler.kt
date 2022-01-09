@@ -27,12 +27,16 @@ class AnimeHandler(private val connection: Connection?) :
         val animes = super.handle(rs)
         val runner = QueryRunner()
 
+        val genreHandler = AnimeGenreHandler()
         val episodeHandler = EpisodeHandler()
-        val queryEpisodes = "SELECT * FROM episodes WHERE anime_id = ?"
+        val scanHandler = ScanHandler()
 
         animes.forEach {
-            val episodes = runner.query(this.connection, queryEpisodes, episodeHandler, it.id)
-            it.episodes = episodes
+            it.genres =
+                runner.query(this.connection, "SELECT * FROM anime_genres WHERE anime_id = ?", genreHandler, it.id)
+            it.episodes =
+                runner.query(this.connection, "SELECT * FROM episodes WHERE anime_id = ?", episodeHandler, it.id)
+            it.scans = runner.query(this.connection, "SELECT * FROM scans WHERE anime_id = ?", scanHandler, it.id)
         }
 
         return animes

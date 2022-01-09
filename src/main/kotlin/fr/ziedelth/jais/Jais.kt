@@ -13,7 +13,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.*
 import fr.ziedelth.jais.utils.*
@@ -25,10 +24,8 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.plugins.PluginManager
-import fr.ziedelth.jais.utils.plugins.PluginUtils
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.FileReader
 import java.nio.file.Files
 import java.util.*
@@ -38,6 +35,7 @@ class Jais {
     private val countries = mutableListOf<CountryImpl>()
     private val platforms = mutableListOf<PlatformImpl>()
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+    private val animes = mutableMapOf<String, String>()
 
     fun init() {
         JLogger.info("Init...")
@@ -68,6 +66,7 @@ class Jais {
             if (checkDay != day) {
                 JLogger.info("Resetting checked episodes...")
                 day = checkDay
+                this.animes.clear()
                 this.platforms.forEach { it.platform.checkedEpisodes.clear(); it.platform.checkedData.clear() }
             }
 
@@ -87,9 +86,10 @@ class Jais {
                     Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
                 }
 
-                val episodesSaved = (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+                val episodesSaved =
+                    (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
 
-                val animes = mutableMapOf<String, String>()
+
                 val connection = JMapper.getConnection()
                 val startTime = System.currentTimeMillis()
 
@@ -113,6 +113,9 @@ class Jais {
                                         Impl.tryCatch {
                                             PluginManager.plugins?.forEach { it.newEpisode(episode) }
                                         }
+
+                                        if (!this.animes.contains(episode.anime.onlyLettersAndDigits())) this.animes[episode.anime.onlyLettersAndDigits()] =
+                                            episode.anime
                                     }
 
                                     JMapper.insertEpisode(connection, episode)

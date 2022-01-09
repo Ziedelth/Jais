@@ -28,7 +28,12 @@ object JThread {
         return id
     }
 
-    fun startExactly(action: () -> Unit, delay: Long, daemon: Boolean = false, priority: Int = Thread.NORM_PRIORITY): Int {
+    fun startExactly(
+        action: () -> Unit,
+        delay: Long,
+        daemon: Boolean = false,
+        priority: Int = Thread.NORM_PRIORITY
+    ): Int {
         val thread = Thread {
             val currentThread = Thread.currentThread()
 

@@ -13,5 +13,7 @@ class AnimeData {
     var image: String? = null
     var description: String? = null
 
+    lateinit var genres: MutableList<AnimeGenreData>
     lateinit var episodes: MutableList<EpisodeData>
+    lateinit var scans: MutableList<ScanData>
 }

@@ -4,7 +4,10 @@
 
 package fr.ziedelth.jais.utils.animes.sql
 
-import fr.ziedelth.jais.utils.*
+import fr.ziedelth.jais.utils.FileImpl
+import fr.ziedelth.jais.utils.HashUtils
+import fr.ziedelth.jais.utils.ISO8601
+import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
@@ -13,7 +16,6 @@ import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
 import fr.ziedelth.jais.utils.animes.sql.handlers.*
-import fr.ziedelth.jais.utils.plugins.PluginManager
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanListHandler
@@ -31,7 +33,8 @@ object JMapper {
         return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
     }
 
-    fun getDebugConnection(): Connection? = DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+    fun getDebugConnection(): Connection? =
+        DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
 
     fun getCountries(connection: Connection?): MutableList<CountryData> {
         val blh = BeanListHandler(CountryData::class.java)
@@ -295,7 +298,17 @@ object JMapper {
             val query =
                 "INSERT INTO animes (country_id, release_date, code, name, image, description) VALUES (?, ?, ?, ?, ?, ?)"
             val newId: Long =
-                runner.insert(connection, query, sh, countryId, releaseDate, code, name, saveAnimeImage(image, saveImage), description)
+                runner.insert(
+                    connection,
+                    query,
+                    sh,
+                    countryId,
+                    releaseDate,
+                    code,
+                    name,
+                    saveAnimeImage(image, saveImage),
+                    description
+                )
                     .toLong()
             getAnime(connection, newId)
         }
@@ -554,47 +567,41 @@ object JMapper {
         val platformData = insertPlatform(connection, episode.platform.platformHandler)
         val countryData = insertCountry(connection, episode.country.countryHandler)
 
-        if (platformData != null && countryData != null) {
-            val animeData = insertAnime(
-                connection,
-                countryData.id,
-                ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                episode.anime,
-                episode.animeImage,
-                episode.animeDescription
-            )
+        val animeData = insertAnime(
+            connection,
+            countryData?.id,
+            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+            episode.anime,
+            episode.animeImage,
+            episode.animeDescription
+        )
 
-            if (animeData != null) {
-                episode.animeGenres.forEach {
-                    val genre = insertGenre(connection, it)
-                    if (genre != null) insertAnimeGenre(
+        if (animeData?.genres?.isEmpty() == true) {
+            episode.animeGenres.forEach {
+                val genre = insertGenre(connection, it)
+                if (genre != null)
+                    insertAnimeGenre(
                         connection,
                         animeData.id,
                         genre.id
                     )
-                }
-
-                val etd = insertEpisodeType(connection, episode.episodeType)
-                val ltd = insertLangType(connection, episode.langType)
-
-                if (etd != null && ltd != null) {
-                     insertEpisode(
-                        connection,
-                        platformData.id,
-                        animeData.id,
-                        etd.id,
-                        ltd.id,
-                        ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
-                        episode.season.toInt(),
-                        episode.number.toInt(),
-                        episode.episodeId,
-                        episode.title,
-                        episode.url,
-                        episode.image,
-                        episode.duration
-                    )
-                }
             }
         }
+
+        insertEpisode(
+            connection,
+            platformData?.id,
+            animeData?.id,
+            insertEpisodeType(connection, episode.episodeType)?.id,
+            insertLangType(connection, episode.langType)?.id,
+            ISO8601.toUTCDate(ISO8601.fromCalendar(episode.releaseDate)),
+            episode.season.toInt(),
+            episode.number.toInt(),
+            episode.episodeId,
+            episode.title,
+            episode.url,
+            episode.image,
+            episode.duration
+        )
     }
 }
