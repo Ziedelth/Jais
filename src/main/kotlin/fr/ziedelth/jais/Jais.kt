@@ -105,6 +105,7 @@ class Jais {
                                 episodes.sortedBy { it.releaseDate }.forEach { episode ->
                                     if (!episodesSaved.contains(episode.episodeId)) {
                                         episodesSaved.add(episode.episodeId)
+                                        Files.write(file.toPath(), gson.toJson(episodesSaved).toByteArray())
 
                                         Impl.tryCatch {
                                             PluginManager.plugins?.forEach { it.newEpisode(episode) }
@@ -118,7 +119,6 @@ class Jais {
                                 }
                             }
 
-                            Files.write(file.toPath(), gson.toJson(episodesSaved).toByteArray())
                             JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
                         }
 
