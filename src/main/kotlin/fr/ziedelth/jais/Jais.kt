@@ -90,117 +90,115 @@ class Jais {
                 val connection = JMapper.getConnection()
                 val startTime = System.currentTimeMillis()
 
-                JThread.startMultiThreads(this.platforms.map { platformImpl ->
-                    {
-                        JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
-                        val episodes = platformImpl.platform.checkEpisodes(calendar)
-                        JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
-                        val scans = platformImpl.platform.checkScans(calendar)
-                        JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
+                this.platforms.forEach { platformImpl ->
+                    JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
+                    val episodes = platformImpl.platform.checkEpisodes(calendar)
+                    JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
+                    val scans = platformImpl.platform.checkScans(calendar)
+                    JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
 
-                        if (episodes.isNotEmpty()) {
-                            JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
+                    if (episodes.isNotEmpty()) {
+                        JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
 
-                            Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
-                                episodes.sortedBy { it.releaseDate }.forEach { episode ->
-                                    if (!episodesSaved.contains(episode.episodeId)) {
-                                        episodesSaved.add(episode.episodeId)
-                                        Files.write(file.toPath(), gson.toJson(episodesSaved).toByteArray())
+                        Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
+                            episodes.sortedBy { it.releaseDate }.forEach { episode ->
+                                if (!episodesSaved.contains(episode.episodeId)) {
+                                    episodesSaved.add(episode.episodeId)
+                                    Files.write(file.toPath(), gson.toJson(episodesSaved).toByteArray())
 
-                                        Impl.tryCatch {
-                                            PluginManager.plugins?.forEach { it.newEpisode(episode) }
-                                        }
-
-                                        if (!this.animes.contains(episode.anime.onlyLettersAndDigits())) this.animes[episode.anime.onlyLettersAndDigits()] =
-                                            episode.anime
+                                    Impl.tryCatch {
+                                        PluginManager.plugins?.forEach { it.newEpisode(episode) }
                                     }
 
-                                    JMapper.insertEpisode(connection, episode)
+                                    if (!this.animes.contains(episode.anime.onlyLettersAndDigits())) this.animes[episode.anime.onlyLettersAndDigits()] =
+                                        episode.anime
                                 }
-                            }
 
-                            JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
+                                JMapper.insertEpisode(connection, episode)
+                            }
                         }
 
-                        if (scans.isNotEmpty()) {
-                            JLogger.info("[${platformImpl.platformHandler.name}] Insert all scans...")
+                        JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
+                    }
 
-                            Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
-                                JLogger.config("Insert platform data...")
-                                val platformData = JMapper.insertPlatform(connection, platformImpl.platformHandler)
+                    if (scans.isNotEmpty()) {
+                        JLogger.info("[${platformImpl.platformHandler.name}] Insert all scans...")
 
-                                scans.sortedBy { it.releaseDate }.forEach { scan ->
-                                    JLogger.config("Insert country data...")
-                                    val countryData = JMapper.insertCountry(connection, scan.country.countryHandler)
+                        Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
+                            JLogger.config("Insert platform data...")
+                            val platformData = JMapper.insertPlatform(connection, platformImpl.platformHandler)
 
-                                    if (platformData != null && countryData != null) {
-                                        JLogger.config("Insert anime genres data...")
-                                        val animeData = JMapper.insertAnime(
-                                            connection,
-                                            countryData.id,
-                                            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-                                            scan.anime,
-                                            scan.animeImage,
-                                            scan.animeDescription
-                                        )
+                            scans.sortedBy { it.releaseDate }.forEach { scan ->
+                                JLogger.config("Insert country data...")
+                                val countryData = JMapper.insertCountry(connection, scan.country.countryHandler)
 
-                                        if (animeData != null) {
-                                            scan.animeGenres.forEach {
-                                                val genre = JMapper.insertGenre(connection, it)
-                                                if (genre != null) JMapper.insertAnimeGenre(
-                                                    connection,
-                                                    animeData.id,
-                                                    genre.id
-                                                )
-                                            }
+                                if (platformData != null && countryData != null) {
+                                    JLogger.config("Insert anime genres data...")
+                                    val animeData = JMapper.insertAnime(
+                                        connection,
+                                        countryData.id,
+                                        ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                                        scan.anime,
+                                        scan.animeImage,
+                                        scan.animeDescription
+                                    )
 
-                                            JLogger.config("Insert episode type data...")
-                                            val etd = JMapper.insertEpisodeType(connection, scan.episodeType)
-                                            JLogger.config("Insert lang type data...")
-                                            val ltd = JMapper.insertLangType(connection, scan.langType)
+                                    if (animeData != null) {
+                                        scan.animeGenres.forEach {
+                                            val genre = JMapper.insertGenre(connection, it)
+                                            if (genre != null) JMapper.insertAnimeGenre(
+                                                connection,
+                                                animeData.id,
+                                                genre.id
+                                            )
+                                        }
 
-                                            if (etd != null && ltd != null) {
-                                                val exists = JMapper.getScan(
-                                                    connection,
-                                                    platformData.id,
-                                                    animeData.id,
-                                                    scan.number.toInt()
-                                                ) != null
-                                                JLogger.config("Insert scan data...")
-                                                val scanData = JMapper.insertScan(
-                                                    connection,
-                                                    platformData.id,
-                                                    animeData.id,
-                                                    etd.id,
-                                                    ltd.id,
-                                                    ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-                                                    scan.number.toInt(),
-                                                    scan.url
-                                                )
+                                        JLogger.config("Insert episode type data...")
+                                        val etd = JMapper.insertEpisodeType(connection, scan.episodeType)
+                                        JLogger.config("Insert lang type data...")
+                                        val ltd = JMapper.insertLangType(connection, scan.langType)
 
-                                                if (!exists && scanData != null) {
-                                                    JLogger.config("Scan don't exists before, send to plugins...")
-                                                    if (!animes.contains(scan.anime.onlyLettersAndDigits())) animes[scan.anime.onlyLettersAndDigits()] =
-                                                        scan.anime
+                                        if (etd != null && ltd != null) {
+                                            val exists = JMapper.getScan(
+                                                connection,
+                                                platformData.id,
+                                                animeData.id,
+                                                scan.number.toInt()
+                                            ) != null
+                                            JLogger.config("Insert scan data...")
+                                            val scanData = JMapper.insertScan(
+                                                connection,
+                                                platformData.id,
+                                                animeData.id,
+                                                etd.id,
+                                                ltd.id,
+                                                ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+                                                scan.number.toInt(),
+                                                scan.url
+                                            )
 
-                                                    Impl.tryCatch {
-                                                        PluginManager.plugins?.forEach {
-                                                            it.newScan(scan)
-                                                        }
+                                            if (!exists && scanData != null) {
+                                                JLogger.config("Scan don't exists before, send to plugins...")
+                                                if (!animes.contains(scan.anime.onlyLettersAndDigits())) animes[scan.anime.onlyLettersAndDigits()] =
+                                                    scan.anime
+
+                                                Impl.tryCatch {
+                                                    PluginManager.plugins?.forEach {
+                                                        it.newScan(scan)
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-
-                                JLogger.config("Ok!")
                             }
 
-                            JLogger.info("[${platformImpl.platformHandler.name}] All scans has been inserted!")
+                            JLogger.config("Ok!")
                         }
+
+                        JLogger.info("[${platformImpl.platformHandler.name}] All scans has been inserted!")
                     }
-                })
+                }
 
                 val endTime = System.currentTimeMillis()
                 JLogger.info("All platforms has been checked in ${endTime - startTime}ms!")
