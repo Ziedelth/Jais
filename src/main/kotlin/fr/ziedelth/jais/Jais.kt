@@ -102,7 +102,6 @@ class Jais {
                             JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
 
                             Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
-
                                 episodes.sortedBy { it.releaseDate }.forEach { episode ->
                                     if (!episodesSaved.contains(episode.episodeId)) {
                                         episodesSaved.add(episode.episodeId)
@@ -214,6 +213,8 @@ class Jais {
 //                    this.sendMessage("Nouvelle(s) sortie(s)", animeRelease)
 //                    JLogger.info("New release: $animeRelease")
 //                }
+            } else {
+                JLogger.warning("No internet")
             }
         }
     }
