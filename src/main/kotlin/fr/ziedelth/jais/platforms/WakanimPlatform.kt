@@ -169,7 +169,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                             (t.ifEmpty { "0" }.toLongOrNull()
                                 ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
                         }.sum()
-                        if (duration <= 0) duration = -1
+                        if (duration <= 0) duration = 1440
 
                         val wakanim = this.wakanim.firstOrNull { it.anime.equals(anime, true) } ?: return@forEachIndexed
                         val animeImage = wakanim.image

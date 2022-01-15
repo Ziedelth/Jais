@@ -93,17 +93,14 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                                 Impl.getString(it, "width")?.toLongOrNull()
                                     ?.times(Impl.getString(it, "height")?.toLongOrNull() ?: 0) ?: 0
                             }, "url")?.toHTTPS() ?: return@forEachIndexed
-                        val duration = Impl.getString(ejo, "duration")?.toLongOrNull() ?: -1
+                        val duration = Impl.getString(ejo, "duration")?.toLongOrNull() ?: 1440
 
                         if (!this.crunchyroll.any { it.anime.equals(anime, true) }) {
                             val animeId = url.split("/")[4]
-                            val result =
-                                JBrowser.get("${platformImpl.platformHandler.url}${country.restrictionEpisodes(this)}/$animeId")
-                            val animeImage =
-                                result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")?.toHTTPS()
+                            val result = JBrowser.get("${platformImpl.platformHandler.url}${country.restrictionEpisodes(this)}/$animeId")
+                            val animeImage = result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")?.toHTTPS()
                             var animeDescription = result?.getElementsByClass("more")?.first()?.text()
-                            if (animeDescription.isNullOrBlank()) animeDescription =
-                                result?.getElementsByClass("trunc-desc")?.text()
+                            if (animeDescription.isNullOrBlank()) animeDescription = result?.getElementsByClass("trunc-desc")?.text()
                             this.crunchyroll.add(Crunchyroll(anime, animeImage, animeDescription))
                         }
 

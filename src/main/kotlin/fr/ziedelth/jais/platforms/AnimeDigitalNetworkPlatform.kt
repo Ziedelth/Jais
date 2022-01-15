@@ -75,7 +75,7 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
                     val title = Impl.getString(ejo, "name")
                     val url = Impl.getString(ejo, "url")?.toHTTPS() ?: return@forEachIndexed
                     val image = Impl.getString(ejo, "image2x")?.toHTTPS() ?: return@forEachIndexed
-                    val duration = Impl.getLong(ejo, "duration") ?: -1
+                    val duration = Impl.getLong(ejo, "duration") ?: 1440
 
                     this.addEpisode(
                         title,
