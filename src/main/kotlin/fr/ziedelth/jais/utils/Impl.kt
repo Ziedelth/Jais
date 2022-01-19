@@ -7,7 +7,6 @@ package fr.ziedelth.jais.utils
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import org.mariadb.jdbc.internal.io.socket.UnixDomainSocket.socket
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.logging.Level

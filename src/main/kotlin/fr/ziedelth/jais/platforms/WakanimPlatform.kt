@@ -13,6 +13,7 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
@@ -84,7 +85,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     }?.toTypedArray() ?: emptyArray())
                 }
 
-                this.cElements[country]?.forEachIndexed { _, it ->
+                this.cElements[country]?.forEachIndexed { index, it ->
                     val text = it?.text()
                     val ts = text?.split(" ")
                     val releaseDate =
@@ -97,25 +98,22 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     val anime = ts?.subList(1, ts.indexOf("Séries"))?.joinToString(" ") ?: return@forEachIndexed
                     val number = ts[ts.size - 2].replace(" ", "").toLongOrNull()
 
+                    val etc = ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
+
                     var episodeType =
-                        if (EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data == ts[ts.size - 4])
+                        if (etc.contains("${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}", true))
                             EpisodeType.FILM
-                        else if (ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
-                                .contains("${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}", true)
-                        )
+                        else if (etc.contains("${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}", true))
                             EpisodeType.SPECIAL
                         else
                             EpisodeType.EPISODE
 
                     val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
-                    val checkUrl = "https://www.wakanim.tv${
-                        it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")
-                    }".toHTTPS()
+                    val checkUrl = "https://www.wakanim.tv${it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")}".toHTTPS()
                     val wakanimType = checkUrl.split("/")[6]
 
-                    val hash = Base64.getEncoder()
-                        .encodeToString("${anime.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
+                    val hash = Base64.getEncoder().encodeToString("$index${anime.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
                     if (hash.isBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
 
                     val episodeResult = JBrowser.get(checkUrl)
@@ -132,8 +130,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         }
                     }
 
-                    val cardNumber =
-                        cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
+                    val cardNumber = cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
 
                     if (number != null && cardNumber != null && number == cardNumber) {
                         val url = "https://www.wakanim.tv${
@@ -155,21 +152,17 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                             episodeType = EpisodeType.SPECIAL
                         }
                         // If contains film in title of season, it's a film
-                        else if (cardSeason.contains(
-                                "${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}",
-                                true
-                            )
-                        ) {
+                        else if (cardSeason.contains("${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}", true)) {
                             episodeType = EpisodeType.FILM
                         }
 
                         val cardDuration =
                             cardEpisodeElement.getElementsByClass("slider_item_duration").text().split(":")
-                        var duration = cardDuration.mapIndexed { index, t ->
+                        var duration = cardDuration.mapIndexed { i, t ->
                             (t.ifEmpty { "0" }.toLongOrNull()
-                                ?.times(60.0.pow(((cardDuration.size - index) - 1).toDouble())) ?: 0L).toLong()
+                                ?.times(60.0.pow(((cardDuration.size - i) - 1).toDouble())) ?: 0L).toLong()
                         }.sum()
-                        if (duration <= 0) duration = 1440
+                        if (duration <= 0) duration = -1
 
                         val wakanim = this.wakanim.firstOrNull { it.anime.equals(anime, true) } ?: return@forEachIndexed
                         val animeImage = wakanim.image

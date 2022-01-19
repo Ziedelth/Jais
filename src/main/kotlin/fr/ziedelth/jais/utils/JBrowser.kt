@@ -38,7 +38,9 @@ object JBrowser {
 
                 do {
                     s = stdInput.readLine()
-                    JLogger.config("[BROWSER] $s")
+
+                    if (s != null)
+                        JLogger.config("[BROWSER] $s")
                 } while (s != null)
 
                 stdInput.close()

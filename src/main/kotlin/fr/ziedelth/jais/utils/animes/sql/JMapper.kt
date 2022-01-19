@@ -8,10 +8,7 @@ import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.HashUtils
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
-import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.EpisodeType
-import fr.ziedelth.jais.utils.animes.Genre
-import fr.ziedelth.jais.utils.animes.LangType
+import fr.ziedelth.jais.utils.animes.*
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.*
@@ -382,7 +379,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM episodes", episodeHandler)
     }
 
-    fun getEpisode(connection: Connection?, id: Long): EpisodeData? {
+    fun getEpisode(connection: Connection?, id: Long?): EpisodeData? {
         val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", episodeHandler, id).firstOrNull()
@@ -497,7 +494,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM scans", scanHandler)
     }
 
-    fun getScan(connection: Connection?, id: Long): ScanData? {
+    fun getScan(connection: Connection?, id: Long?): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
@@ -563,7 +560,7 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM ops_ends", episodeHandler)
     }
 
-    fun insertEpisode(connection: Connection?, episode: Episode) {
+    fun insertEpisode(connection: Connection?, episode: Episode): EpisodeData? {
         val platformData = insertPlatform(connection, episode.platform.platformHandler)
         val countryData = insertCountry(connection, episode.country.countryHandler)
 
@@ -588,7 +585,7 @@ object JMapper {
             }
         }
 
-        insertEpisode(
+        return insertEpisode(
             connection,
             platformData?.id,
             animeData?.id,
@@ -602,6 +599,43 @@ object JMapper {
             episode.url,
             episode.image,
             episode.duration
+        )
+    }
+
+    fun insertScan(connection: Connection?, scan: Scan): ScanData? {
+        val platformData = insertPlatform(connection, scan.platform.platformHandler)
+        val countryData = insertCountry(connection, scan.country.countryHandler)
+
+        val animeData = insertAnime(
+            connection,
+            countryData?.id,
+            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+            scan.anime,
+            scan.animeImage,
+            scan.animeDescription
+        )
+
+        if (animeData?.genres?.isEmpty() == true) {
+            scan.animeGenres.forEach {
+                val genre = insertGenre(connection, it)
+                if (genre != null)
+                    insertAnimeGenre(
+                        connection,
+                        animeData.id,
+                        genre.id
+                    )
+            }
+        }
+
+        return insertScan(
+            connection,
+            platformData?.id,
+            animeData?.id,
+            insertEpisodeType(connection, scan.episodeType)?.id,
+            insertLangType(connection, scan.langType)?.id,
+            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
+            scan.number.toInt(),
+            scan.url
         )
     }
 }
