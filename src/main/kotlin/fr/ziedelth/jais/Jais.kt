@@ -26,6 +26,7 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.plugins.PluginManager
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileReader
 import java.nio.file.Files
@@ -79,14 +80,8 @@ class Jais {
             JLogger.info("Check if has Internet...")
             if (Impl.hasInternet()) {
                 val gson = Gson()
-                val episodesFile = FileImpl.getFile("episodes.json")
-
-                if (!episodesFile.exists()) {
-                    episodesFile.createNewFile()
-                    Files.write(episodesFile.toPath(), gson.toJson(JsonArray()).toByteArray())
-                }
-
-                val episodesSaved = (gson.fromJson(FileReader(episodesFile), Array<String>::class.java) ?: emptyArray()).toMutableList()
+                val (episodesFile, episodesSaved) = getEpisodeFile(gson)
+                val (scansFile, scansSaved) = getScanFile(gson)
                 val connection = JMapper.getConnection()
                 val startTime = System.currentTimeMillis()
 
@@ -146,8 +141,10 @@ class Jais {
                                     episodesSaved.add(episode.episodeId)
                                     Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
 
-                                    Impl.tryCatch {
-                                        PluginManager.plugins?.forEach { it.newEpisode(episode) }
+                                    PluginManager.plugins?.forEach {
+                                        Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
+                                            it.newEpisode(episode)
+                                        }
                                     }
                                 }
 
@@ -173,6 +170,17 @@ class Jais {
 
                         Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
                             scans.sortedBy { it.releaseDate }.forEach { scan ->
+                                if (!scansSaved.contains(scan.hashCode())) {
+                                    scansSaved.add(scan.hashCode())
+                                    Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
+
+                                    PluginManager.plugins?.forEach {
+                                        Impl.tryCatch("Can not send scan for ${it.wrapper.pluginId} plugin") {
+                                            it.newScan(scan)
+                                        }
+                                    }
+                                }
+
                                 if (connection != null && !connection.isClosed) {
                                     val scanData = JMapper.insertScan(connection, scan)
                                     val ifExists = JMapper.getScan(connection, scanData?.id) != null
@@ -206,6 +214,32 @@ class Jais {
                 JLogger.warning("No internet")
             }
         }
+    }
+
+    private fun getEpisodeFile(gson: Gson): Pair<File, MutableList<String>> {
+        val file = FileImpl.getFile("episodes.json")
+
+        if (!file.exists()) {
+            file.createNewFile()
+            Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
+        }
+
+        val episodesSaved =
+            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, episodesSaved)
+    }
+
+    private fun getScanFile(gson: Gson): Pair<File, MutableList<Int>> {
+        val file = FileImpl.getFile("scans.json")
+
+        if (!file.exists()) {
+            file.createNewFile()
+            Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
+        }
+
+        val episodesSaved =
+            (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, episodesSaved)
     }
 
     private fun sendMessage(title: String, description: String, image: String? = null) {
