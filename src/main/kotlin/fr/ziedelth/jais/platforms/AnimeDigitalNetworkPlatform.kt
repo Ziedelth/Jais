@@ -42,11 +42,14 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                val inputStream = URL(
+                val urlConnection = URL(
                     "https://gw.api.animedigitalnetwork.${country.checkOnEpisodesURL(this)}/video/calendar?date=${
                         getDate(calendar)
                     }"
-                ).openStream()
+                ).openConnection()
+                urlConnection.connectTimeout = 10000
+                urlConnection.readTimeout = 10000
+                val inputStream = urlConnection.getInputStream()
                 val jsonObject: JsonObject? = gson.fromJson(InputStreamReader(inputStream), JsonObject::class.java)
                 inputStream.close()
 
