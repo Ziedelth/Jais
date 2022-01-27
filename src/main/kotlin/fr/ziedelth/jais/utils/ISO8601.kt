@@ -9,6 +9,12 @@ import java.time.ZonedDateTime
 import java.util.*
 
 object ISO8601 {
+    /*
+    private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+    private val sdf2 = SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH)
+    private val sdf3 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    private val sdf4 = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
+     */
     private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
     private val sdf2 = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
     private val sdf3 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -50,6 +56,7 @@ object ISO8601 {
         calendar.time = date
         return calendar
     }
+
 
     fun isSameDayUsingInstant(calendar1: Calendar?, calendar2: Calendar?): Boolean {
         return calendar1?.get(Calendar.DAY_OF_YEAR) == calendar2?.get(Calendar.DAY_OF_YEAR)
