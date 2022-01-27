@@ -18,7 +18,7 @@ jobs:
         run: mvn -B test
 
       - name: Build with Maven
-        run: mvn -B package test
+        run: mvn -B package
 
       - name: Upload Actifact
         uses: actions/upload-artifact@v2
