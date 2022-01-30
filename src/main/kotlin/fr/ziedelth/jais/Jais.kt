@@ -13,6 +13,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.*
 import fr.ziedelth.jais.utils.*
@@ -30,6 +31,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileReader
 import java.nio.file.Files
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -68,11 +70,41 @@ class Jais {
             if (checkDay != day) {
                 JLogger.info("Resetting checked episodes...")
                 day = checkDay
-                this.platforms.forEach { it.platform.checkedEpisodes.clear(); it.platform.checkedData.clear() }
+
+                this.saveAnalytics()
+
+                this.platforms.forEach {
+                    it.platform.checkedEpisodes.clear()
+                    it.platform.checkedData.clear()
+                }
             }
 
             this.checkEpisodesAndScans()
         }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
+    }
+
+    private fun saveAnalytics() {
+        val gson = Gson()
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -1)
+        val file = FileImpl.getFile("analytics.json")
+
+        if (!file.exists()) {
+            file.createNewFile()
+            Files.write(file.toPath(), gson.toJson(JsonObject()).toByteArray())
+        }
+
+        val arraySaved = gson.fromJson(FileReader(file), JsonObject::class.java) ?: JsonObject()
+        val currentDay = JsonObject()
+
+        PluginManager.plugins?.forEach {
+            val pluginId = it.wrapper.pluginId
+            val followers = it.getFollowers()
+            currentDay.addProperty(pluginId, followers)
+        }
+
+        arraySaved.add(SimpleDateFormat("dd/MM/yyyy").format(calendar.time), currentDay)
+        Files.write(file.toPath(), gson.toJson(arraySaved).toByteArray())
     }
 
     private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {
