@@ -13,5 +13,5 @@ abstract class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
     abstract fun newEpisode(episode: Episode)
     abstract fun newScan(scan: Scan)
 
-    fun getFollowers(): Int = -1
+    abstract fun getFollowers(): Int
 }
