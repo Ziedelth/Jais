@@ -25,6 +25,7 @@ const fs = require('fs');
         slowMo: 0,
         args: [
             '--window-size=1400,900',
+            '--use-gl=egl',
             '--disable-gpu', "--disable-features=IsolateOrigins,site-per-process", '--blink-settings=imagesEnabled=true'
         ],
         defaultViewport: {

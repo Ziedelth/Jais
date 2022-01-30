@@ -7,7 +7,8 @@ package fr.ziedelth.jais.utils
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import java.net.URL
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.logging.Level
 
 
@@ -50,11 +51,17 @@ object Impl {
     }
 
     fun hasInternet(): Boolean {
+        var socket: Socket? = null
+
         return try {
-            URL("https://www.google.com").openConnection().connect()
+            socket = Socket()
+            val socketAddress = InetSocketAddress("google.com", 80)
+            socket.connect(socketAddress, 10000)
             true
         } catch (exception: Exception) {
             false
+        } finally {
+            socket?.close()
         }
     }
 }

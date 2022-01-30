@@ -7,7 +7,9 @@ package fr.ziedelth.jais.utils
 import com.google.common.io.Files
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -25,8 +27,27 @@ object JBrowser {
 
         val folderResults = File(folder, "results")
         if (!folderResults.exists()) folderResults.mkdirs()
-        val code =
-            Runtime.getRuntime().exec("node index.js $url $randomCode", null, folder).waitFor(2L, TimeUnit.MINUTES)
+
+        val process = Runtime.getRuntime().exec("node index.js $url $randomCode", null, folder)
+
+        JThread.start({
+            val stdInput = BufferedReader(InputStreamReader(process.inputStream))
+
+            Impl.tryCatch {
+                var s: String?
+
+                do {
+                    s = stdInput.readLine()
+
+                    if (s != null)
+                        JLogger.config("[BROWSER] $s")
+                } while (s != null)
+
+                stdInput.close()
+            }
+        })
+
+        val code = process.waitFor(1L, TimeUnit.MINUTES)
 
         return if (code) {
             JLogger.config("Saving... ($url)")

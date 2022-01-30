@@ -47,18 +47,22 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                val inputStream = URL("https://scantrad.net/rss/").openStream()
+                val urlConnection = URL("https://scantrad.net/rss/").openConnection()
+                urlConnection.connectTimeout = 10000
+                urlConnection.readTimeout = 10000
+                val inputStream = urlConnection.getInputStream()
                 val jsonObject: JsonObject? = gson.fromJson(
                     objectMapper.writeValueAsString(xmlMapper.readTree(InputStreamReader(inputStream))),
                     JsonObject::class.java
                 )
+                inputStream.close()
 
                 Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }
                     ?.forEachIndexed { _, scanObject ->
                         val titleNS = Impl.getString(scanObject, "title") ?: return@forEachIndexed
                         if (this.checkedEpisodes.contains(titleNS)) return@forEachIndexed
                         val releaseDate =
-                            ISO8601.fromUTCDate(ISO8601.fromCalendar4(Impl.getString(scanObject, "pubDate")))
+                            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(scanObject, "pubDate")))
                                 ?: return@forEachIndexed
                         if (!ISO8601.isSameDayUsingInstant(
                                 calendar,

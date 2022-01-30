@@ -76,7 +76,7 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                             ?: return@tryCatch
                         val duration =
                             latestEpisode.getElementsByClass("episode-runtime").text().split(" min")[0].toLongOrNull()
-                                ?.times(60) ?: 1440
+                                ?.times(60) ?: -1
 
                         this.addCheckEpisodes(id.toString())
                         list.add(

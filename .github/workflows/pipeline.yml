@@ -1,6 +1,9 @@
 name: Build & Deploy
 
-on: [ push ]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build-java:
@@ -14,8 +17,11 @@ jobs:
         with:
           java-version: 11
 
+      - name: Test with Maven
+        run: mvn -B test
+
       - name: Build with Maven
-        run: mvn -B clean package test
+        run: mvn -B package
 
       - name: Upload Actifact
         uses: actions/upload-artifact@v2
