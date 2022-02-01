@@ -57,8 +57,13 @@ class Jais {
         this.addPlatform(WakanimPlatform::class.java)
 
         JLogger.info("Setup FCM...")
-        val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(FileImpl.getFile("firebase_key.json")))).setProjectId("866259759032").build()
-        FirebaseApp.initializeApp(options)
+
+        if (FileImpl.fileExists("firebase_key.json")) {
+            val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(FileImpl.getFile("firebase_key.json")))).setProjectId("866259759032").build()
+            FirebaseApp.initializeApp(options)
+        } else {
+            JLogger.warning("FCM File not found, ignoring...")
+        }
 
         JLogger.info("Setup all plugins...")
         PluginManager.loadAll()
@@ -115,9 +120,10 @@ class Jais {
                 val (episodesFile, episodesSaved) = getEpisodeFile(gson)
                 val (scansFile, scansSaved) = getScanFile(gson)
                 val connection = JMapper.getConnection()
+                val isConnected = connection != null && !connection.isClosed
                 val startTime = System.currentTimeMillis()
 
-                if (connection != null && !connection.isClosed) {
+                if (isConnected) {
                     if (this.looseEpisodes.isNotEmpty()) {
                         val list = mutableListOf<Episode>()
                         JLogger.info("Retry insertion of loose episode...")
@@ -180,7 +186,7 @@ class Jais {
                                     }
                                 }
 
-                                if (connection != null && !connection.isClosed) {
+                                if (isConnected) {
                                     val episodeData = JMapper.insertEpisode(connection, episode)
                                     val ifExists = JMapper.getEpisode(connection, episodeData?.id) != null
 
@@ -213,7 +219,7 @@ class Jais {
                                     }
                                 }
 
-                                if (connection != null && !connection.isClosed) {
+                                if (isConnected) {
                                     val scanData = JMapper.insertScan(connection, scan)
                                     val ifExists = JMapper.getScan(connection, scanData?.id) != null
 

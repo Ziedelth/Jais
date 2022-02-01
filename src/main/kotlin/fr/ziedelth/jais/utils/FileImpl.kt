@@ -9,10 +9,12 @@ import java.awt.image.BufferedImage
 import java.io.File
 
 object FileImpl {
+    private val currentFolder = File(Jais::class.java.protectionDomain.codeSource.location.path).parent
     private fun exists(file: File): Boolean = file.exists() && if (file.isFile) file.readBytes().isNotEmpty() else true
     private fun notExists(file: File): Boolean = !this.exists(file)
 
-    fun getFile(name: String) = File(File(Jais::class.java.protectionDomain.codeSource.location.path).parent, name)
+    fun fileExists(name: String) = File(this.currentFolder, name).exists()
+    fun getFile(name: String) = File(this.currentFolder, name)
 
     private fun createDirectory(file: File) {
         if (this.notExists(file) && !file.mkdirs()) JLogger.warning("Failed to create ${file.name} folder, already exists")
