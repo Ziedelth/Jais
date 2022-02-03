@@ -76,7 +76,7 @@ jobs:
 
       - name: SSH Commands
         run: |
-          ssh -C pi@${{ secrets.SSH_HOST }} "sh ~/Jais/stop.sh && rm -rf ~/Jais/Jaïs-jar-with-dependencies.jar && rm -rf ~/Jais/browser/index.js && rm -rf ~/Jais/browser/package.json"
-          scp Jaïs/* pi@${{ secrets.SSH_HOST }}:~/Jais
-          scp Browser/* pi@${{ secrets.SSH_HOST }}:~/Jais/browser
-          ssh -C pi@${{ secrets.SSH_HOST }} "sh ~/Jais/start.sh"
+          ssh -C ${{ secrets.SSH_DESTINATION }} "sh ${{ secrets.SSH_FOLDER }}/stop.sh && rm -rf ${{ secrets.SSH_FOLDER }}/Jaïs-jar-with-dependencies.jar && rm -rf ${{ secrets.SSH_FOLDER }}/browser/index.js && rm -rf ${{ secrets.SSH_FOLDER }}/browser/package.json"
+          scp Jaïs/* ${{ secrets.SSH_DESTINATION }}:${{ secrets.SSH_FOLDER }}/
+          scp Browser/* ${{ secrets.SSH_DESTINATION }}:${{ secrets.SSH_FOLDER }}/browser
+          ssh -C ${{ secrets.SSH_DESTINATION }} "${{ secrets.SSH_FOLDER }}/start.sh"
