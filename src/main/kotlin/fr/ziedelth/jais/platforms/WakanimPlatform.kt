@@ -55,11 +55,10 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000) {
+                if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000 || (!this.cElements.containsKey(country) || this.cElements[country] == null)) {
                     this.lastCheck[country] = System.currentTimeMillis()
 
-                    val url =
-                        "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
+                    val url = "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
                     val result = JBrowser.get(url)
                     this.cElements[country] = result?.getElementsByClass("Calendar-ep")
 
