@@ -321,7 +321,7 @@ object JMapper {
 
                 val fileName = "$uuid.jpg"
                 val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
-                val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/animes"), fileName)
+                val webFile = File(FileImpl.directories(false, "/var/www/html/images/animes"), fileName)
                 ImageIO.write(bufferedImage, "jpg", localFile)
                 ImageIO.write(bufferedImage, "jpg", webFile)
 
@@ -443,7 +443,7 @@ object JMapper {
 
                     val fileName = "$uuid.jpg"
                     val localFile = File(FileImpl.directories(true, "images", "episodes"), fileName)
-                    val webFile = File(FileImpl.directories(false, "/var/www/ziedelth.fr/images/episodes"), fileName)
+                    val webFile = File(FileImpl.directories(false, "/var/www/html/images/episodes"), fileName)
                     ImageIO.write(bufferedImage, "jpg", localFile)
                     ImageIO.write(bufferedImage, "jpg", webFile)
 
