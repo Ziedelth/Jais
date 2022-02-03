@@ -48,14 +48,15 @@ object JBrowser {
         })
 
         val code = process.waitFor(1L, TimeUnit.MINUTES)
+        val file = File(folder, "result-$randomCode.html")
 
-        return if (code) {
+        return if (code && file.exists()) {
             JLogger.config("Saving... ($url)")
-            val file = File(folder, "result-$randomCode.html")
             val document = Jsoup.parse(file, "UTF-8", url)
             Files.copy(file, File(folderResults, "result-$randomCode.html"))
             file.delete()
             JLogger.config("Saved! ($url)")
+
             document
         } else {
             JLogger.warning("Failed to open $url...")
