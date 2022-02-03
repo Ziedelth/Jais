@@ -28,7 +28,7 @@ object JBrowser {
         val folderResults = File(folder, "results")
         if (!folderResults.exists()) folderResults.mkdirs()
 
-        val process = Runtime.getRuntime().exec("node index.js $url $randomCode", null, folder)
+        val process = Runtime.getRuntime().exec("node index.js \"$url\" \"$randomCode\"", null, folder)
 
         JThread.start({
             val stdInput = BufferedReader(InputStreamReader(process.inputStream))
