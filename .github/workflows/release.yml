@@ -74,6 +74,10 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Test SSH
+        run: |
+          ssh -C ${{ secrets.SSH_DESTINATION }} "echo 'Hello World' >> ~/github-actions.txt"
+
       - name: SSH Commands
         run: |
           ssh -C ${{ secrets.SSH_DESTINATION }} "sh ${{ secrets.SSH_FOLDER }}/stop.sh && rm -rf ${{ secrets.SSH_FOLDER }}/Jaïs-jar-with-dependencies.jar && rm -rf ${{ secrets.SSH_FOLDER }}/browser/index.js && rm -rf ${{ secrets.SSH_FOLDER }}/browser/package.json"
