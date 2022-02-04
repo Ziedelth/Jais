@@ -76,7 +76,7 @@ jobs:
 
       - name: Test SSH
         run: |
-          ssh -C ${{ secrets.SSH_DESTINATION }} "echo 'Hello World' >> ~/github-actions.txt"
+          ssh -C ${{ secrets.SSH_DESTINATION }} "echo Editing Jais at date: `date` >> ~/github-actions.txt"
 
       - name: SSH Commands
         run: |
