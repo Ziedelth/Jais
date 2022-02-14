@@ -13,7 +13,6 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
@@ -55,10 +54,13 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                if (System.currentTimeMillis() - (this.lastCheck[country] ?: 0) >= 3600000 || (!this.cElements.containsKey(country) || this.cElements[country] == null)) {
+                if (System.currentTimeMillis() - (this.lastCheck[country]
+                        ?: 0) >= 3600000 || (!this.cElements.containsKey(country) || this.cElements[country] == null)
+                ) {
                     this.lastCheck[country] = System.currentTimeMillis()
 
-                    val url = "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
+                    val url =
+                        "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
                     val result = JBrowser.get(url)
                     this.cElements[country] = result?.getElementsByClass("Calendar-ep")
 
@@ -102,17 +104,24 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     var episodeType =
                         if (etc.contains("${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}", true))
                             EpisodeType.FILM
-                        else if (etc.contains("${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}", true))
+                        else if (etc.contains(
+                                "${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}",
+                                true
+                            )
+                        )
                             EpisodeType.SPECIAL
                         else
                             EpisodeType.EPISODE
 
                     val langType = LangType.getLangType(ts[ts.size - 1].replace(" ", ""))
                     if (langType == LangType.UNKNOWN) return@forEachIndexed
-                    val checkUrl = "https://www.wakanim.tv${it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")}".toHTTPS()
+                    val checkUrl = "https://www.wakanim.tv${
+                        it.getElementsByClass("Calendar-linkImg").firstOrNull()?.attr("href")
+                    }".toHTTPS()
                     val wakanimType = checkUrl.split("/")[6]
 
-                    val hash = Base64.getEncoder().encodeToString("$index${anime.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
+                    val hash = Base64.getEncoder()
+                        .encodeToString("$index${anime.onlyLettersAndDigits()}$number$langType".encodeToByteArray())
                     if (hash.isBlank() || this.checkedEpisodes.contains(hash)) return@forEachIndexed
 
                     val episodeResult = JBrowser.get(checkUrl)
@@ -129,7 +138,8 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         }
                     }
 
-                    val cardNumber = cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
+                    val cardNumber =
+                        cardEpisodeElement?.getElementsByClass("slider_item_number")?.text()?.toLongOrNull()
 
                     if (number != null && cardNumber != null && number == cardNumber) {
                         val url = "https://www.wakanim.tv${
@@ -151,7 +161,11 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                             episodeType = EpisodeType.SPECIAL
                         }
                         // If contains film in title of season, it's a film
-                        else if (cardSeason.contains("${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}", true)) {
+                        else if (cardSeason.contains(
+                                "${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}",
+                                true
+                            )
+                        ) {
                             episodeType = EpisodeType.FILM
                         }
 

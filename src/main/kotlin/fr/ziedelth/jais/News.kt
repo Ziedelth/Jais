@@ -9,13 +9,11 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
-import com.google.gson.internal.bind.util.ISO8601Utils
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL
-import java.text.ParsePosition
 import java.util.*
 
 fun main(args: Array<String>) {
@@ -52,7 +50,8 @@ private fun adn(
         if (!category.equals("Anime", true)) return@forEach
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
-        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
+        val releaseDate =
+            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
 
         if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEach
 

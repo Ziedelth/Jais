@@ -28,7 +28,10 @@ object Notifications {
             return
         }
 
-        FirebaseApp.initializeApp(FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(file))).setProjectId("866259759032").build())
+        FirebaseApp.initializeApp(
+            FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(file)))
+                .setProjectId("866259759032").build()
+        )
     }
 
     fun clear() {

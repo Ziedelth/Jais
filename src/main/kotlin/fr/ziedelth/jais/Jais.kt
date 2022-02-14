@@ -4,13 +4,6 @@
 
 package fr.ziedelth.jais
 
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.messaging.AndroidConfig
-import com.google.firebase.messaging.AndroidNotification
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.Message
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -28,7 +21,6 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.plugins.PluginManager
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileReader
 import java.nio.file.Files
 import java.text.SimpleDateFormat
@@ -171,6 +163,8 @@ class Jais {
                                 if (!episodesSaved.contains(episode.episodeId)) {
                                     episodesSaved.add(episode.episodeId)
                                     Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
+
+                                    Notifications.notifyEpisode(episode)
 
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
