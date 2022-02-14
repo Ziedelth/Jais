@@ -12,6 +12,7 @@ import com.google.firebase.messaging.AndroidNotification
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import fr.ziedelth.jais.utils.animes.Episode
+import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
@@ -38,20 +39,20 @@ object Notifications {
         this.map.clear()
     }
 
-    fun notifyEpisode(episode: Episode) {
-        val list = this.map.getOrDefault(episode.country.country, mutableListOf())
-        val code = HashUtils.sha512(episode.anime.lowercase().onlyLettersAndDigits())
+    fun notify(country: Country, anime: String) {
+        val list = this.map.getOrDefault(country, mutableListOf())
+        val code = HashUtils.sha512(anime.lowercase().onlyLettersAndDigits())
 
         if (list.contains(code))
             return
 
         list.add(code)
-        this.map[episode.country.country] = list
+        this.map[country] = list
 
         FirebaseMessaging.getInstance().send(
             Message.builder().setAndroidConfig(
                 AndroidConfig.builder().setNotification(
-                    AndroidNotification.builder().setTitle("Nouvelles sorties").setBody(episode.anime).build()
+                    AndroidNotification.builder().setTitle("Nouvelles sorties").setBody(anime).build()
                 ).build()
             ).setTopic("animes").build()
         )

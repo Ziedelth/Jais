@@ -164,7 +164,7 @@ class Jais {
                                     episodesSaved.add(episode.episodeId)
                                     Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
 
-                                    Notifications.notifyEpisode(episode)
+                                    Notifications.notify(episode.country.country, episode.anime)
 
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
@@ -198,6 +198,8 @@ class Jais {
                                 if (!scansSaved.contains(scan.hashCode())) {
                                     scansSaved.add(scan.hashCode())
                                     Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
+
+                                    Notifications.notify(scan.country.country, scan.anime)
 
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send scan for ${it.wrapper.pluginId} plugin") {
