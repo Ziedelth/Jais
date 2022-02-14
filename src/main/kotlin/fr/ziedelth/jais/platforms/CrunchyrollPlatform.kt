@@ -48,7 +48,8 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                val urlConnection = URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openConnection()
+                val urlConnection =
+                    URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openConnection()
                 urlConnection.connectTimeout = 10000
                 urlConnection.readTimeout = 10000
                 val inputStream = urlConnection.getInputStream()

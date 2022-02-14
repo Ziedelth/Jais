@@ -4,13 +4,6 @@
 
 package fr.ziedelth.jais
 
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.messaging.AndroidConfig
-import com.google.firebase.messaging.AndroidNotification
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.Message
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -28,7 +21,6 @@ import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.plugins.PluginManager
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileReader
 import java.nio.file.Files
 import java.text.SimpleDateFormat
@@ -45,6 +37,7 @@ class Jais {
 
     fun init() {
         JLogger.info("Init...")
+        Notifications.init()
 
         JLogger.info("Adding countries...")
         this.addCountry(FranceCountry::class.java)
@@ -55,15 +48,6 @@ class Jais {
 //        this.addPlatform(NetflixPlatform::class.java)
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
-
-        JLogger.info("Setup FCM...")
-
-        if (FileImpl.fileExists("firebase_key.json")) {
-            val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(FileImpl.getFile("firebase_key.json")))).setProjectId("866259759032").build()
-            FirebaseApp.initializeApp(options)
-        } else {
-            JLogger.warning("FCM File not found, ignoring...")
-        }
 
         JLogger.info("Setup all plugins...")
         PluginManager.loadAll()
@@ -76,6 +60,7 @@ class Jais {
                 JLogger.info("Resetting checked episodes...")
                 day = checkDay
 
+                Notifications.clear()
                 this.saveAnalytics()
 
                 this.platforms.forEach {
@@ -179,6 +164,8 @@ class Jais {
                                     episodesSaved.add(episode.episodeId)
                                     Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
 
+                                    Notifications.notifyEpisode(episode)
+
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
                                             it.newEpisode(episode)
@@ -241,13 +228,6 @@ class Jais {
                 JLogger.info("All platforms has been checked in ${endTime - startTime}ms!")
 
                 connection?.close()
-
-                // TODO: New notification system
-//                if (animes.isNotEmpty()) {
-//                    val animeRelease = animes.values.joinToString(", ") { it }
-//                    this.sendMessage("Nouvelle(s) sortie(s)", animeRelease)
-//                    JLogger.info("New release: $animeRelease")
-//                }
             } else {
                 JLogger.warning("No internet")
             }
@@ -278,16 +258,6 @@ class Jais {
         val episodesSaved =
             (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
         return Pair(file, episodesSaved)
-    }
-
-    private fun sendMessage(title: String, description: String, image: String? = null) {
-        FirebaseMessaging.getInstance().send(
-            Message.builder().setAndroidConfig(
-                AndroidConfig.builder().setNotification(
-                    AndroidNotification.builder().setTitle(title).setBody(description).setImage(image).build()
-                ).build()
-            ).setTopic("animes").build()
-        )
     }
 
     fun addCountry(country: Class<out Country>): Boolean {
