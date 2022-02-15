@@ -51,7 +51,7 @@ private fun adn(
 
     Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.forEach {
         val category = Impl.getString(it.asJsonObject, "category")
-        if (!category.equals("Anime", true)) return@forEach
+        if (!(category.equals("Anime", true) || category.equals("Manga", true))) return@forEach
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
         val url = Impl.getString(it.asJsonObject, "link")

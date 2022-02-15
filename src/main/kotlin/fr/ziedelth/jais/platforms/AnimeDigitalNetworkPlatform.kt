@@ -130,7 +130,7 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
 
                 Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }?.forEachIndexed { _, njo ->
                     val category = Impl.getString(njo, "category")
-                    if (!category.equals("Anime", true) || !category.equals("Manga", true)) return@forEachIndexed
+                    if (!(category.equals("Anime", true) || category.equals("Manga", true))) return@forEachIndexed
                     val title = Impl.getString(njo, "title") ?: return@forEachIndexed
                     val description = Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
                     val url = Impl.getString(njo, "link") ?: return@forEachIndexed
