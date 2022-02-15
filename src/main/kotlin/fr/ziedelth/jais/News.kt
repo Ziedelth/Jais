@@ -27,7 +27,8 @@ fun main(args: Array<String>) {
     val xmlMapper = XmlMapper()
     val objectMapper = ObjectMapper()
 
-    val v = "Nouveau visuel spécial ! Pour célébrer la journée de l'amour, l'anime The Quintessential Quintuplets, a publié un visuel des cinq sœurs Nakano vous souhaitant une \"joyeuse Saint-Valentin\"."
+    val v =
+        "Nouveau visuel spécial ! Pour célébrer la journée de l'amour, l'anime The Quintessential Quintuplets, a publié un visuel des cinq sœurs Nakano vous souhaitant une \"joyeuse Saint-Valentin\"."
     println(v.substring(0 until min(v.length, 100)))
 
     println("-- Anime Digital Network")
@@ -55,7 +56,8 @@ private fun adn(
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
         val url = Impl.getString(it.asJsonObject, "link")
-        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
+        val releaseDate =
+            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
 
         if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEach
 
@@ -84,7 +86,8 @@ private fun crunchyroll(
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
         val url = Impl.getString(it.asJsonObject, "guid")
-        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
+        val releaseDate =
+            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
 
         if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEach
 

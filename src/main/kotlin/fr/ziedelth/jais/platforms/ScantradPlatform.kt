@@ -96,7 +96,7 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
                         val animeGenres = scantrad.genres ?: emptyArray()
                         val animeDescription = scantrad.description
 
-                        this.addCheckEpisodes(titleNS)
+                        this.addCheck(titleNS)
                         list.add(
                             Scan(
                                 platformImpl,

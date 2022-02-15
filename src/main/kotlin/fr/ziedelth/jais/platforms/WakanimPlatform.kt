@@ -182,7 +182,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         val animeGenres = wakanim.genres ?: emptyArray()
                         val animeDescription = wakanim.smallSummary
 
-                        this.addCheckEpisodes(hash)
+                        this.addCheck(hash)
                         list.add(
                             Episode(
                                 platformImpl,
