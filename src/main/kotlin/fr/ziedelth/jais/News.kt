@@ -15,6 +15,7 @@ import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
+import kotlin.math.min
 
 fun main(args: Array<String>) {
     // https://www.crunchyroll.com/newsrss?lang=frFR
@@ -25,6 +26,9 @@ fun main(args: Array<String>) {
     val gson = GsonBuilder().setPrettyPrinting().create()
     val xmlMapper = XmlMapper()
     val objectMapper = ObjectMapper()
+
+    val v = "Nouveau visuel spécial ! Pour célébrer la journée de l'amour, l'anime The Quintessential Quintuplets, a publié un visuel des cinq sœurs Nakano vous souhaitant une \"joyeuse Saint-Valentin\"."
+    println(v.substring(0 until min(v.length, 100)))
 
     println("-- Anime Digital Network")
     adn(gson, objectMapper, xmlMapper, calendar)
@@ -50,13 +54,14 @@ private fun adn(
         if (!category.equals("Anime", true)) return@forEach
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
-        val releaseDate =
-            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
+        val url = Impl.getString(it.asJsonObject, "link")
+        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
 
         if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEach
 
         println(title)
         println(description)
+        println(url)
         println(ISO8601.fromUTCDate(releaseDate))
         println()
     }
@@ -78,13 +83,14 @@ private fun crunchyroll(
     Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.forEach {
         val title = Impl.getString(it.asJsonObject, "title")
         val description = Jsoup.parse(Impl.getString(it.asJsonObject, "description") ?: "").text()
-        val releaseDate =
-            ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
+        val url = Impl.getString(it.asJsonObject, "guid")
+        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(it.asJsonObject, "pubDate"))) ?: return@forEach
 
         if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEach
 
         println(title)
         println(description)
+        println(url)
         println(ISO8601.fromUTCDate(releaseDate))
         println()
     }

@@ -76,4 +76,5 @@ abstract class Platform(val jais: Jais) {
     fun getAllowedCountries(): Array<Country> = this.jais.getAllowedCountries(this)
     open fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode> = emptyArray()
     open fun checkScans(calendar: Calendar = Calendar.getInstance()): Array<Scan> = emptyArray()
+    open fun checkNews(calendar: Calendar = Calendar.getInstance()): Array<News> = emptyArray()
 }

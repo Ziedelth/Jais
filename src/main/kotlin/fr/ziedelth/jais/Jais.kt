@@ -104,6 +104,7 @@ class Jais {
                 val gson = Gson()
                 val (episodesFile, episodesSaved) = getEpisodeFile(gson)
                 val (scansFile, scansSaved) = getScanFile(gson)
+                val (newsFile, newsSaved) = getNewsFile(gson)
                 val connection = JMapper.getConnection()
                 val isConnected = connection != null && !connection.isClosed
                 val startTime = System.currentTimeMillis()
@@ -153,7 +154,9 @@ class Jais {
                     val episodes = platformImpl.platform.checkEpisodes(calendar)
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
                     val scans = platformImpl.platform.checkScans(calendar)
-                    JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size}")
+                    JLogger.info("[${platformImpl.platformHandler.name}] Fetching news...")
+                    val news = platformImpl.platform.checkNews(calendar)
+                    JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
 
                     if (episodes.isNotEmpty()) {
                         JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
@@ -224,6 +227,27 @@ class Jais {
 
                         JLogger.info("[${platformImpl.platformHandler.name}] All scans has been inserted!")
                     }
+
+                    if (news.isNotEmpty()) {
+                        JLogger.info("[${platformImpl.platformHandler.name}] Insert all news...")
+
+                        Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert news!") {
+                            news.sortedBy { it.releaseDate }.forEach { news ->
+                                if (!newsSaved.contains(news.hashCode())) {
+                                    newsSaved.add(news.hashCode())
+                                    Files.write(newsFile.toPath(), gson.toJson(newsSaved).toByteArray())
+
+                                    PluginManager.plugins?.forEach {
+                                        Impl.tryCatch("Can not send news for ${it.wrapper.pluginId} plugin") {
+                                            it.newNews(news)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        JLogger.info("[${platformImpl.platformHandler.name}] All news has been inserted!")
+                    }
                 }
 
                 Notifications.send()
@@ -258,9 +282,22 @@ class Jais {
             Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
         }
 
-        val episodesSaved =
+        val scansSaved =
             (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, episodesSaved)
+        return Pair(file, scansSaved)
+    }
+
+    private fun getNewsFile(gson: Gson): Pair<File, MutableList<Int>> {
+        val file = FileImpl.getFile("news.json")
+
+        if (!file.exists()) {
+            file.createNewFile()
+            Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
+        }
+
+        val newsSaved =
+            (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, newsSaved)
     }
 
     fun addCountry(country: Class<out Country>): Boolean {
