@@ -164,7 +164,7 @@ class Jais {
                                     episodesSaved.add(episode.episodeId)
                                     Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
 
-                                    Notifications.notify(episode.country.country, episode.anime)
+                                    Notifications.add(episode.anime)
 
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
@@ -199,7 +199,7 @@ class Jais {
                                     scansSaved.add(scan.hashCode())
                                     Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
 
-                                    Notifications.notify(scan.country.country, scan.anime)
+                                    Notifications.add(scan.anime)
 
                                     PluginManager.plugins?.forEach {
                                         Impl.tryCatch("Can not send scan for ${it.wrapper.pluginId} plugin") {
@@ -226,6 +226,7 @@ class Jais {
                     }
                 }
 
+                Notifications.send()
                 val endTime = System.currentTimeMillis()
                 JLogger.info("All platforms has been checked in ${endTime - startTime}ms!")
 
