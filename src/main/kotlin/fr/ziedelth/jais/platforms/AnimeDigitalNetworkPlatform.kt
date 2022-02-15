@@ -132,12 +132,14 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
                     val category = Impl.getString(njo, "category")
                     if (!(category.equals("Anime", true) || category.equals("Manga", true))) return@forEachIndexed
                     val title = Impl.getString(njo, "title") ?: return@forEachIndexed
+                    if (this.checkedEpisodes.contains(title)) return@forEachIndexed
                     val description = Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
                     val url = Impl.getString(njo, "link") ?: return@forEachIndexed
                     val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(njo, "pubDate"))) ?: return@forEachIndexed
 
                     if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEachIndexed
 
+                    this.addCheck(title)
                     list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
                 }
             }

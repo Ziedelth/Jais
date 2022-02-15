@@ -78,7 +78,7 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                             latestEpisode.getElementsByClass("episode-runtime").text().split(" min")[0].toLongOrNull()
                                 ?.times(60) ?: -1
 
-                        this.addCheckEpisodes(id.toString())
+                        this.addCheck(id.toString())
                         list.add(
                             Episode(
                                 platformImpl,

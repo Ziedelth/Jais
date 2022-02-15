@@ -14,7 +14,7 @@ abstract class Platform(val jais: Jais) {
     val checkedEpisodes = mutableListOf<String?>()
     val checkedData = mutableMapOf<String?, MutableList<String>>()
 
-    fun addCheckEpisodes(id: String?) {
+    fun addCheck(id: String?) {
         if (!this.checkedEpisodes.contains(id) && !id.isNullOrBlank() && id != "null") this.checkedEpisodes.add(id)
     }
 
@@ -48,7 +48,7 @@ abstract class Platform(val jais: Jais) {
                 .contains(data)
         ) return
 
-        this.addCheckEpisodes(episodeId)
+        this.addCheck(episodeId)
         this.addCheckData(episodeId, data)
         list.add(
             Episode(

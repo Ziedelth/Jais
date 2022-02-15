@@ -163,12 +163,14 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
 
                 Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }?.forEachIndexed { _, njo ->
                     val title = Impl.getString(njo, "title") ?: return@forEachIndexed
+                    if (this.checkedEpisodes.contains(title)) return@forEachIndexed
                     val description = Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
                     val url = Impl.getString(njo, "guid") ?: return@forEachIndexed
                     val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(njo, "pubDate"))) ?: return@forEachIndexed
 
                     if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEachIndexed
 
+                    this.addCheck(title)
                     list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
                 }
             }
