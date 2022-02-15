@@ -15,6 +15,7 @@ import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
+import kotlin.math.min
 
 fun main(args: Array<String>) {
     // https://www.crunchyroll.com/newsrss?lang=frFR
@@ -25,6 +26,9 @@ fun main(args: Array<String>) {
     val gson = GsonBuilder().setPrettyPrinting().create()
     val xmlMapper = XmlMapper()
     val objectMapper = ObjectMapper()
+
+    val v = "Nouveau visuel spécial ! Pour célébrer la journée de l'amour, l'anime The Quintessential Quintuplets, a publié un visuel des cinq sœurs Nakano vous souhaitant une \"joyeuse Saint-Valentin\"."
+    println(v.substring(0 until min(v.length, 100)))
 
     println("-- Anime Digital Network")
     adn(gson, objectMapper, xmlMapper, calendar)
