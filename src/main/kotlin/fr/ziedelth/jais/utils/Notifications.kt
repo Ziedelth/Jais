@@ -18,8 +18,8 @@ import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
 
 object Notifications {
-    private val map: MutableList<String> = mutableListOf()
-    private var notify: MutableList<String> = mutableListOf()
+    private val map: MutableMap<String, String> = mutableMapOf()
+    private var notify: MutableMap<String, String> = mutableMapOf()
 
     fun init() {
         JLogger.info("Setup notifications...")
@@ -47,17 +47,20 @@ object Notifications {
         if (this.map.contains(code))
             return
 
-        this.map.add(code)
+        this.map[code] = anime
     }
 
     fun send() {
-        val notContains = this.map.filter { !this.notify.contains(it) }
+        val notContains = this.map.filter { (k, v) -> !this.notify.contains(k) }
         this.notify = this.map
+
+        if (notContains.isEmpty())
+            return
 
         FirebaseMessaging.getInstance().send(
             Message.builder().setAndroidConfig(
                 AndroidConfig.builder().setNotification(
-                    AndroidNotification.builder().setTitle(if (notContains.size > 1) "Nouvelles sorties" else "Nouvelle sortie").setBody(notContains.joinToString(", ")).build()
+                    AndroidNotification.builder().setTitle(if (notContains.size > 1) "Nouvelles sorties" else "Nouvelle sortie").setBody(notContains.values.joinToString(", ")).build()
                 ).build()
             ).setTopic("animes").build()
         )
