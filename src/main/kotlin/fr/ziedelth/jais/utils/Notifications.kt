@@ -44,14 +44,14 @@ object Notifications {
     fun add(anime: String) {
         val code = HashUtils.sha512(anime.lowercase().onlyLettersAndDigits())
 
-        if (this.map.contains(code))
+        if (this.map.containsKey(code))
             return
 
         this.map[code] = anime
     }
 
     fun send() {
-        val notContains = this.map.filter { (k, v) -> !this.notify.contains(k) }
+        val notContains = this.map.filter { entry -> !this.notify.containsKey(entry.key) }
         this.notify = this.map
 
         if (notContains.isEmpty())
