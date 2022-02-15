@@ -11,9 +11,6 @@ import com.google.firebase.messaging.AndroidConfig
 import com.google.firebase.messaging.AndroidNotification
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
-import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.Scan
-import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
 
@@ -67,7 +64,9 @@ object Notifications {
         FirebaseMessaging.getInstance().send(
             Message.builder().setAndroidConfig(
                 AndroidConfig.builder().setNotification(
-                    AndroidNotification.builder().setTitle(if (notContains.size > 1) "Nouvelles sorties" else "Nouvelle sortie").setBody(notContains.values.joinToString(", ")).build()
+                    AndroidNotification.builder()
+                        .setTitle(if (notContains.size > 1) "Nouvelles sorties" else "Nouvelle sortie")
+                        .setBody(notContains.values.joinToString(", ")).build()
                 ).build()
             ).setTopic("animes").build()
         )

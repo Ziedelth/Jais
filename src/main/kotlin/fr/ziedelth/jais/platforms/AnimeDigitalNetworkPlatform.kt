@@ -118,7 +118,8 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} news:") {
-                val urlConnection = URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.checkOnEpisodesURL(this)}").openConnection()
+                val urlConnection =
+                    URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.checkOnEpisodesURL(this)}").openConnection()
                 urlConnection.connectTimeout = 10000
                 urlConnection.readTimeout = 10000
                 val inputStream = urlConnection.getInputStream()
@@ -128,20 +129,27 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
                 )
                 inputStream.close()
 
-                Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }?.forEachIndexed { _, njo ->
-                    val category = Impl.getString(njo, "category")
-                    if (!(category.equals("Anime", true) || category.equals("Manga", true))) return@forEachIndexed
-                    val title = Impl.getString(njo, "title") ?: return@forEachIndexed
-                    if (this.checkedEpisodes.contains(title)) return@forEachIndexed
-                    val description = Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
-                    val url = Impl.getString(njo, "link") ?: return@forEachIndexed
-                    val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(njo, "pubDate"))) ?: return@forEachIndexed
+                Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }
+                    ?.forEachIndexed { _, njo ->
+                        val category = Impl.getString(njo, "category")
+                        if (!(category.equals("Anime", true) || category.equals("Manga", true))) return@forEachIndexed
+                        val title = Impl.getString(njo, "title") ?: return@forEachIndexed
+                        if (this.checkedEpisodes.contains(title)) return@forEachIndexed
+                        val description =
+                            Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
+                        val url = Impl.getString(njo, "link") ?: return@forEachIndexed
+                        val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(njo, "pubDate")))
+                            ?: return@forEachIndexed
 
-                    if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEachIndexed
+                        if (!ISO8601.isSameDayUsingInstant(
+                                calendar,
+                                releaseDate
+                            ) || calendar.before(releaseDate)
+                        ) return@forEachIndexed
 
-                    this.addCheck(title)
-                    list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
-                }
+                        this.addCheck(title)
+                        list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
+                    }
             }
         }
 
