@@ -18,8 +18,9 @@ import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
 
 object Notifications {
-    private val map: MutableMap<String, String> = mutableMapOf()
-    private var notify: MutableMap<String, String> = mutableMapOf()
+    private var init = false
+    val map: MutableMap<String, String> = mutableMapOf()
+    val notify: MutableMap<String, String> = mutableMapOf()
 
     fun init() {
         JLogger.info("Setup notifications...")
@@ -34,6 +35,8 @@ object Notifications {
             FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(FileInputStream(file)))
                 .setProjectId("866259759032").build()
         )
+
+        init = true
     }
 
     fun clear() {
@@ -50,12 +53,16 @@ object Notifications {
         this.map[code] = anime
     }
 
-    fun send() {
+    fun send(): Int {
         val notContains = this.map.filter { entry -> !this.notify.containsKey(entry.key) }
-        this.notify = this.map
 
         if (notContains.isEmpty())
-            return
+            return 0
+
+        this.notify.putAll(notContains)
+
+        if (!this.init)
+            return notContains.size
 
         FirebaseMessaging.getInstance().send(
             Message.builder().setAndroidConfig(
@@ -64,5 +71,7 @@ object Notifications {
                 ).build()
             ).setTopic("animes").build()
         )
+
+        return notContains.size
     }
 }

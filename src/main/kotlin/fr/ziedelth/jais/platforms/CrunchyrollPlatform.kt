@@ -14,12 +14,10 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.EpisodeType
-import fr.ziedelth.jais.utils.animes.Genre
-import fr.ziedelth.jais.utils.animes.LangType
+import fr.ziedelth.jais.utils.animes.*
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import org.jsoup.Jsoup
 import java.io.InputStreamReader
 import java.net.URL
 import java.util.*
@@ -135,6 +133,44 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                             langType
                         )
                     }
+            }
+        }
+
+        return list.toTypedArray()
+    }
+
+    @Synchronized
+    override fun checkNews(calendar: Calendar): Array<News> {
+        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val list = mutableListOf<News>()
+        val gson = Gson()
+        val xmlMapper = XmlMapper()
+        val objectMapper = ObjectMapper()
+
+        this.getAllowedCountries().forEach { country ->
+            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
+
+            Impl.tryCatch("Failed to get ${this.javaClass.simpleName} news:") {
+                val urlConnection = URL("https://www.crunchyroll.com/newsrss?lang=${country.checkOnEpisodesURL(this)}").openConnection()
+                urlConnection.connectTimeout = 10000
+                urlConnection.readTimeout = 10000
+                val inputStream = urlConnection.getInputStream()
+                val jsonObject: JsonObject? = gson.fromJson(
+                    objectMapper.writeValueAsString(xmlMapper.readTree(InputStreamReader(inputStream))),
+                    JsonObject::class.java
+                )
+                inputStream.close()
+
+                Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }?.forEachIndexed { _, njo ->
+                    val title = Impl.getString(njo, "title") ?: return@forEachIndexed
+                    val description = Jsoup.parse(Impl.getString(njo, "description") ?: "").text() ?: return@forEachIndexed
+                    val url = Impl.getString(njo, "guid") ?: return@forEachIndexed
+                    val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(njo, "pubDate"))) ?: return@forEachIndexed
+
+                    if (!ISO8601.isSameDayUsingInstant(calendar, releaseDate) || calendar.before(releaseDate)) return@forEachIndexed
+
+                    list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
+                }
             }
         }
 
