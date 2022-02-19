@@ -53,22 +53,9 @@ class Jais {
         PluginManager.loadAll()
 
         JLogger.info("Starting...")
+
         JThread.startExactly({
-            val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-
-            if (checkDay != day) {
-                JLogger.info("Resetting checked episodes...")
-                day = checkDay
-
-                Notifications.clear()
-                this.saveAnalytics()
-
-                this.platforms.forEach {
-                    it.platform.checkedEpisodes.clear()
-                    it.platform.checkedData.clear()
-                }
-            }
-
+            this.resetDaily()
             this.checkEpisodesAndScans()
         }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
     }
@@ -95,6 +82,20 @@ class Jais {
 
         arraySaved.add(SimpleDateFormat("dd/MM/yyyy").format(calendar.time), currentDay)
         Files.write(file.toPath(), gson.toJson(arraySaved).toByteArray())
+    }
+
+    private fun resetDaily() {
+        val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+
+        if (checkDay != day) {
+            JLogger.info("Resetting checked episodes...")
+            day = checkDay
+
+            Notifications.clear()
+            this.saveAnalytics()
+            PluginManager.plugins?.forEach { it.reset() }
+            this.platforms.forEach { it.platform.reset() }
+        }
     }
 
     private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {

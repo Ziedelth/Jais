@@ -12,10 +12,15 @@ import java.util.*
 
 abstract class Platform(val jais: Jais) {
     val checkedEpisodes = mutableListOf<String?>()
-    val checkedData = mutableMapOf<String?, MutableList<String>>()
+    private val checkedData = mutableMapOf<String?, MutableList<String>>()
 
     fun addCheck(id: String?) {
         if (!this.checkedEpisodes.contains(id) && !id.isNullOrBlank() && id != "null") this.checkedEpisodes.add(id)
+    }
+
+    fun reset() {
+        this.checkedEpisodes.clear()
+        this.checkedData.clear()
     }
 
     private fun addCheckData(id: String?, data: String) {
