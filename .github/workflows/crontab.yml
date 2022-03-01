@@ -1,4 +1,4 @@
-name: 'nightly artifacts cleanup'
+name: 'Delete old artifacts'
 on:
   schedule:
     - cron: '0 * * * *'
