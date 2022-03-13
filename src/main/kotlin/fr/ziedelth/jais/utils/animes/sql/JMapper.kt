@@ -560,6 +560,25 @@ object JMapper {
         return runner.query(connection, "SELECT * FROM ops_ends", episodeHandler)
     }
 
+    fun insertOpsEnds(
+        connection: Connection?,
+        animeId: Long,
+        opsEndsType: Long,
+        url: String,
+    ) {
+        val sh = ScalarHandler<Long>()
+        val runner = QueryRunner()
+        val query = "INSERT INTO ops_ends (anime_id, ops_ends_type_id, url) VALUES (?, ?, ?)"
+        runner.insert(
+            connection,
+            query,
+            sh,
+            animeId,
+            opsEndsType,
+            url
+        )
+    }
+
     fun insertEpisode(connection: Connection?, episode: Episode): EpisodeData? {
         val platformData = insertPlatform(connection, episode.platform.platformHandler)
         val countryData = insertCountry(connection, episode.country.countryHandler)

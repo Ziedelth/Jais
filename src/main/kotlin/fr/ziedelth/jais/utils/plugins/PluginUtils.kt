@@ -12,6 +12,7 @@ import kotlin.math.floor
 object PluginUtils {
     fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
     fun String.onlyLettersAndDigits() = this.filter { it.isLetterOrDigit() }
+    fun String.onDigits() = this.filter { it.isDigit() }
 
     private fun calculateHHMMSS(secNum: Int): String {
         val hours = floor(secNum / 3600.0)

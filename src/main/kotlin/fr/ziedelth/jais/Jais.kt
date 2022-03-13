@@ -152,9 +152,9 @@ class Jais {
 
                 this.platforms.forEach { platformImpl ->
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
-                    val episodes = platformImpl.platform.checkEpisodes(calendar)
+                    val episodes = platformImpl.platform.checkEpisodes(calendar).sortedWith(compareBy(Episode::anime, Episode::releaseDate, Episode::season, Episode::number, Episode::episodeType, Episode::langType))
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
-                    val scans = platformImpl.platform.checkScans(calendar)
+                    val scans = platformImpl.platform.checkScans(calendar).sortedWith(compareBy(Scan::anime, Scan::releaseDate, Scan::number, Scan::episodeType, Scan::langType))
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching news...")
                     val news = platformImpl.platform.checkNews(calendar)
                     JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
