@@ -35,6 +35,12 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
 
     private val scantrad: MutableList<Scantrad> = mutableListOf()
 
+    /**
+     * It checks the RSS feed for new episodes and returns an array of Scan objects
+     *
+     * @param calendar The date to check for new episodes.
+     * @return An array of Scan objects.
+     */
     @Synchronized
     override fun checkScans(calendar: Calendar): Array<Scan> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()

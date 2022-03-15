@@ -4,6 +4,7 @@
 
 package fr.ziedelth.jais.utils.animes
 
+/* This class is used to represent the different genres that an anime can have */
 enum class Genre(val fr: String, val identifiers: Array<String> = arrayOf()) {
     UNKNOWN("Inconnu"),
     ACTION("Action", identifiers = arrayOf("Action")),
@@ -59,9 +60,20 @@ enum class Genre(val fr: String, val identifiers: Array<String> = arrayOf()) {
     ;
 
     companion object {
+        /**
+         * Return the Genre enum value whose identifiers contain the given string
+         *
+         * @param string The string to match against.
+         */
         fun getGenre(string: String): Genre =
             values().firstOrNull { v -> v.identifiers.map { it.lowercase() }.contains(string.lowercase()) } ?: UNKNOWN
 
+        /**
+         * If the array is not null, map each element to a Genre object, filter out nulls, and return an array of distinct
+         * Genre objects
+         *
+         * @param array The array of strings that you want to convert to Genre objects.
+         */
         fun getGenres(array: Iterable<String>?): Array<Genre> =
             array?.mapNotNull { s ->
                 values().firstOrNull {

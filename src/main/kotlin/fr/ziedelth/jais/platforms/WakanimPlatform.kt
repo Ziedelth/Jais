@@ -43,6 +43,12 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
     private val lastCheck = mutableMapOf<Country, Long>()
     private val cElements = mutableMapOf<Country, Elements?>()
 
+    /**
+     * It checks the episodes for the current day and returns them
+     *
+     * @param calendar The calendar object that contains the date of the episode.
+     * @return An array of Episode objects.
+     */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -211,6 +217,12 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
+    /**
+     * If the document has a class named "NoEpisodes", then return false. Otherwise, return true
+     *
+     * @param episodeResult Document?
+     * @return Nothing.
+     */
     private fun hasEpisodes(episodeResult: Document?): Boolean {
         try {
             if (episodeResult?.getElementsByClass("NoEpisodes")?.firstOrNull() != null) return false
@@ -220,6 +232,17 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return true
     }
 
+    /**
+     * Get the date from the calendar and format it as a string
+     *
+     * @param calendar The Calendar object that you want to convert to a date.
+     */
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
+
+    /**
+     * Get the date in ISO format
+     *
+     * @param calendar The Calendar object to be used to generate the date.
+     */
     private fun getISODate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

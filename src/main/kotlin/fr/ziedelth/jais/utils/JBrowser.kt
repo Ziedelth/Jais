@@ -13,6 +13,7 @@ import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+/* A singleton object. */
 object JBrowser {
     /**
      * It opens a URL in a browser, and returns the HTML of the page

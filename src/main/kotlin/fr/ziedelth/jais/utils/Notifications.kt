@@ -16,8 +16,11 @@ import java.io.FileInputStream
 
 /* The `object` keyword is used to create a singleton object. */
 object Notifications {
+    /* A flag to check if the Firebase SDK has been initialized. */
     private var init = false
+    /* It creates a mutable map of String to String. */
     val map: MutableMap<String, String> = mutableMapOf()
+    /* It creates a mutable map of String to String. */
     val notify: MutableMap<String, String> = mutableMapOf()
 
     /**

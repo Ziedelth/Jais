@@ -7,6 +7,7 @@ package fr.ziedelth.jais.utils.animes
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
 
+/* This class is used to determine the type of episode based on the country and the episode name */
 enum class EpisodeType(val fr: String, private val data: Array<EpisodeDataImpl>) {
     UNKNOWN("Inconnu", emptyArray<EpisodeDataImpl>()),
     CHAPTER("Chapitre", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
@@ -18,6 +19,12 @@ enum class EpisodeType(val fr: String, private val data: Array<EpisodeDataImpl>)
     fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
 
     companion object {
+        /**
+         * Given a string, return the corresponding EpisodeType
+         *
+         * @param string The string to check against.
+         * @return The type of episode.
+         */
         fun getEpisodeType(string: String?): EpisodeType {
             for (type in values()) {
                 for (data in type.data) {
@@ -30,6 +37,12 @@ enum class EpisodeType(val fr: String, private val data: Array<EpisodeDataImpl>)
             return UNKNOWN
         }
 
+        /**
+         * Given a class, return the corresponding episode type
+         *
+         * @param clazz The class of the country.
+         * @return The type of episode that the given class is.
+         */
         fun getEpisodeType(clazz: Class<out Country>?): EpisodeType {
             for (type in values()) {
                 for (data in type.data) {
