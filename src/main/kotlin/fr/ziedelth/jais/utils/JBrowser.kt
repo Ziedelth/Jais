@@ -14,6 +14,12 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 object JBrowser {
+    /**
+     * It opens a URL in a browser, and returns the HTML of the page
+     *
+     * @param url The URL to open.
+     * @return A Document object.
+     */
     fun get(url: String?): Document? {
         if (url.isNullOrEmpty()) return null
         val randomCode = UUID.randomUUID().toString().replace("-", "")
