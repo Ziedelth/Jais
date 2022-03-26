@@ -16,7 +16,6 @@ _Version de développement, pas encore accès au public_
 - [x] [Discord](https://discord.com/)
 - [x] [Twitter](https://twitter.com/Jaiss___)
 - [x] [Instagram](https://www.instagram.com/jais_zie/)
-- [ ] Reddit
 
 ## Plateformes d'animes prises en charges
 
@@ -25,3 +24,4 @@ _Version de développement, pas encore accès au public_
 - [x] [Scantrad](https://scantrad.net/)
 - [x] [Wakanim](https://www.wakanim.tv/)
 - [x] [Netflix](https://www.netflix.com/)
+- [ ] [Cubari](https://cubari.moe/)
