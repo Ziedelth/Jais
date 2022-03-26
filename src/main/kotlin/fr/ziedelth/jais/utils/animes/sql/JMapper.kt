@@ -39,7 +39,7 @@ object JMapper {
      * It returns a connection to the database
      */
     fun getDebugConnection(): Connection? =
-        DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "")
+        DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "root")
 
     /**
      * It takes a connection and returns a list of CountryData objects
@@ -801,7 +801,7 @@ object JMapper {
      * @param number The number of the scan.
      * @return A ScanData object.
      */
-    fun getScan(connection: Connection?, platformId: Long?, animeId: Long?, number: Int): ScanData? {
+    fun getScan(connection: Connection?, platformId: Long?, animeId: Long?, number: String): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -834,7 +834,7 @@ object JMapper {
         idEpisodeType: Long?,
         idLangType: Long?,
         releaseDate: String,
-        number: Int,
+        number: String,
         url: String,
     ): ScanData? {
         val scan = getScan(connection, platformId, animeId, number)
@@ -1001,7 +1001,7 @@ object JMapper {
             insertEpisodeType(connection, scan.episodeType)?.id,
             insertLangType(connection, scan.langType)?.id,
             ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-            scan.number.toInt(),
+            scan.number,
             scan.url
         )
     }

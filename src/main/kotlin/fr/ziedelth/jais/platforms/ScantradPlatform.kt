@@ -82,7 +82,7 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
                         val animeLink = descriptionDocument.getElementsByTag("a").attr("href").toHTTPS()
 
                         val anime = titleSplitter.subList(0, titleSplitter.size - 2).joinToString(" ")
-                        val number = titleSplitter.lastOrNull()?.toLongOrNull() ?: return@forEachIndexed
+                        val number = titleSplitter.lastOrNull() ?: return@forEachIndexed
                         val url = Impl.getString(scanObject, "link")?.toHTTPS() ?: return@forEachIndexed
 
                         if (!this.scantrad.any { it.anime.equals(anime, true) }) {
