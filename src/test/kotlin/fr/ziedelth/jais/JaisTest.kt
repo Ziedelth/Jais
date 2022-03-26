@@ -12,11 +12,13 @@ import kotlin.test.assertEquals
 internal class JaisTest {
     private val jais = Jais()
 
+    /* This is a test for the function `addCountry` of the class `Jais`. */
     @Test
     fun testAddCountry() {
         assertEquals(true, this.jais.addCountry(FranceCountry::class.java))
     }
 
+    /* A test for the function `addPlatform` of the class `Jais`. */
     @Test
     fun testAddPlatform() {
         assertEquals(true, this.jais.addPlatform(AnimeDigitalNetworkPlatform::class.java))

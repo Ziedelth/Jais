@@ -30,8 +30,19 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
+    /**
+     * Get the date from the calendar and format it as a string
+     *
+     * @param calendar The Calendar object that you want to convert to a string.
+     */
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 
+    /**
+     * It gets the episodes for the current day and adds them to the list
+     *
+     * @param calendar The calendar object that contains the date to check for episodes.
+     * @return An array of Episode objects.
+     */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -106,6 +117,12 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
+    /**
+     * It checks the RSS feed for the latest news and adds them to the list if they are not already in the list
+     *
+     * @param calendar The calendar to check against.
+     * @return An array of News objects.
+     */
     @Synchronized
     override fun checkNews(calendar: Calendar): Array<News> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()

@@ -27,6 +27,8 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class NetflixPlatform(jais: Jais) : Platform(jais) {
+    /* It's a `@Synchronized` annotation. It's a way to prevent multiple threads to access the same method at the same
+    time. */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -108,5 +110,10 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
+    /**
+     * Get the date in ISO format
+     *
+     * @param calendar The calendar object that you want to convert to a string.
+     */
     private fun getISODate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

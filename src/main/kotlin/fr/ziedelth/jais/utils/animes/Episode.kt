@@ -13,6 +13,9 @@ import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 
+/**
+ * It's a data class that represents an episode.
+ */
 data class Episode(
     val platform: PlatformImpl,
     val country: CountryImpl,
@@ -34,6 +37,7 @@ data class Episode(
     var animeBufferedImage: BufferedImage? = null
     var episodeBufferedImage: BufferedImage? = null
 
+    /* It's a constructor. */
     init {
         this.anime = this.anime.replace("’", "'")
         this.episodeId = "${
@@ -44,6 +48,12 @@ data class Episode(
         Impl.tryCatch { this.episodeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.image)), 640, 360) }
     }
 
+    /**
+     * The function checks if the current object is equal to the other object
+     *
+     * @param other Any?
+     * @return Nothing.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -72,6 +82,11 @@ data class Episode(
         return true
     }
 
+    /**
+     * The function returns a hash code for the object
+     *
+     * @return Nothing.
+     */
     override fun hashCode(): Int {
         var result = platform.hashCode()
         result = 31 * result + country.hashCode()
@@ -94,6 +109,11 @@ data class Episode(
         return result
     }
 
+    /**
+     * It returns a string representation of the object
+     *
+     * @return The toString() method is overridden to return a string representation of the object.
+     */
     override fun toString(): String {
         return "Episode(platform=$platform, country=$country, releaseDate=$releaseDate, anime='$anime', animeImage=$animeImage, animeGenres=${animeGenres.contentToString()}, animeDescription=$animeDescription, season=$season, number=$number, episodeType=$episodeType, langType=$langType, episodeId='$episodeId', title=$title, url='$url', image='$image', duration=$duration, animeBufferedImage=$animeBufferedImage, episodeBufferedImage=$episodeBufferedImage)"
     }

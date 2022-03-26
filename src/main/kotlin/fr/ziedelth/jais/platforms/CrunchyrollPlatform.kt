@@ -34,6 +34,7 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
 
     private val crunchyroll: MutableList<Crunchyroll> = mutableListOf()
 
+    /* Checking the episodes for the current day and adding them to the list. */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -139,6 +140,12 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
+    /**
+     * It checks the RSS feed for new episodes and returns an array of News objects
+     *
+     * @param calendar The date to check for new episodes.
+     * @return An array of News objects.
+     */
     @Synchronized
     override fun checkNews(calendar: Calendar): Array<News> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
