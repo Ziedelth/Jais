@@ -30,13 +30,16 @@ import kotlin.reflect.KClass
 class Jais {
     /* Creating a list of countries. */
     private val countries = mutableListOf<CountryImpl>()
+
     /* Creating a list of platform implementations. */
     private val platforms = mutableListOf<PlatformImpl>()
+
     /* Getting the current day of the year. */
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
     /* Creating a list of episodes that are not in the database. */
     private val looseEpisodes = mutableListOf<Episode>()
+
     /* Creating a list of scans that are not in the database. */
     private val looseScans = mutableListOf<Scan>()
 
@@ -137,7 +140,7 @@ class Jais {
 
                         this.looseEpisodes.forEach { episode ->
                             val episodeData = JMapper.insertEpisode(connection, episode)
-                            val ifExists = JMapper.getEpisode(connection, episodeData?.id) != null
+                            val ifExists = JMapper.episodeMapper.get(connection, episodeData?.id) != null
 
                             if (ifExists) {
                                 JLogger.info("Episode has been correctly inserted or updated in the database!")
@@ -156,7 +159,7 @@ class Jais {
 
                         this.looseScans.forEach { scan ->
                             val scanData = JMapper.insertScan(connection, scan)
-                            val ifExists = JMapper.getScan(connection, scanData?.id) != null
+                            val ifExists = JMapper.scanMapper.get(connection, scanData?.id) != null
 
                             if (ifExists) {
                                 JLogger.info("Scan has been correctly inserted or updated in the database!")
@@ -172,9 +175,26 @@ class Jais {
 
                 this.platforms.forEach { platformImpl ->
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
-                    val episodes = platformImpl.platform.checkEpisodes(calendar).sortedWith(compareBy(Episode::anime, Episode::releaseDate, Episode::season, Episode::number, Episode::episodeType, Episode::langType))
+                    val episodes = platformImpl.platform.checkEpisodes(calendar).sortedWith(
+                        compareBy(
+                            Episode::anime,
+                            Episode::releaseDate,
+                            Episode::season,
+                            Episode::number,
+                            Episode::episodeType,
+                            Episode::langType
+                        )
+                    )
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
-                    val scans = platformImpl.platform.checkScans(calendar).sortedWith(compareBy(Scan::anime, Scan::releaseDate, Scan::number, Scan::episodeType, Scan::langType))
+                    val scans = platformImpl.platform.checkScans(calendar).sortedWith(
+                        compareBy(
+                            Scan::anime,
+                            Scan::releaseDate,
+                            Scan::number,
+                            Scan::episodeType,
+                            Scan::langType
+                        )
+                    )
                     JLogger.info("[${platformImpl.platformHandler.name}] Fetching news...")
                     val news = platformImpl.platform.checkNews(calendar)
                     JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
@@ -199,7 +219,7 @@ class Jais {
 
                                 if (isConnected) {
                                     val episodeData = JMapper.insertEpisode(connection, episode)
-                                    val ifExists = JMapper.getEpisode(connection, episodeData?.id) != null
+                                    val ifExists = JMapper.episodeMapper.get(connection, episodeData?.id) != null
 
                                     if (ifExists) {
                                         JLogger.info("Episode has been correctly inserted or updated in the database!")
@@ -234,7 +254,7 @@ class Jais {
 
                                 if (isConnected) {
                                     val scanData = JMapper.insertScan(connection, scan)
-                                    val ifExists = JMapper.getScan(connection, scanData?.id) != null
+                                    val ifExists = JMapper.scanMapper.get(connection, scanData?.id) != null
 
                                     if (ifExists) {
                                         JLogger.info("Scan has been correctly inserted or updated in the database!")

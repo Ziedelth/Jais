@@ -13,8 +13,10 @@ import kotlin.math.max
 object JThread {
     /* It's a counter that will be used to give a unique id to each thread. */
     private var count = 0
+
     /* It creates a thread pool with the number of available processors. */
     private val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+
     /* It's a map of id to thread. */
     private val threads = mutableMapOf<Int, Thread>()
 

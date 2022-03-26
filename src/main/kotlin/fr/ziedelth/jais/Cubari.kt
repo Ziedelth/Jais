@@ -28,7 +28,9 @@ fun main(args: Array<String>) {
         page.getElementsByClass("table-default").forEach { element ->
             val number = element.attr("data-chapter")
             val scanUrl = "$siteUrl${element.getElementsByTag("a").first()?.attr("href")}"
-            val literalScanDate = element.getElementsByClass("detailed-chapter-upload-date").first()?.text()?.replace("[", "")?.replace("]", "")?.split(", ")
+            val literalScanDate =
+                element.getElementsByClass("detailed-chapter-upload-date").first()?.text()?.replace("[", "")
+                    ?.replace("]", "")?.split(", ")
             // Take the 3 first elements
             val scanDate = literalScanDate?.take(3)
             // Convert scanDate to a Date

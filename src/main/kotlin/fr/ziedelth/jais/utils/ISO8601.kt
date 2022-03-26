@@ -12,8 +12,10 @@ import java.util.*
 object ISO8601 {
     /* Creating a `SimpleDateFormat` object with the format `yyyy-MM-dd'T'HH:mm:ssZ`. */
     private val sdf1 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+
     /* This is the format that the date picker uses. */
     private val sdf2 = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH)
+
     /* Creating a `SimpleDateFormat` object with the format `yyyy-MM-dd'T'HH:mm:ss'Z'`. */
     private val sdf3 = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 

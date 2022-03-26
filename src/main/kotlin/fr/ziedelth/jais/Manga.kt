@@ -5,8 +5,6 @@
 package fr.ziedelth.jais
 
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.plugins.PluginUtils.onDigits
-import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,24 +38,30 @@ Image|Manga|Éditeur|Volume|Prix|Lien
 ![Image manga](https://www.nautiljon.com/imagesmin/manga_volumes/11/41/from_the_children_s_country_1958714.jpg?1642675001)|From the Children's Country |Meian|Vol. 1 Nouveauté|6.95 €|[Acheter](https://www.nautiljon.com/site/acheter.php?ean=9782382753965&books)
      */
 
-    println("""## Sorties mangas du $f
+    println(
+        """## Sorties mangas du $f
 ##### _Rapport généré automatiquement par Jaïs_
 
 ---
 
 Image|Manga|Éditeur|Volume|Prix|Lien
-:---:|:---:|:---:|:---:|:---:|:---:""")
+:---:|:---:|:---:|:---:|:---:|:---:"""
+    )
 
-     elements?.filter { it.getElementsByTag("td").firstOrNull()?.text()?.equals(f, true) == true }?.forEach {
+    elements?.filter { it.getElementsByTag("td").firstOrNull()?.text()?.equals(f, true) == true }?.forEach {
 //    elements?.forEach {
-         val tags = it.getElementsByTag("td")
-         val image = "$base${tags[1]?.getElementsByTag("img")?.firstOrNull()?.attr("src")}"
-         val split = tags[2]?.text()?.split("Vol. ")
-         val title = split?.get(0)
-         val vol = try { "Vol. ${split?.get(1)?.split(" ")?.get(0)}" } catch (exception: Exception) { "Vol. 1" }
-         val price = tags[3]?.text()
-         val editor = tags[4]?.text()
-         val link = "$base${tags[5]?.getElementsByTag("a")?.firstOrNull()?.attr("href")}"
-         println("![Image manga]($image)|$title|$editor|$vol|$price|[Acheter]($link)")
+        val tags = it.getElementsByTag("td")
+        val image = "$base${tags[1]?.getElementsByTag("img")?.firstOrNull()?.attr("src")}"
+        val split = tags[2]?.text()?.split("Vol. ")
+        val title = split?.get(0)
+        val vol = try {
+            "Vol. ${split?.get(1)?.split(" ")?.get(0)}"
+        } catch (exception: Exception) {
+            "Vol. 1"
+        }
+        val price = tags[3]?.text()
+        val editor = tags[4]?.text()
+        val link = "$base${tags[5]?.getElementsByTag("a")?.firstOrNull()?.attr("href")}"
+        println("![Image manga]($image)|$title|$editor|$vol|$price|[Acheter]($link)")
     }
 }

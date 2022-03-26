@@ -12,6 +12,7 @@ import org.pf4j.PluginManager
 object PluginManager {
     /* Creating a new instance of the plugin manager. */
     private val pluginManager: PluginManager = DefaultPluginManager(FileImpl.getFile("plugins").toPath())
+
     /* It's a way to store the plugins in a variable. */
     var plugins: Array<JavaPlugin>? = null
 
