@@ -10,11 +10,14 @@ import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
-import fr.ziedelth.jais.utils.animes.sql.data.*
+import fr.ziedelth.jais.utils.animes.sql.data.AnimeData
+import fr.ziedelth.jais.utils.animes.sql.data.EpisodeData
+import fr.ziedelth.jais.utils.animes.sql.data.PlatformData
+import fr.ziedelth.jais.utils.animes.sql.data.ScanData
 import fr.ziedelth.jais.utils.animes.sql.mappers.*
 import java.sql.Connection
 import java.sql.DriverManager
-import java.util.Calendar
+import java.util.*
 
 object JMapper {
     private val countryMapper = CountryMapper()
@@ -45,7 +48,16 @@ object JMapper {
     fun getDebugConnection(): Connection? =
         DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "root")
 
-    private fun initInsert(connection: Connection?, platform: PlatformImpl, country: CountryImpl, releaseDate: Calendar, anime: String, animeImage: String?, animeDescription: String?, genres: Array<Genre>): Pair<PlatformData?, AnimeData?> {
+    private fun initInsert(
+        connection: Connection?,
+        platform: PlatformImpl,
+        country: CountryImpl,
+        releaseDate: Calendar,
+        anime: String,
+        animeImage: String?,
+        animeDescription: String?,
+        genres: Array<Genre>
+    ): Pair<PlatformData?, AnimeData?> {
         val platformData = this.platformMapper.insert(connection, platform.platformHandler)
         val countryData = this.countryMapper.insert(connection, country.countryHandler)
 

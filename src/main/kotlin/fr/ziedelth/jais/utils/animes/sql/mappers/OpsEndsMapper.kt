@@ -49,17 +49,19 @@ class OpsEndsMapper {
         connection: Connection?,
         animeId: Long,
         opsEndsType: Long,
+        name: String?,
         url: String,
     ) {
         val sh = ScalarHandler<Long>()
         val runner = QueryRunner()
-        val query = "INSERT INTO ops_ends (anime_id, ops_ends_type_id, url) VALUES (?, ?, ?)"
+        val query = "INSERT INTO ops_ends (anime_id, ops_ends_type_id, name, url) VALUES (?, ?, ?, ?)"
         runner.insert(
             connection,
             query,
             sh,
             animeId,
             opsEndsType,
+            name,
             url
         )
     }
