@@ -35,7 +35,7 @@ import kotlin.math.min
 import kotlin.reflect.KClass
 
 class Jais {
-    private val isDebug = true
+    private val isDebug = false
 
     /* Creating a list of countries. */
     private val countries = mutableListOf<CountryImpl>()
