@@ -42,6 +42,8 @@ abstract class JavaPlugin(wrapper: PluginWrapper?) : Plugin(wrapper) {
      */
     open fun newNews(news: News) {}
 
+    open fun sendMessage(message: String) {}
+
     /**
      * "Get the number of followers."
      *

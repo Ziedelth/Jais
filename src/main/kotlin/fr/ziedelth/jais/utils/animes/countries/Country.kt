@@ -31,6 +31,7 @@ interface Country {
      * @param platform The platform to restrict the episodes to.
      */
     fun restrictionEpisodes(platform: Platform?): String?
+
     /**
      * Get the subtitles for the episodes of a show.
      *

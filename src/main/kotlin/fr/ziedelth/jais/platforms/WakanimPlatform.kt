@@ -37,7 +37,32 @@ import kotlin.math.pow
     countries = [FranceCountry::class]
 )
 class WakanimPlatform(jais: Jais) : Platform(jais) {
-    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
+    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Wakanim
+
+            if (anime != other.anime) return false
+            if (image != other.image) return false
+            if (smallSummary != other.smallSummary) return false
+            if (genres != null) {
+                if (other.genres == null) return false
+                if (!genres.contentEquals(other.genres)) return false
+            } else if (other.genres != null) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = anime?.hashCode() ?: 0
+            result = 31 * result + (image?.hashCode() ?: 0)
+            result = 31 * result + (smallSummary?.hashCode() ?: 0)
+            result = 31 * result + (genres?.contentHashCode() ?: 0)
+            return result
+        }
+    }
 
     private val wakanim: MutableList<Wakanim> = mutableListOf()
     private val lastCheck = mutableMapOf<Country, Long>()

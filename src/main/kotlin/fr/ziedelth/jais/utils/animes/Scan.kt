@@ -24,7 +24,7 @@ data class Scan(
     val animeImage: String?,
     val animeGenres: Array<Genre>,
     val animeDescription: String?,
-    val number: Long,
+    val number: String,
     val episodeType: EpisodeType = EpisodeType.CHAPTER,
     val langType: LangType = LangType.SUBTITLES,
     val url: String,

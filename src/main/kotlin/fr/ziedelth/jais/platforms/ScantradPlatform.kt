@@ -31,7 +31,32 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class ScantradPlatform(jais: Jais) : Platform(jais) {
-    data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?)
+    data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Scantrad
+
+            if (anime != other.anime) return false
+            if (image != other.image) return false
+            if (genres != null) {
+                if (other.genres == null) return false
+                if (!genres.contentEquals(other.genres)) return false
+            } else if (other.genres != null) return false
+            if (description != other.description) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = anime?.hashCode() ?: 0
+            result = 31 * result + (image?.hashCode() ?: 0)
+            result = 31 * result + (genres?.contentHashCode() ?: 0)
+            result = 31 * result + (description?.hashCode() ?: 0)
+            return result
+        }
+    }
 
     private val scantrad: MutableList<Scantrad> = mutableListOf()
 
@@ -82,7 +107,7 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
                         val animeLink = descriptionDocument.getElementsByTag("a").attr("href").toHTTPS()
 
                         val anime = titleSplitter.subList(0, titleSplitter.size - 2).joinToString(" ")
-                        val number = titleSplitter.lastOrNull()?.toLongOrNull() ?: return@forEachIndexed
+                        val number = titleSplitter.lastOrNull() ?: return@forEachIndexed
                         val url = Impl.getString(scanObject, "link")?.toHTTPS() ?: return@forEachIndexed
 
                         if (!this.scantrad.any { it.anime.equals(anime, true) }) {

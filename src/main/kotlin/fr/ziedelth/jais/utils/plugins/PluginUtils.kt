@@ -13,8 +13,10 @@ import kotlin.math.floor
 object PluginUtils {
     /* It's a function that takes a number and returns a string. */
     fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
+
     /* It's a function that takes a string and returns a string. */
     fun String.onlyLettersAndDigits() = this.filter { it.isLetterOrDigit() }
+
     /* It's a function that takes a string and returns a string. */
     fun String.onDigits() = this.filter { it.isDigit() }
 
