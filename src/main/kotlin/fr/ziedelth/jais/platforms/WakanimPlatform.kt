@@ -37,12 +37,43 @@ import kotlin.math.pow
     countries = [FranceCountry::class]
 )
 class WakanimPlatform(jais: Jais) : Platform(jais) {
-    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
+    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Wakanim
+
+            if (anime != other.anime) return false
+            if (image != other.image) return false
+            if (smallSummary != other.smallSummary) return false
+            if (genres != null) {
+                if (other.genres == null) return false
+                if (!genres.contentEquals(other.genres)) return false
+            } else if (other.genres != null) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = anime?.hashCode() ?: 0
+            result = 31 * result + (image?.hashCode() ?: 0)
+            result = 31 * result + (smallSummary?.hashCode() ?: 0)
+            result = 31 * result + (genres?.contentHashCode() ?: 0)
+            return result
+        }
+    }
 
     private val wakanim: MutableList<Wakanim> = mutableListOf()
     private val lastCheck = mutableMapOf<Country, Long>()
     private val cElements = mutableMapOf<Country, Elements?>()
 
+    /**
+     * It checks the episodes for the current day and returns them
+     *
+     * @param calendar The calendar object that contains the date of the episode.
+     * @return An array of Episode objects.
+     */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
@@ -211,6 +242,12 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
+    /**
+     * If the document has a class named "NoEpisodes", then return false. Otherwise, return true
+     *
+     * @param episodeResult Document?
+     * @return Nothing.
+     */
     private fun hasEpisodes(episodeResult: Document?): Boolean {
         try {
             if (episodeResult?.getElementsByClass("NoEpisodes")?.firstOrNull() != null) return false
@@ -220,6 +257,17 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return true
     }
 
+    /**
+     * Get the date from the calendar and format it as a string
+     *
+     * @param calendar The Calendar object that you want to convert to a date.
+     */
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
+
+    /**
+     * Get the date in ISO format
+     *
+     * @param calendar The Calendar object to be used to generate the date.
+     */
     private fun getISODate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

@@ -12,10 +12,18 @@ import java.util.*
 import java.util.logging.*
 import java.util.logging.Formatter
 
+/* It's a Kotlin's version of the Java formatter. */
 object JLogger : Logger("ZiedLogger", null) {
+    /* Kotlin's version of the Java formatter */
     class JFormatter : Formatter() {
         private val sdf = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.FRANCE)
 
+        /**
+         * It formats the log message.
+         *
+         * @param record The log record.
+         * @return The formatted string.
+         */
         override fun format(record: LogRecord?): String {
             val message = formatMessage(record)
             val sw = StringWriter()
@@ -28,6 +36,7 @@ object JLogger : Logger("ZiedLogger", null) {
         }
     }
 
+    /* A Kotlin's version of the Java formatter. */
     init {
         val jFormatter = JFormatter()
 

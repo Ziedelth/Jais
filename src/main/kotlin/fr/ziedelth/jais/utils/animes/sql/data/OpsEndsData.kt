@@ -8,5 +8,6 @@ class OpsEndsData {
     var id: Long = -1
     var animeId: Long = -1
     var opsEndsTypeId: Long = -1
+    var name: String? = null
     lateinit var url: String
 }

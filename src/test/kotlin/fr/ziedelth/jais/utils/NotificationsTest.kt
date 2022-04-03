@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 internal class NotificationsTest {
+    /* It's a test for the `add` function. */
     @Test
     fun testAdd() {
         Notifications.add("test")

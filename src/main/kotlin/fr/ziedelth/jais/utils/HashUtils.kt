@@ -6,28 +6,35 @@ package fr.ziedelth.jais.utils
 
 import java.security.MessageDigest
 
-/**
- * Hashing Utils
- * @author Sam Clarke <www.samclarke.com>
- * @license MIT
- */
 object HashUtils {
+    /**
+     * Compute the SHA-512 hash of a given String
+     *
+     * @param input The string you want to hash.
+     */
     fun sha512(input: String?) = hashString("SHA-512", input)
 
+    /**
+     * Compute the SHA-256 hash of a given String and return the result as a hexadecimal String
+     *
+     * @param input The string to hash.
+     */
     fun sha256(input: String) = hashString("SHA-256", input)
 
+    /**
+     * Compute the SHA-1 hash of the input string and return the hash as a hex string
+     *
+     * @param input The string to hash.
+     */
     fun sha1(input: String) = hashString("SHA-1", input)
 
+
     /**
-     * Supported algorithms on Android:
+     * It takes a string and returns a string
      *
-     * Algorithm	Supported API Levels
-     * MD5          1+
-     * SHA-1	    1+
-     * SHA-224	    1-8,22+
-     * SHA-256	    1+
-     * SHA-384	    1+
-     * SHA-512	    1+
+     * @param type The type of hash to use.
+     * @param input The string to be hashed.
+     * @return The hash string.
      */
     private fun hashString(type: String, input: String?): String {
         val HEX_CHARS = "0123456789ABCDEF"

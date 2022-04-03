@@ -13,6 +13,9 @@ import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 
+/**
+ * It's a data class that represents a scan of a manga.
+ */
 data class Scan(
     val platform: PlatformImpl,
     val country: CountryImpl,
@@ -21,19 +24,27 @@ data class Scan(
     val animeImage: String?,
     val animeGenres: Array<Genre>,
     val animeDescription: String?,
-    val number: Long,
+    val number: String,
     val episodeType: EpisodeType = EpisodeType.CHAPTER,
     val langType: LangType = LangType.SUBTITLES,
     val url: String,
 ) {
+    /* It's a nullable variable. */
     var animeBufferedImage: BufferedImage? = null
 
+    /* It's a constructor. */
     init {
         this.anime = this.anime.replace("’", "'")
 
         Impl.tryCatch { this.animeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.animeImage)), 350, 500) }
     }
 
+    /**
+     * The function checks if the two objects are the same
+     *
+     * @param other Any?
+     * @return Nothing.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -56,6 +67,11 @@ data class Scan(
         return true
     }
 
+    /**
+     * The function returns a hash code for the object
+     *
+     * @return Nothing.
+     */
     override fun hashCode(): Int {
         var result = platform.hashCode()
         result = 31 * result + country.hashCode()
