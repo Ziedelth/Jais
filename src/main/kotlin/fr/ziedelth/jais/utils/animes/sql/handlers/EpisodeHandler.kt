@@ -16,8 +16,8 @@ class EpisodeHandler :
             val map = mutableMapOf<String, String>()
             map["platform_id"] = "platformId"
             map["anime_id"] = "animeId"
-            map["id_episode_type"] = "idEpisodeType"
-            map["id_lang_type"] = "idLangType"
+            map["episode_type_id"] = "episodeTypeId"
+            map["lang_type_id"] = "langTypeId"
             map["release_date"] = "releaseDate"
             map["episode_id"] = "episodeId"
             return map

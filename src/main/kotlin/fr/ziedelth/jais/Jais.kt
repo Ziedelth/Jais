@@ -35,23 +35,11 @@ import kotlin.math.min
 import kotlin.reflect.KClass
 
 class Jais {
-    private val isDebug = false
-
-    /* Creating a list of countries. */
     private val countries = mutableListOf<CountryImpl>()
-
-    /* Creating a list of platform implementations. */
     private val platforms = mutableListOf<PlatformImpl>()
-
     private val commands = mutableListOf<CommandImpl>()
-
-    /* Getting the current day of the year. */
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-
-    /* Creating a list of episodes that are not in the database. */
     private val looseEpisodes = mutableListOf<Episode>()
-
-    /* Creating a list of scans that are not in the database. */
     private val looseScans = mutableListOf<Scan>()
 
     /**
@@ -285,7 +273,7 @@ class Jais {
             val (episodesFile, episodesSaved) = getEpisodeFile(gson)
             val (scansFile, scansSaved) = getScanFile(gson)
             val (newsFile, newsSaved) = getNewsFile(gson)
-            val connection = if (this.isDebug) JMapper.getDebugConnection() else JMapper.getConnection()
+            val connection = JMapper.getConnection()
             connection?.autoCommit = false
             val startTime = System.currentTimeMillis()
 

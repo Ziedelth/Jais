@@ -17,38 +17,18 @@ import java.util.*
 import javax.imageio.ImageIO
 
 class EpisodeMapper {
-    /**
-     * It takes a connection and returns a list of EpisodeData objects
-     *
-     * @param connection The connection to the database.
-     * @return A list of EpisodeData objects.
-     */
     fun get(connection: Connection?): MutableList<EpisodeData> {
         val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM episodes", episodeHandler)
     }
 
-    /**
-     * Get the episode with the given id
-     *
-     * @param connection The connection to the database.
-     * @param id The id of the episode to get.
-     * @return Nothing.
-     */
     fun get(connection: Connection?, id: Long?): EpisodeData? {
         val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM episodes WHERE id = ?", episodeHandler, id).firstOrNull()
     }
 
-    /**
-     * Get the episode data for the episode with the given id
-     *
-     * @param connection The connection to the database.
-     * @param episodeId The episode ID of the episode you want to get.
-     * @return Nothing.
-     */
     fun get(connection: Connection?, episodeId: String): EpisodeData? {
         val episodeHandler = EpisodeHandler()
         val runner = QueryRunner()
@@ -56,32 +36,13 @@ class EpisodeMapper {
             .firstOrNull()
     }
 
-    /**
-     * Inserts an episode into the database
-     *
-     * @param connection The connection to the database.
-     * @param platformId The platform ID of the episode.
-     * @param animeId The ID of the anime.
-     * @param idEpisodeType The ID of the episode type.
-     * @param idLangType The language type of the episode.
-     * @param releaseDate The date the episode was released.
-     * @param season The season number.
-     * @param number The number of the episode.
-     * @param episodeId The unique identifier for the episode.
-     * @param title The title of the episode.
-     * @param url The URL of the episode.
-     * @param image The image URL.
-     * @param duration The duration of the episode in seconds.
-     * @param saveImage Boolean = true
-     * @return The episode that was just inserted.
-     */
     fun insert(
         connection: Connection?,
         animeMapper: AnimeMapper,
         platformId: Long?,
         animeId: Long?,
-        idEpisodeType: Long?,
-        idLangType: Long?,
+        episodeTypeId: Long?,
+        langTypeId: Long?,
         releaseDate: String,
         season: Int,
         number: Int,
@@ -109,7 +70,7 @@ class EpisodeMapper {
                 episode = get(connection, episode.id)
             }
 
-            if (episode != null && episode.duration != duration) {
+            if (episode != null && episode.duration != duration && duration != -1L) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET duration = ? WHERE id = ?"
                 runner.update(connection, query, duration, episode.id)
@@ -141,7 +102,7 @@ class EpisodeMapper {
                 val lastNumber = animeMapper.get(
                     connection,
                     animeId
-                )?.episodes?.filter { it.platformId == platformId && it.animeId == animeId && it.season == season && it.idEpisodeType == idEpisodeType && it.idLangType == idLangType }
+                )?.episodes?.filter { it.platformId == platformId && it.animeId == animeId && it.season == season && it.episodeTypeId == episodeTypeId && it.langTypeId == langTypeId }
                     ?.maxByOrNull { it.number }?.number
                 n = (lastNumber ?: 0) + 1
             }
@@ -149,15 +110,15 @@ class EpisodeMapper {
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO episodes (platform_id, anime_id, id_episode_type, id_lang_type, release_date, season, number, episode_id, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO episodes (platform_id, anime_id, episode_type_id, lang_type_id, release_date, season, number, episode_id, title, url, image, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             val newId: Long = runner.insert(
                 connection,
                 query,
                 sh,
                 platformId,
                 animeId,
-                idEpisodeType,
-                idLangType,
+                episodeTypeId,
+                langTypeId,
                 releaseDate,
                 season,
                 n,

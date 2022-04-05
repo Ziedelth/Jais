@@ -19,62 +19,21 @@ import java.util.*
 import javax.imageio.ImageIO
 
 class AnimeMapper {
-    /**
-     * It takes a connection and returns a list of anime data
-     *
-     * @param connection The connection to the database.
-     * @return A list of AnimeData objects.
-     */
     fun get(connection: Connection?): MutableList<AnimeData> {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes", ah)
     }
 
-    /**
-     * Get an anime by its id
-     *
-     * @param connection The connection to the database.
-     * @param id The id of the anime you want to get.
-     * @return A single AnimeData object.
-     */
     fun get(connection: Connection?, id: Long?): AnimeData? {
         val ah = AnimeHandler(connection)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    /**
-     * Get an anime by country id and name
-     *
-     * @param connection The connection to the database.
-     * @param countryId The country ID of the anime.
-     * @param name The name of the anime.
-     * @return An AnimeData object.
-     */
-    fun get(connection: Connection?, countryId: Long?, name: String?): AnimeData? {
-        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
-
-        val ah = AnimeHandler(connection)
-        val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM animes WHERE country_id = ? AND code = ?", ah, countryId, code)
-            .firstOrNull()
-    }
-
-    /**
-     * Insert an anime into the database
-     *
-     * @param connection The connection to the database.
-     * @param countryId The country ID of the anime.
-     * @param releaseDate The date the anime was released.
-     * @param name The name of the anime.
-     * @param image The image of the anime.
-     * @param description The description of the anime.
-     * @param saveImage Boolean = true
-     * @return The anime object that was inserted.
-     */
     fun insert(
         connection: Connection?,
+        animeCodeMapper: AnimeCodeMapper,
         countryId: Long?,
         releaseDate: String?,
         name: String?,
@@ -82,14 +41,17 @@ class AnimeMapper {
         description: String?,
         saveImage: Boolean = true
     ): AnimeData? {
-        var anime = get(connection, countryId, name)
+        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
+        val animeCode = animeCodeMapper.get(connection, code)
 
-        return if (anime != null) {
-            if (anime.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
+        return if (animeCode != null) {
+            var anime = get(connection, animeCode.animeId)
+
+            if (anime?.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
                 val runner = QueryRunner()
                 val query = "UPDATE animes SET description = ? WHERE id = ?"
-                runner.update(connection, query, description, anime.id)
-                anime = get(connection, anime.id)
+                runner.update(connection, query, description, anime?.id)
+                anime = get(connection, anime?.id)
             }
 
             if (anime?.image.isNullOrEmpty() && !image.isNullOrEmpty()) {
@@ -101,12 +63,10 @@ class AnimeMapper {
 
             anime
         } else {
-            val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
-
             val sh = ScalarHandler<Long>()
             val runner = QueryRunner()
             val query =
-                "INSERT INTO animes (country_id, release_date, code, name, image, description) VALUES (?, ?, ?, ?, ?, ?)"
+                "INSERT INTO animes (country_id, release_date, name, image, description) VALUES (?, ?, ?, ?, ?)"
             val newId: Long =
                 runner.insert(
                     connection,
@@ -114,13 +74,14 @@ class AnimeMapper {
                     sh,
                     countryId,
                     releaseDate,
-                    code,
                     name,
                     saveAnimeImage(image, saveImage),
                     description
                 )
                     .toLong()
-            get(connection, newId)
+            val anime = get(connection, newId)
+            animeCodeMapper.insert(connection, anime?.id, code)
+            anime
         }
     }
 

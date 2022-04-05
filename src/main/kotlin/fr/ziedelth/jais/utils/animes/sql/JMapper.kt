@@ -26,6 +26,7 @@ object JMapper {
     private val episodeTypeMapper = EpisodeTypeMapper()
     private val langTypeMapper = LangTypeMapper()
     private val animeGenreMapper = AnimeGenreMapper()
+    private val animeCodeMapper = AnimeCodeMapper()
 
     val animeMapper = AnimeMapper()
     val episodeMapper = EpisodeMapper()
@@ -63,6 +64,7 @@ object JMapper {
 
         val animeData = this.animeMapper.insert(
             connection,
+            this.animeCodeMapper,
             countryData?.id,
             ISO8601.toUTCDate(ISO8601.fromCalendar(releaseDate)),
             anime,
