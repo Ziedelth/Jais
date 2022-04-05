@@ -5,6 +5,7 @@
 package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.utils.FileImpl
+import fr.ziedelth.jais.utils.HashUtils
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
@@ -13,9 +14,7 @@ import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 
-/**
- * It's a data class that represents a scan of a manga.
- */
+
 data class Scan(
     val platform: PlatformImpl,
     val country: CountryImpl,
@@ -29,22 +28,25 @@ data class Scan(
     val langType: LangType = LangType.SUBTITLES,
     val url: String,
 ) {
-    /* It's a nullable variable. */
+    private val hash: String = HashUtils.sha512(
+        "${
+            this.platform.platformHandler.name.uppercase().substring(0 until 4)
+        }-${this.langType.getData(country.country.javaClass)?.data}"
+    )
+    val scanId: String = "${this.platform.platformHandler.name.uppercase().substring(0 until 4)}-${
+        this.hash.substring(
+            0,
+            12
+        )
+    }-${this.langType.getData(country.country.javaClass)?.data}"
     var animeBufferedImage: BufferedImage? = null
 
-    /* It's a constructor. */
     init {
         this.anime = this.anime.replace("’", "'")
 
         Impl.tryCatch { this.animeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.animeImage)), 350, 500) }
     }
 
-    /**
-     * The function checks if the two objects are the same
-     *
-     * @param other Any?
-     * @return Nothing.
-     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -62,28 +64,27 @@ data class Scan(
         if (episodeType != other.episodeType) return false
         if (langType != other.langType) return false
         if (url != other.url) return false
+        if (hash != other.hash) return false
+        if (scanId != other.scanId) return false
         if (animeBufferedImage != other.animeBufferedImage) return false
 
         return true
     }
 
-    /**
-     * The function returns a hash code for the object
-     *
-     * @return Nothing.
-     */
     override fun hashCode(): Int {
         var result = platform.hashCode()
         result = 31 * result + country.hashCode()
         result = 31 * result + releaseDate.hashCode()
         result = 31 * result + anime.hashCode()
-        result = 31 * result + animeImage.hashCode()
+        result = 31 * result + (animeImage?.hashCode() ?: 0)
         result = 31 * result + animeGenres.contentHashCode()
         result = 31 * result + (animeDescription?.hashCode() ?: 0)
         result = 31 * result + number.hashCode()
         result = 31 * result + episodeType.hashCode()
         result = 31 * result + langType.hashCode()
         result = 31 * result + url.hashCode()
+        result = 31 * result + hash.hashCode()
+        result = 31 * result + scanId.hashCode()
         result = 31 * result + (animeBufferedImage?.hashCode() ?: 0)
         return result
     }

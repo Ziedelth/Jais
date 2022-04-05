@@ -8,7 +8,6 @@ import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.commands.Command
 import fr.ziedelth.jais.utils.commands.CommandHandler
 import fr.ziedelth.jais.utils.plugins.PluginManager
-import kotlin.system.exitProcess
 
 @CommandHandler(command = "send", description = "Send a message to plugins")
 class SendCommand : Command {
