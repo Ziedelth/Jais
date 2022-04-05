@@ -23,7 +23,7 @@ class ScanMapper {
         return runner.query(connection, "SELECT * FROM scans WHERE id = ?", scanHandler, id).firstOrNull()
     }
 
-    fun get(connection: Connection?, platformId: Long?, animeId: Long?, number: String): ScanData? {
+    fun get(connection: Connection?, platformId: Long?, animeId: Long?, number: Long): ScanData? {
         val scanHandler = ScanHandler()
         val runner = QueryRunner()
         return runner.query(
@@ -43,7 +43,7 @@ class ScanMapper {
         episodeTypeId: Long?,
         langTypeId: Long?,
         releaseDate: String,
-        number: String,
+        number: Long,
         url: String,
     ): ScanData? {
         val scan = get(connection, platformId, animeId, number)

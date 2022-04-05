@@ -5,9 +5,7 @@
 package fr.ziedelth.jais.utils.animes.sql.mappers
 
 import fr.ziedelth.jais.utils.animes.sql.data.AnimeCodeData
-import fr.ziedelth.jais.utils.animes.sql.data.AnimeGenreData
 import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeCodeHandler
-import fr.ziedelth.jais.utils.animes.sql.handlers.AnimeGenreHandler
 import org.apache.commons.dbutils.QueryRunner
 import java.sql.Connection
 

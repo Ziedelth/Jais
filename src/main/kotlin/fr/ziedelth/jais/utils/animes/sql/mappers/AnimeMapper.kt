@@ -31,15 +31,6 @@ class AnimeMapper {
         return runner.query(connection, "SELECT * FROM animes WHERE id = ?", ah, id).firstOrNull()
     }
 
-    fun get(connection: Connection?, countryId: Long?, name: String?): AnimeData? {
-        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
-
-        val ah = AnimeHandler(connection)
-        val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM animes WHERE country_id = ? AND code = ?", ah, countryId, code)
-            .firstOrNull()
-    }
-
     fun insert(
         connection: Connection?,
         animeCodeMapper: AnimeCodeMapper,
@@ -54,7 +45,7 @@ class AnimeMapper {
         val animeCode = animeCodeMapper.get(connection, code)
 
         return if (animeCode != null) {
-            var anime = get(connection, countryId, name)
+            var anime = get(connection, animeCode.animeId)
 
             if (anime?.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
                 val runner = QueryRunner()

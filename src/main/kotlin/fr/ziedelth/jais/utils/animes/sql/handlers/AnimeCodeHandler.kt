@@ -5,7 +5,6 @@
 package fr.ziedelth.jais.utils.animes.sql.handlers
 
 import fr.ziedelth.jais.utils.animes.sql.data.AnimeCodeData
-import fr.ziedelth.jais.utils.animes.sql.data.AnimeGenreData
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.BeanProcessor
 import org.apache.commons.dbutils.handlers.BeanListHandler

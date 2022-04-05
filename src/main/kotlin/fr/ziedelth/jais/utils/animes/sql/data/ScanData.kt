@@ -11,6 +11,6 @@ class ScanData {
     var episodeTypeId: Long = -1
     var langTypeId: Long = -1
     lateinit var releaseDate: String
-    lateinit var number: String
+    var number: Long = -1
     lateinit var url: String
 }
