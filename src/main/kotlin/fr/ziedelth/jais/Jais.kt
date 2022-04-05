@@ -216,6 +216,57 @@ class Jais {
         )
     )
 
+    private fun createFile(file: File, gson: Gson) {
+        if (!file.exists()) {
+            file.createNewFile()
+            Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
+        }
+    }
+
+    /**
+     * It creates a file called episodes.json if it doesn't exist, and if it does exist, it reads the file and returns the
+     * contents as a list of strings
+     *
+     * @param gson Gson
+     * @return A pair of a file and a mutable list of strings.
+     */
+    private fun getEpisodeFile(gson: Gson): Pair<File, MutableList<String>> {
+        val file = FileImpl.getFile("episodes.json")
+        this.createFile(file, gson)
+        val episodesSaved =
+            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, episodesSaved)
+    }
+
+    /**
+     * It creates a file called "scans.json" if it doesn't exist, and if it does exist, it reads the file and converts the
+     * contents to a list of integers
+     *
+     * @param gson Gson
+     * @return A pair of a file and a mutable list of integers.
+     */
+    private fun getScanFile(gson: Gson): Pair<File, MutableList<String>> {
+        val file = FileImpl.getFile("scans.json")
+        this.createFile(file, gson)
+        val scansSaved =
+            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, scansSaved)
+    }
+
+    /**
+     * If the file doesn't exist, create it and write an empty JSON array to it
+     *
+     * @param gson Gson
+     * @return A pair of a file and a mutable list of integers.
+     */
+    private fun getNewsFile(gson: Gson): Pair<File, MutableList<String>> {
+        val file = FileImpl.getFile("news.json")
+        this.createFile(file, gson)
+        val newsSaved =
+            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+        return Pair(file, newsSaved)
+    }
+
     /**
      * It checks the episodes and scans of all the platforms and saves them in the database
      *
@@ -283,8 +334,8 @@ class Jais {
 
                     Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
                         scans.sortedBy { it.releaseDate }.forEachIndexed { _, scan ->
-                            if (!scansSaved.contains(scan.hashCode())) {
-                                scansSaved.add(scan.hashCode())
+                            if (!scansSaved.contains(scan.scanId)) {
+                                scansSaved.add(scan.scanId)
                                 Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
                                 Notifications.add(scan.anime)
                                 PluginManager.sendScan(scan)
@@ -312,8 +363,8 @@ class Jais {
 
                     Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert news!") {
                         news.sortedBy { it.releaseDate }.forEach { news ->
-                            if (!newsSaved.contains(news.hashCode())) {
-                                newsSaved.add(news.hashCode())
+                            if (!newsSaved.contains(news.newsId)) {
+                                newsSaved.add(news.newsId)
                                 Files.write(newsFile.toPath(), gson.toJson(newsSaved).toByteArray())
                                 PluginManager.sendNews(news)
                             }
@@ -330,57 +381,6 @@ class Jais {
 
             connection?.close()
         }
-    }
-
-    private fun createFile(file: File, gson: Gson) {
-        if (!file.exists()) {
-            file.createNewFile()
-            Files.write(file.toPath(), gson.toJson(JsonArray()).toByteArray())
-        }
-    }
-
-    /**
-     * It creates a file called episodes.json if it doesn't exist, and if it does exist, it reads the file and returns the
-     * contents as a list of strings
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of strings.
-     */
-    private fun getEpisodeFile(gson: Gson): Pair<File, MutableList<String>> {
-        val file = FileImpl.getFile("episodes.json")
-        this.createFile(file, gson)
-        val episodesSaved =
-            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, episodesSaved)
-    }
-
-    /**
-     * It creates a file called "scans.json" if it doesn't exist, and if it does exist, it reads the file and converts the
-     * contents to a list of integers
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of integers.
-     */
-    private fun getScanFile(gson: Gson): Pair<File, MutableList<Int>> {
-        val file = FileImpl.getFile("scans.json")
-        this.createFile(file, gson)
-        val scansSaved =
-            (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, scansSaved)
-    }
-
-    /**
-     * If the file doesn't exist, create it and write an empty JSON array to it
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of integers.
-     */
-    private fun getNewsFile(gson: Gson): Pair<File, MutableList<Int>> {
-        val file = FileImpl.getFile("news.json")
-        this.createFile(file, gson)
-        val newsSaved =
-            (gson.fromJson(FileReader(file), Array<Int>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, newsSaved)
     }
 
     /**

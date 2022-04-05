@@ -4,5 +4,4 @@
 
 package fr.ziedelth.jais.utils
 
-object JCommand {
-}
+object JCommand
