@@ -28,10 +28,9 @@ object JMapper {
     private val animeGenreMapper = AnimeGenreMapper()
     private val animeCodeMapper = AnimeCodeMapper()
 
-    val animeMapper = AnimeMapper()
+    private val animeMapper = AnimeMapper()
     val episodeMapper = EpisodeMapper()
     val scanMapper = ScanMapper()
-    val opsEndsMapper = OpsEndsMapper()
 
     /**
      * It returns a connection to the database if the configuration is valid
