@@ -54,11 +54,11 @@ class Jais {
         this.addCountry(FranceCountry::class.java)
 
         JLogger.info("Adding platforms...")
-        this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
-        this.addPlatform(CrunchyrollPlatform::class.java)
+        // this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
+        // this.addPlatform(CrunchyrollPlatform::class.java)
         this.addPlatform(NetflixPlatform::class.java)
-        this.addPlatform(ScantradPlatform::class.java)
-        this.addPlatform(WakanimPlatform::class.java)
+        // this.addPlatform(ScantradPlatform::class.java)
+        // this.addPlatform(WakanimPlatform::class.java)
 
         JLogger.info("Adding commands...")
         this.addCommand(ExitCommand::class.java)
