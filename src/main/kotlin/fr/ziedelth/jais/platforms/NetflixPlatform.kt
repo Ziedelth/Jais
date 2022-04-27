@@ -38,11 +38,11 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
 
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                if (calendar.get(Calendar.DAY_OF_WEEK) == 5) {
+                if (calendar.get(Calendar.DAY_OF_WEEK) == 4) {
                     // Komi can't communicate
                     val id = 81228573
                     val url = "https://www.netflix.com/${country.checkOnEpisodesURL(this)}/title/$id"
-                    val releaseDate = ISO8601.fromUTCDate("${getISODate(calendar)}T08:01:00Z")
+                    val releaseDate = ISO8601.fromUTCDate("${getISODate(calendar)}T07:02:00Z")
                     if (!this.checkedEpisodes.contains(id.toString()) && ISO8601.isSameDayUsingInstant(
                             calendar,
                             releaseDate
@@ -58,7 +58,6 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                         val anime =
                             document.selectXpath("//*[@id=\"section-seasons-and-episodes\"]/div[1]/h2[2]").text()
                                 ?: return@tryCatch
-                        // val animeImage = style?.split("(\"")?.get(1)?.replace("\")", "")?.toHTTPS()
                         val animeImage =
                             "https://animotaku.fr/wp-content/uploads/2021/08/anime-komi-cant-communicate-date-sortie.jpeg"
                         val animeGenres = Genre.getGenres(

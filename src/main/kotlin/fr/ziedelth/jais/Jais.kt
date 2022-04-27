@@ -56,7 +56,7 @@ class Jais {
         JLogger.info("Adding platforms...")
         this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
         this.addPlatform(CrunchyrollPlatform::class.java)
-//        this.addPlatform(NetflixPlatform::class.java)
+        this.addPlatform(NetflixPlatform::class.java)
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
 
@@ -107,7 +107,13 @@ class Jais {
 
         PluginManager.plugins?.forEach {
             val pluginId = it.wrapper.pluginId
-            val followers = it.getFollowers()
+
+            val followers = try {
+                it.getFollowers()
+            } catch (e: Exception) {
+                -1
+            }
+
             currentDay.addProperty(pluginId, followers)
         }
 
