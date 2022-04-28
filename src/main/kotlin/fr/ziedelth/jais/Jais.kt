@@ -299,23 +299,21 @@ class Jais {
 
                     Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
                         episodes.sortedBy { it.releaseDate }.forEachIndexed { _, episode ->
-                            if (!episodesSaved.contains(episode.episodeId)) {
-                                episodesSaved.add(episode.episodeId)
-                                Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
-                                Notifications.add(episode.anime)
-                                PluginManager.sendEpisode(episode)
-                            }
-
                             val episodeData = JMapper.insertEpisode(connection, episode)
-                            val ifExists = JMapper.episodeMapper.get(connection, episodeData?.id) != null
+                            val ifExistsAfterInsertion = JMapper.episodeMapper.get(connection, episodeData?.id) != null
 
-                            if (!ifExists) {
+                            if (!ifExistsAfterInsertion) {
                                 JLogger.warning("Episode has occurred a problem when insertion, retry next time...")
                                 this.looseEpisodes.add(episode)
                                 return@forEachIndexed
                             }
 
-                            JLogger.info("Episode has been correctly inserted or updated in the database!")
+                            if (!episodesSaved.contains(episode.episodeId)) {
+                                episodesSaved.add(episode.episodeId)
+                                Files.write(episodesFile.toPath(), gson.toJson(episodesSaved).toByteArray())
+                                PluginManager.sendEpisode(episode)
+                                episodeData?.let { Notifications.add(Anime(it.animeId, episode.anime)) }
+                            }
                         }
                     }
 
@@ -328,23 +326,21 @@ class Jais {
 
                     Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
                         scans.sortedBy { it.releaseDate }.forEachIndexed { _, scan ->
-                            if (!scansSaved.contains(scan.scanId)) {
-                                scansSaved.add(scan.scanId)
-                                Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
-                                Notifications.add(scan.anime)
-                                PluginManager.sendScan(scan)
-                            }
-
                             val scanData = JMapper.insertScan(connection, scan)
-                            val ifExists = JMapper.scanMapper.get(connection, scanData?.id) != null
+                            val ifExistsAfterInsertion = JMapper.scanMapper.get(connection, scanData?.id) != null
 
-                            if (!ifExists) {
+                            if (!ifExistsAfterInsertion) {
                                 JLogger.warning("Scan has occurred a problem when insertion, retry next time...")
                                 this.looseScans.add(scan)
                                 return@forEachIndexed
                             }
 
-                            JLogger.info("Scan has been correctly inserted or updated in the database!")
+                            if (!scansSaved.contains(scan.scanId)) {
+                                scansSaved.add(scan.scanId)
+                                Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
+                                PluginManager.sendScan(scan)
+                                scanData?.let { Notifications.add(Anime(it.animeId, scan.anime)) }
+                            }
                         }
                     }
 

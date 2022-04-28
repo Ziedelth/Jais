@@ -47,14 +47,14 @@ class AnimeMapper {
         return if (animeCode != null) {
             var anime = get(connection, animeCode.animeId)
 
-            if (anime?.description.isNullOrEmpty() && !description.isNullOrEmpty()) {
+            if (anime?.description?.trim().isNullOrEmpty() && !description?.trim().isNullOrEmpty()) {
                 val runner = QueryRunner()
                 val query = "UPDATE animes SET description = ? WHERE id = ?"
                 runner.update(connection, query, description, anime?.id)
                 anime = get(connection, anime?.id)
             }
 
-            if (anime?.image.isNullOrEmpty() && !image.isNullOrEmpty()) {
+            if ((anime?.image?.trim().isNullOrEmpty() || anime?.image?.trim()?.startsWith("http") == true) && !image?.trim().isNullOrEmpty()) {
                 val runner = QueryRunner()
                 val query = "UPDATE animes SET image = ? WHERE id = ?"
                 runner.update(connection, query, saveAnimeImage(image, saveImage), anime?.id)
@@ -74,7 +74,7 @@ class AnimeMapper {
                     sh,
                     countryId,
                     releaseDate,
-                    name,
+                    name?.trim(),
                     saveAnimeImage(image, saveImage),
                     description
                 )

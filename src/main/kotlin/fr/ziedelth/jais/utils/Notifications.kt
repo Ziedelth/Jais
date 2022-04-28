@@ -11,13 +11,14 @@ import com.google.firebase.messaging.AndroidConfig
 import com.google.firebase.messaging.AndroidNotification
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
-import fr.ziedelth.jais.utils.plugins.PluginUtils.onlyLettersAndDigits
 import java.io.FileInputStream
+
+data class Anime(val id: Long, val name: String)
 
 object Notifications {
     private var init = false
-    val map: MutableMap<String, String> = mutableMapOf()
-    val notify: MutableMap<String, String> = mutableMapOf()
+    val map = mutableListOf<Anime>()
+    val notify = mutableListOf<Anime>()
 
     fun init() {
         JLogger.info("Setup notifications...")
@@ -41,40 +42,42 @@ object Notifications {
         this.notify.clear()
     }
 
-    fun add(anime: String) {
-        val code = anime.lowercase().onlyLettersAndDigits()
-
-        if (this.map.containsKey(code))
+    fun add(anime: Anime) {
+        if (this.map.any { it.id == anime.id })
             return
 
-        this.map[code] = anime
+        this.map.add(anime)
     }
 
     fun send(): Int {
-        val notContains = this.map.filter { entry -> !this.notify.containsKey(entry.key) }
+        val notContains = this.map.filter { a -> !this.notify.any { a.id == it.id } }
 
         if (notContains.isEmpty())
             return 0
 
-        this.notify.putAll(notContains)
+        this.notify.addAll(notContains)
 
         if (!this.init)
             return notContains.size
 
-        sendNotifications(notContains.values)
-
+        sendNotifications(notContains)
         return notContains.size
     }
 
-    private fun sendNotifications(list: Collection<String>) {
+    private fun notification(title: String, body: String, topic: String) {
         FirebaseMessaging.getInstance().send(
             Message.builder().setAndroidConfig(
                 AndroidConfig.builder().setNotification(
                     AndroidNotification.builder()
-                        .setTitle(if (list.size > 1) "Nouvelles sorties" else "Nouvelle sortie")
-                        .setBody(list.joinToString(", ")).build()
+                        .setTitle(title)
+                        .setBody(body).build()
                 ).build()
-            ).setTopic("animes").build()
+            ).setTopic(topic).build()
         )
+    }
+
+    private fun sendNotifications(list: Collection<Anime>) {
+        notification(if (list.size > 1) "Nouvelles sorties" else "Nouvelle sortie", list.joinToString(", ") { it.name }, "animes")
+        list.forEach { notification("Nouvelle sortie", it.name, it.id.toString()) }
     }
 }

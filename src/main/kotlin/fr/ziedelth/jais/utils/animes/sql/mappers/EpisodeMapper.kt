@@ -56,17 +56,17 @@ class EpisodeMapper {
         var episode = get(connection, episodeId)
 
         return if (episode != null) {
-            if (episode.title.isNullOrBlank() || !episode.title.equals(title, true)) {
+            if (episode.title?.trim().isNullOrBlank() || !episode.title?.trim().equals(title, true)) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET title = ? WHERE id = ?"
-                runner.update(connection, query, title, episode.id)
+                runner.update(connection, query, title?.trim(), episode.id)
                 episode = get(connection, episode.id)
             }
 
-            if (episode != null && (episode.url.isBlank() || !episode.url.equals(url, true))) {
+            if (episode != null && (episode.url.trim().isBlank() || !episode.url.trim().equals(url, true))) {
                 val runner = QueryRunner()
                 val query = "UPDATE episodes SET url = ? WHERE id = ?"
-                runner.update(connection, query, url, episode.id)
+                runner.update(connection, query, url.trim(), episode.id)
                 episode = get(connection, episode.id)
             }
 
@@ -122,8 +122,8 @@ class EpisodeMapper {
                 releaseDate,
                 season,
                 n,
-                episodeId,
-                title,
+                episodeId.trim().ifBlank { null },
+                title?.trim()?.ifBlank { null },
                 url,
                 imagePath,
                 duration
