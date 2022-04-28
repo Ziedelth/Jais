@@ -18,7 +18,7 @@ data class Anime(val id: Long, val name: String)
 object Notifications {
     private var init = false
     val map = mutableListOf<Anime>()
-    val notify = mutableListOf<Anime>()
+    private val notify = mutableListOf<Anime>()
 
     fun init() {
         JLogger.info("Setup notifications...")
@@ -64,20 +64,29 @@ object Notifications {
         return notContains.size
     }
 
-    private fun notification(title: String, body: String, topic: String) {
-        FirebaseMessaging.getInstance().send(
-            Message.builder().setAndroidConfig(
-                AndroidConfig.builder().setNotification(
-                    AndroidNotification.builder()
-                        .setTitle(title)
-                        .setBody(body).build()
-                ).build()
-            ).setTopic(topic).build()
+    data class Notif(val title: String, val body: String, val topic: String)
+
+    private fun notification(notifs: Iterable<Notif>) {
+        FirebaseMessaging.getInstance().sendAll(
+            notifs.map {
+                Message.builder().setAndroidConfig(
+                    AndroidConfig.builder().setNotification(
+                        AndroidNotification.builder()
+                            .setTitle(it.title)
+                            .setBody(it.body).build()
+                    ).build()
+                ).setTopic(it.topic).build()
+            }
         )
     }
 
     private fun sendNotifications(list: Collection<Anime>) {
-        notification(if (list.size > 1) "Nouvelles sorties" else "Nouvelle sortie", list.joinToString(", ") { it.name }, "animes")
-        list.forEach { notification("Nouvelle sortie", it.name, it.id.toString()) }
+        val notifs = mutableListOf(
+            Notif(
+                if (list.size > 1) "Nouvelles sorties" else "Nouvelle sortie",
+                list.joinToString(", ") { it.name },
+                "animes"))
+        notifs.addAll(list.map { Notif("Nouvelle sortie", it.name, it.id.toString()) })
+        notification(notifs)
     }
 }

@@ -32,3 +32,4 @@ target/*
 /src/main/kotlin/fr/ziedelth/jais/Cubari.kt
 /src/main/kotlin/fr/ziedelth/jais/Manga.kt
 /src/main/kotlin/fr/ziedelth/jais/OpsEndsDetection.kt
+/src/main/kotlin/fr/ziedelth/jais/Test.kt

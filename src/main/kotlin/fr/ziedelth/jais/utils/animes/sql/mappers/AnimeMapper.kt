@@ -54,7 +54,9 @@ class AnimeMapper {
                 anime = get(connection, anime?.id)
             }
 
-            if ((anime?.image?.trim().isNullOrEmpty() || anime?.image?.trim()?.startsWith("http") == true) && !image?.trim().isNullOrEmpty()) {
+            if ((anime?.image?.trim().isNullOrEmpty() || anime?.image?.trim()
+                    ?.startsWith("http") == true) && !image?.trim().isNullOrEmpty()
+            ) {
                 val runner = QueryRunner()
                 val query = "UPDATE animes SET image = ? WHERE id = ?"
                 runner.update(connection, query, saveAnimeImage(image, saveImage), anime?.id)

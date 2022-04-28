@@ -67,14 +67,17 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                         val episode = episodeArray?.get(episodeArray.size() - 4)?.asJsonObject
 
                         val anime = "Komi cherche ses mots"
-                        val animeImage = "https://animotaku.fr/wp-content/uploads/2021/08/anime-komi-cant-communicate-date-sortie.jpeg"
-                        val animeGenres = arrayOf(Genre.COMEDY, Genre.DRAMA, Genre.ROMANCE, Genre.SCHOOL, Genre.SLICE_OF_LIFE)
-                        val animeDescription = "Dans un lycée regorgeant de personnalités pour le moins originales, Tadano aide sa camarade Komi, timide et peu sociable, à atteindre son objectif : se faire 100 amis."
+                        val animeImage =
+                            "https://animotaku.fr/wp-content/uploads/2021/08/anime-komi-cant-communicate-date-sortie.jpeg"
+                        val animeGenres =
+                            arrayOf(Genre.COMEDY, Genre.DRAMA, Genre.ROMANCE, Genre.SCHOOL, Genre.SLICE_OF_LIFE)
+                        val animeDescription =
+                            "Dans un lycée regorgeant de personnalités pour le moins originales, Tadano aide sa camarade Komi, timide et peu sociable, à atteindre son objectif : se faire 100 amis."
                         val season = episode?.get("seasnum")?.asLong ?: return@tryCatch
                         val number = episode.get("epnum")?.asLong ?: return@tryCatch
                         val episodeType = EpisodeType.EPISODE
                         val langType = LangType.SUBTITLES
-                        val image =  episode.get("img")?.asString ?: return@tryCatch
+                        val image = episode.get("img")?.asString ?: return@tryCatch
 
                         this.addCheck(id.toString())
                         list.add(
