@@ -10,6 +10,7 @@ import com.squareup.okhttp.OkHttpClient
 import com.squareup.okhttp.Request
 import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
+import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.Episode
@@ -18,6 +19,7 @@ import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import java.io.FileReader
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,12 +31,23 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class NetflixPlatform(jais: Jais) : Platform(jais) {
+    data class Configuration(val key: String) {
+        companion object {
+            fun load(): Configuration? {
+                val file = FileImpl.getFile("netflix.json")
+                return if (!file.exists()) null else Gson().fromJson(FileReader(file), Configuration::class.java)
+            }
+        }
+    }
+
+
     /* It's a `@Synchronized` annotation. It's a way to prevent multiple threads to access the same method at the same
     time. */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
         val platformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
+        val configuration = Configuration.load() ?: return emptyArray()
 
         this.getAllowedCountries().forEach { country ->
             val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
@@ -56,7 +69,7 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                             .url("https://unogsng.p.rapidapi.com/episodes?netflixid=$id")
                             .get()
                             .addHeader("X-RapidAPI-Host", "unogsng.p.rapidapi.com")
-                            .addHeader("X-RapidAPI-Key", "cedd44ca52mshd9502590704785cp12abb6jsn2019b9852486")
+                            .addHeader("X-RapidAPI-Key", configuration.key)
                             .build()
 
                         val response = client.newCall(request).execute()
