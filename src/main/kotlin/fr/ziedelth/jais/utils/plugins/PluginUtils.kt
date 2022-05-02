@@ -8,6 +8,7 @@ import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Scan
 import kotlin.math.floor
+import kotlin.math.min
 
 object PluginUtils {
     fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
@@ -29,16 +30,20 @@ object PluginUtils {
         return "${(if (hours >= 1) "$h:" else "")}$m:$s"
     }
 
-    fun getMessage(episode: Episode) = "🎉 ${episode.anime}\n" +
-            "${getEpisodeTitle(episode)}\n" +
-            "${
-                getEpisodeDataMessage(
-                    episode,
-                    false
-                )
-            } ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
-            "${getEpisodeTimeMessage(episode)}\n" +
-            "#Anime #Episode #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
+    fun getMessage(episode: Episode): String {
+        val episodeTitle = getEpisodeTitle(episode)
+
+        return "🎉 ${episode.anime}\n" +
+                "${episodeTitle.substring(0 until min(episodeTitle.length, 25))}\n" +
+                "${
+                    getEpisodeDataMessage(
+                        episode,
+                        false
+                    )
+                } ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
+                "${getEpisodeTimeMessage(episode)}\n" +
+                "#Anime #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
+    }
 
     fun getMarkdownMessage(episode: Episode) = "**${getEpisodeTitle(episode)}**\n" +
             getEpisodeDataMessage(episode) +
@@ -59,7 +64,7 @@ object PluginUtils {
                     false
                 )
             }\n" +
-            "#Anime #Scan #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
+            "#Anime #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
 
     fun getMarkdownMessage(scan: Scan) = getScanDataMessage(scan)
 
