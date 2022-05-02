@@ -92,18 +92,17 @@ class Jais {
      * It saves the number of followers for each plugin in a JSON file
      */
     private fun saveAnalytics() {
-        val gson = Gson()
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -1)
-        val file = FileImpl.getFile("analytics.json")
+        val file = FileImpl.getFile("analytics.csv")
 
         if (!file.exists()) {
             file.createNewFile()
-            Files.write(file.toPath(), gson.toJson(JsonObject()).toByteArray())
+            Files.write(file.toPath(), "date;plugin;followers\n".toByteArray())
         }
 
-        val arraySaved = gson.fromJson(FileReader(file), JsonObject::class.java) ?: JsonObject()
-        val currentDay = JsonObject()
+        val old = Files.readString(file.toPath())
+        val currentDay = SimpleDateFormat("dd/MM/yyyy").format(calendar.time)
 
         PluginManager.plugins?.forEach {
             val pluginId = it.wrapper.pluginId
@@ -114,11 +113,10 @@ class Jais {
                 -1
             }
 
-            currentDay.addProperty(pluginId, followers)
+            old.plus("$currentDay;$pluginId;$followers\n")
         }
 
-        arraySaved.add(SimpleDateFormat("dd/MM/yyyy").format(calendar.time), currentDay)
-        Files.write(file.toPath(), gson.toJson(arraySaved).toByteArray())
+        Files.write(file.toPath(), old.toByteArray())
     }
 
     /**
