@@ -6,6 +6,7 @@ package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.HashUtils
+import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
@@ -28,11 +29,7 @@ data class Scan(
     val langType: LangType = LangType.SUBTITLES,
     val url: String,
 ) {
-    private val hash: String = HashUtils.sha512(
-        "${
-            this.platform.platformHandler.name.uppercase().substring(0 until 4)
-        }-${this.langType.getData(country.country.javaClass)?.data}"
-    )
+    private val hash: String = HashUtils.sha512("${this.platform.platformHandler.name.uppercase().substring(0 until 4)}${ISO8601.fromUTCDate(this.releaseDate)}${this.anime}${this.number}${this.langType.getData(country.country.javaClass)?.data}")
     val scanId: String = "${this.platform.platformHandler.name.uppercase().substring(0 until 4)}-${
         this.hash.substring(
             0,
