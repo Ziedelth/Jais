@@ -72,7 +72,7 @@ class Jais {
         JThread.startExactly({
             this.resetDaily()
             this.checkEpisodesAndScans()
-        }, delay = 2 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
+        }, delay = 5 * 60 * 1000L, priority = Thread.MAX_PRIORITY)
 
         JThread.start({
             val scanner = Scanner(System.`in`)
@@ -101,7 +101,7 @@ class Jais {
             Files.write(file.toPath(), "date;plugin;followers\n".toByteArray())
         }
 
-        val old = Files.readString(file.toPath())
+        val builder = StringBuilder(Files.readString(file.toPath()))
         val currentDay = SimpleDateFormat("dd/MM/yyyy").format(calendar.time)
 
         PluginManager.plugins?.forEach {
@@ -113,10 +113,10 @@ class Jais {
                 -1
             }
 
-            old.plus("$currentDay;$pluginId;$followers\n")
+            builder.append("$currentDay;$pluginId;$followers\n")
         }
 
-        Files.write(file.toPath(), old.toByteArray())
+        Files.write(file.toPath(), builder.toString().toByteArray())
     }
 
     /**
