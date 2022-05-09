@@ -48,4 +48,8 @@ data class Scan(
 
         Impl.tryCatch { this.animeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.animeImage)), 350, 500) }
     }
+
+    override fun toString(): String {
+        return "Scan(platform=$platform, country=$country, releaseDate=$releaseDate, anime='$anime', animeImage=$animeImage, animeGenres=${animeGenres.contentToString()}, animeDescription=$animeDescription, number=$number, episodeType=$episodeType, langType=$langType, url='$url', hash='$hash', scanId='$scanId', animeBufferedImage=$animeBufferedImage)"
+    }
 }

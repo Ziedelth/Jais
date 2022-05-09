@@ -6,7 +6,6 @@ package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
-import kotlin.reflect.KClass
 
 enum class EpisodeType(val fr: String, private val data: Array<Pair<Class<out Country>, String>>) {
     CHAPTER("Chapitre", arrayOf(FranceCountry::class.java to "Chapitre")),

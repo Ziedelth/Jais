@@ -54,7 +54,7 @@ enum class Genre(val fr: String, val identifiers: Array<String> = arrayOf()) {
     SLICE_OF_LIFE("Tranche de vie", identifiers = arrayOf("Tranche de vie", "Tranches de vie", "slice of life")),
     VIOLENCE("Violence", identifiers = arrayOf("Violence")),
     WAR("Guerre", identifiers = arrayOf("War")),
-    WEBCOMIC("Webcomic", identifiers = arrayOf("Webcomic")),
+    WEBCOMIC("Webcomic", identifiers = arrayOf("Webcomic", "Webtoon")),
     YAOI("Yaoi", identifiers = arrayOf("Yaoi")),
     YURI("Yuri", identifiers = arrayOf("Yuri")),
     ;
