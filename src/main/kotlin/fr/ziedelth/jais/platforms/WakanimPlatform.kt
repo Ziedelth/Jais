@@ -37,63 +37,30 @@ import kotlin.math.pow
     countries = [FranceCountry::class]
 )
 class WakanimPlatform(jais: Jais) : Platform(jais) {
-    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Wakanim
-
-            if (anime != other.anime) return false
-            if (image != other.image) return false
-            if (smallSummary != other.smallSummary) return false
-            if (genres != null) {
-                if (other.genres == null) return false
-                if (!genres.contentEquals(other.genres)) return false
-            } else if (other.genres != null) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = anime?.hashCode() ?: 0
-            result = 31 * result + (image?.hashCode() ?: 0)
-            result = 31 * result + (smallSummary?.hashCode() ?: 0)
-            result = 31 * result + (genres?.contentHashCode() ?: 0)
-            return result
-        }
-    }
+    data class Wakanim(val anime: String?, val image: String?, val smallSummary: String?, val genres: Array<Genre>?)
 
     private val wakanim: MutableList<Wakanim> = mutableListOf()
     private val lastCheck = mutableMapOf<Country, Long>()
     private val cElements = mutableMapOf<Country, Elements?>()
 
-    /**
-     * It checks the episodes for the current day and returns them
-     *
-     * @param calendar The calendar object that contains the date of the episode.
-     * @return An array of Episode objects.
-     */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val date = getDate(calendar)
         val gson = Gson()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
-                if (System.currentTimeMillis() - (this.lastCheck[country]
-                        ?: 0) >= 3600000 || (!this.cElements.containsKey(country) || this.cElements[country] == null)
+                if (System.currentTimeMillis() - (this.lastCheck[pairCountryImpl.second]
+                        ?: 0) >= 3600000 || (!this.cElements.containsKey(pairCountryImpl.second) || this.cElements[pairCountryImpl.second] == null)
                 ) {
-                    this.lastCheck[country] = System.currentTimeMillis()
+                    this.lastCheck[pairCountryImpl.second] = System.currentTimeMillis()
 
                     val url =
-                        "https://www.wakanim.tv/${country.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
+                        "https://www.wakanim.tv/${pairCountryImpl.second.checkOnEpisodesURL(this)}/v2/agenda/getevents?s=$date&e=$date&free=false".toHTTPS()
                     val result = JBrowser.get(url)
-                    this.cElements[country] = result?.getElementsByClass("Calendar-ep")
+                    this.cElements[pairCountryImpl.second] = result?.getElementsByClass("Calendar-ep")
 
                     val inputStream = URL("https://account.wakanim.tv/api/catalogue").openStream()
                     val jsonArray: JsonArray? = gson.fromJson(InputStreamReader(inputStream), JsonArray::class.java)
@@ -117,7 +84,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     }?.toTypedArray() ?: emptyArray())
                 }
 
-                this.cElements[country]?.forEachIndexed { index, it ->
+                this.cElements[pairCountryImpl.second]?.forEachIndexed { index, it ->
                     val text = it?.text()
                     val ts = text?.split(" ")
                     val releaseDate =
@@ -133,10 +100,10 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     val etc = ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
 
                     var episodeType =
-                        if (etc.contains("${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}", true))
+                        if (etc.contains("${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.data}", true))
                             EpisodeType.FILM
                         else if (etc.contains(
-                                "${EpisodeType.SPECIAL.getData(countryImpl.country.javaClass)?.data}",
+                                "${EpisodeType.SPECIAL.getData(pairCountryImpl.second.javaClass)?.data}",
                                 true
                             )
                         )
@@ -183,9 +150,9 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
 
                         var season = 1L
 
-                        if (cardSeason.contains(countryImpl.countryHandler.season, true)) {
+                        if (cardSeason.contains(pairCountryImpl.first.season, true)) {
                             val split = cardSeason.split(" ")
-                            season = split[split.indexOf((countryImpl.countryHandler.season)) + 1].toLongOrNull() ?: 1L
+                            season = split[split.indexOf((pairCountryImpl.first.season)) + 1].toLongOrNull() ?: 1L
                         }
                         // If contains OVA in title of season, it's special episode
                         else if (cardSeason.contains("OVA", true)) {
@@ -193,7 +160,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         }
                         // If contains film in title of season, it's a film
                         else if (cardSeason.contains(
-                                "${EpisodeType.FILM.getData(countryImpl.country.javaClass)?.data}",
+                                "${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.data}",
                                 true
                             )
                         ) {
@@ -216,8 +183,8 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         this.addCheck(hash)
                         list.add(
                             Episode(
-                                platformImpl,
-                                countryImpl,
+                                pairPlatformImpl,
+                                pairCountryImpl,
                                 releaseDate,
                                 anime,
                                 animeImage,
@@ -242,12 +209,6 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
-    /**
-     * If the document has a class named "NoEpisodes", then return false. Otherwise, return true
-     *
-     * @param episodeResult Document?
-     * @return Nothing.
-     */
     private fun hasEpisodes(episodeResult: Document?): Boolean {
         try {
             if (episodeResult?.getElementsByClass("NoEpisodes")?.firstOrNull() != null) return false
@@ -257,17 +218,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
         return true
     }
 
-    /**
-     * Get the date from the calendar and format it as a string
-     *
-     * @param calendar The Calendar object that you want to convert to a date.
-     */
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("dd-MM-yyyy").format(calendar.time)
 
-    /**
-     * Get the date in ISO format
-     *
-     * @param calendar The Calendar object to be used to generate the date.
-     */
     private fun getISODate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

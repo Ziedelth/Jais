@@ -41,7 +41,7 @@ class AnimeMapper {
         description: String?,
         saveImage: Boolean = true
     ): AnimeData? {
-        val code = HashUtils.sha512(name?.lowercase()?.onlyLettersAndDigits())
+        val code = HashUtils.hashString(name?.lowercase()?.onlyLettersAndDigits())
         val animeCode = animeCodeMapper.get(connection, code)
 
         return if (animeCode != null) {

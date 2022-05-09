@@ -24,15 +24,6 @@ object FileImpl {
     private fun notExists(file: File): Boolean = !this.exists(file)
 
     /**
-     * "Check if a file with the given name exists in the current folder."
-     *
-     * The function is declared as a top-level function, which means it can be called from anywhere in the program
-     *
-     * @param name The name of the file to be created.
-     */
-    fun fileExists(name: String) = File(this.currentFolder, name).exists()
-
-    /**
      * Create a File object with the given name in the current folder
      *
      * @param name The name of the file to be created.

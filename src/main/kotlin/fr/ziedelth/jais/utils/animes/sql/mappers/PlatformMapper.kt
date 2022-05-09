@@ -12,50 +12,24 @@ import org.apache.commons.dbutils.handlers.ScalarHandler
 import java.sql.Connection
 
 class PlatformMapper {
-    /**
-     * It returns a list of PlatformData objects.
-     *
-     * @param connection The connection to the database.
-     * @return A list of PlatformData objects.
-     */
     fun get(connection: Connection?): MutableList<PlatformData> {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms", blh)
     }
 
-    /**
-     * It returns a PlatformData object for the given id.
-     *
-     * @param connection The connection to the database.
-     * @param id The id of the platform to retrieve.
-     * @return A PlatformData object.
-     */
     fun get(connection: Connection?, id: Long): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE id = ?", blh, id).firstOrNull()
     }
 
-    /**
-     * Get a platform by name
-     *
-     * @param connection The connection to the database.
-     * @param name The name of the platform to retrieve.
-     * @return A PlatformData object.
-     */
     fun get(connection: Connection?, name: String?): PlatformData? {
         val blh = BeanListHandler(PlatformData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM platforms WHERE name = ?", blh, name).firstOrNull()
     }
 
-    /**
-     * Insert a platform into the database
-     *
-     * @param connection The connection to the database.
-     * @param platformHandler PlatformHandler is the object that holds the data for the platform.
-     */
     fun insert(connection: Connection?, platformHandler: PlatformHandler): PlatformData? = insert(
         connection,
         platformHandler.name,

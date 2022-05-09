@@ -85,7 +85,9 @@ object Notifications {
             Notif(
                 if (list.size > 1) "Nouvelles sorties" else "Nouvelle sortie",
                 list.joinToString(", ") { it.name },
-                "animes"))
+                "animes"
+            )
+        )
         notifs.addAll(list.map { Notif("Nouvelle sortie", it.name, it.id.toString()) })
         notification(notifs)
     }

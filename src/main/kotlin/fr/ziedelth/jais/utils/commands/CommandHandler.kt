@@ -8,5 +8,4 @@ package fr.ziedelth.jais.utils.commands
 @Retention(AnnotationRetention.RUNTIME)
 annotation class CommandHandler(
     val command: String,
-    val description: String = "No description",
 )

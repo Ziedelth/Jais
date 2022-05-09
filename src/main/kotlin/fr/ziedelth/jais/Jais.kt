@@ -6,7 +6,6 @@ package fr.ziedelth.jais
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import fr.ziedelth.jais.commands.ExitCommand
 import fr.ziedelth.jais.commands.SendCommand
 import fr.ziedelth.jais.countries.FranceCountry
@@ -16,14 +15,11 @@ import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
-import fr.ziedelth.jais.utils.animes.countries.CountryImpl
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
-import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
 import fr.ziedelth.jais.utils.animes.sql.JMapper
 import fr.ziedelth.jais.utils.commands.Command
 import fr.ziedelth.jais.utils.commands.CommandHandler
-import fr.ziedelth.jais.utils.commands.CommandImpl
 import fr.ziedelth.jais.utils.plugins.PluginManager
 import java.io.File
 import java.io.FileReader
@@ -35,17 +31,13 @@ import kotlin.math.min
 import kotlin.reflect.KClass
 
 class Jais {
-    private val countries = mutableListOf<CountryImpl>()
-    private val platforms = mutableListOf<PlatformImpl>()
-    private val commands = mutableListOf<CommandImpl>()
+    private val countries = mutableListOf<Pair<CountryHandler, Country>>()
+    private val platforms = mutableListOf<Pair<PlatformHandler, Platform>>()
+    private val commands = mutableListOf<Pair<CommandHandler, Command>>()
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
     private val looseEpisodes = mutableListOf<Episode>()
     private val looseScans = mutableListOf<Scan>()
 
-    /**
-     * It initializes the application, loads the countries, loads the platforms, loads the plugins, and starts the daily
-     * check
-     */
     fun init() {
         JLogger.info("Init...")
         Notifications.init()
@@ -83,14 +75,11 @@ class Jais {
 
                 val command = allArgs[0]
                 val args = allArgs.subList(min(1, allArgs.size), allArgs.size)
-                this.commands.firstOrNull { it.commandHandler.command == command }?.command?.onCommand(args)
+                this.commands.firstOrNull { it.first.command == command }?.second?.onCommand(args)
             }
         })
     }
 
-    /**
-     * It saves the number of followers for each plugin in a JSON file
-     */
     private fun saveAnalytics() {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -1)
@@ -119,9 +108,6 @@ class Jais {
         Files.write(file.toPath(), old.toByteArray())
     }
 
-    /**
-     * It checks if the day has changed, and if it has, it resets the daily data
-     */
     private fun resetDaily() {
         val checkDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
 
@@ -134,12 +120,12 @@ class Jais {
         Notifications.clear()
         this.saveAnalytics()
         PluginManager.plugins?.forEach { it.reset() }
-        this.platforms.forEach { it.platform.reset() }
+        this.platforms.forEach { it.second.reset() }
     }
 
     private fun insertFailed(connection: Connection?) {
         if (this.looseEpisodes.isNotEmpty()) {
-            val list = mutableListOf<Episode>()
+            val list = mutableSetOf<Episode>()
             JLogger.info("Retry insertion of loose episode...")
 
             this.looseEpisodes.forEach { episode ->
@@ -160,7 +146,7 @@ class Jais {
         }
 
         if (this.looseScans.isNotEmpty()) {
-            val list = mutableListOf<Scan>()
+            val list = mutableSetOf<Scan>()
             JLogger.info("Retry insertion of loose scan...")
 
             this.looseScans.forEach { scan ->
@@ -182,9 +168,9 @@ class Jais {
     }
 
     private fun sortScans(
-        platformImpl: PlatformImpl,
+        platform: Platform,
         calendar: Calendar
-    ) = platformImpl.platform.checkScans(calendar).sortedWith(
+    ) = platform.checkScans(calendar).sortedWith(
         compareBy(
             Scan::anime,
             Scan::releaseDate,
@@ -195,9 +181,9 @@ class Jais {
     )
 
     private fun sortEpisode(
-        platformImpl: PlatformImpl,
+        platform: Platform,
         calendar: Calendar
-    ) = platformImpl.platform.checkEpisodes(calendar).sortedWith(
+    ) = platform.checkEpisodes(calendar).sortedWith(
         compareBy(
             Episode::anime,
             Episode::releaseDate,
@@ -215,55 +201,29 @@ class Jais {
         }
     }
 
-    /**
-     * It creates a file called episodes.json if it doesn't exist, and if it does exist, it reads the file and returns the
-     * contents as a list of strings
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of strings.
-     */
     private fun getEpisodeFile(gson: Gson): Pair<File, MutableList<String>> {
         val file = FileImpl.getFile("episodes.json")
         this.createFile(file, gson)
-        val episodesSaved =
-            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, episodesSaved)
+        val episodesSaved = (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
+        return file to episodesSaved
     }
 
-    /**
-     * It creates a file called "scans.json" if it doesn't exist, and if it does exist, it reads the file and converts the
-     * contents to a list of integers
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of integers.
-     */
     private fun getScanFile(gson: Gson): Pair<File, MutableList<String>> {
         val file = FileImpl.getFile("scans.json")
         this.createFile(file, gson)
         val scansSaved =
             (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, scansSaved)
+        return file to scansSaved
     }
 
-    /**
-     * If the file doesn't exist, create it and write an empty JSON array to it
-     *
-     * @param gson Gson
-     * @return A pair of a file and a mutable list of integers.
-     */
     private fun getNewsFile(gson: Gson): Pair<File, MutableList<String>> {
         val file = FileImpl.getFile("news.json")
         this.createFile(file, gson)
         val newsSaved =
             (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-        return Pair(file, newsSaved)
+        return file to newsSaved
     }
 
-    /**
-     * It checks the episodes and scans of all the platforms and saves them in the database
-     *
-     * @param calendar Calendar = Calendar.getInstance()
-     */
     private fun checkEpisodesAndScans(calendar: Calendar = Calendar.getInstance()) {
         Impl.tryCatch("Failed to fetch episodes") {
             JLogger.info("Check if has Internet...")
@@ -283,20 +243,20 @@ class Jais {
 
             this.insertFailed(connection)
 
-            this.platforms.forEach { platformImpl ->
-                JLogger.info("[${platformImpl.platformHandler.name}] Fetching episodes...")
-                val episodes = sortEpisode(platformImpl, calendar)
-                JLogger.info("[${platformImpl.platformHandler.name}] Fetching scans...")
-                val scans = sortScans(platformImpl, calendar)
-                JLogger.info("[${platformImpl.platformHandler.name}] Fetching news...")
-                val news = platformImpl.platform.checkNews(calendar)
-                JLogger.config("[${platformImpl.platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
+            this.platforms.forEach { (platformHandler, platform) ->
+                JLogger.info("[${platformHandler.name}] Fetching episodes...")
+                val episodes = sortEpisode(platform, calendar)
+                JLogger.info("[${platformHandler.name}] Fetching scans...")
+                val scans = sortScans(platform, calendar)
+                JLogger.info("[${platformHandler.name}] Fetching news...")
+                val news = platform.checkNews(calendar)
+                JLogger.config("[${platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
 
                 if (episodes.isNotEmpty()) {
-                    JLogger.info("[${platformImpl.platformHandler.name}] Insert all episodes...")
+                    JLogger.info("[${platformHandler.name}] Insert all episodes...")
 
-                    Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert episodes!") {
-                        episodes.sortedBy { it.releaseDate }.forEachIndexed { _, episode ->
+                    Impl.tryCatch("[${platformHandler.name}] Cannot insert episodes!") {
+                        episodes.forEachIndexed { _, episode ->
                             val episodeData = JMapper.insertEpisode(connection, episode)
                             val ifExistsAfterInsertion = JMapper.episodeMapper.get(connection, episodeData?.id) != null
 
@@ -316,14 +276,14 @@ class Jais {
                     }
 
                     connection?.commit()
-                    JLogger.info("[${platformImpl.platformHandler.name}] All episodes has been inserted!")
+                    JLogger.info("[${platformHandler.name}] All episodes has been inserted!")
                 }
 
                 if (scans.isNotEmpty()) {
-                    JLogger.info("[${platformImpl.platformHandler.name}] Insert all scans...")
+                    JLogger.info("[${platformHandler.name}] Insert all scans...")
 
-                    Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert scans!") {
-                        scans.sortedBy { it.releaseDate }.forEachIndexed { _, scan ->
+                    Impl.tryCatch("[${platformHandler.name}] Cannot insert scans!") {
+                        scans.forEachIndexed { _, scan ->
                             val scanData = JMapper.insertScan(connection, scan)
                             val ifExistsAfterInsertion = JMapper.scanMapper.get(connection, scanData?.id) != null
 
@@ -343,14 +303,14 @@ class Jais {
                     }
 
                     connection?.commit()
-                    JLogger.info("[${platformImpl.platformHandler.name}] All scans has been inserted!")
+                    JLogger.info("[${platformHandler.name}] All scans has been inserted!")
                 }
 
                 if (news.isNotEmpty()) {
-                    JLogger.info("[${platformImpl.platformHandler.name}] Insert all news...")
+                    JLogger.info("[${platformHandler.name}] Insert all news...")
 
-                    Impl.tryCatch("[${platformImpl.platformHandler.name}] Cannot insert news!") {
-                        news.sortedBy { it.releaseDate }.forEach { news ->
+                    Impl.tryCatch("[${platformHandler.name}] Cannot insert news!") {
+                        news.forEach { news ->
                             if (!newsSaved.contains(news.newsId)) {
                                 newsSaved.add(news.newsId)
                                 Files.write(newsFile.toPath(), gson.toJson(newsSaved).toByteArray())
@@ -359,7 +319,7 @@ class Jais {
                         }
                     }
 
-                    JLogger.info("[${platformImpl.platformHandler.name}] All news has been inserted!")
+                    JLogger.info("[${platformHandler.name}] All news has been inserted!")
                 }
             }
 
@@ -371,107 +331,45 @@ class Jais {
         }
     }
 
-    /**
-     * If the country is not already in the list of countries, and the country is annotated with the CountryHandler
-     * annotation, add the country to the list of countries
-     *
-     * @param country The class of the country to add.
-     * @return A boolean value.
-     */
-    fun addCountry(country: Class<out Country>): Boolean {
-        return if (this.countries.none { it.country::class.java == country } && country.isAnnotationPresent(
+    private fun addCountry(country: Class<out Country>) {
+        if (this.countries.none { it.second::class.java == country } && country.isAnnotationPresent(
                 CountryHandler::class.java
             )) {
             this.countries.add(
-                CountryImpl(
-                    countryHandler = country.getAnnotation(CountryHandler::class.java),
-                    country = country.getConstructor().newInstance()
-                )
+                country.getAnnotation(CountryHandler::class.java) to country.getConstructor().newInstance()
             )
-
-            true
-        } else false
+        }
     }
 
-    /**
-     * If the country is not null, return the first country in the list of countries that has the same class as the
-     * country. Otherwise, return null
-     *
-     * @param country The country to get information about.
-     * @return The first country that has the same class as the country parameter.
-     */
-    fun getCountryInformation(country: Country?): CountryImpl? {
-        return if (country != null) this.countries.firstOrNull { it.country::class.java == country::class.java } else null
-    }
+    private fun getCountryInformation(country: KClass<out Country>?) =
+        this.countries.firstOrNull { it.second::class.java == country?.java }
 
-    /**
-     * Get the country information for the given country
-     *
-     * @param country The country class that you want to get information about.
-     * @return The country information for the given country class.
-     */
-    private fun getCountryInformation(country: KClass<out Country>?): CountryImpl? {
-        return this.countries.firstOrNull { it.country::class.java == country?.java }
-    }
-
-    /**
-     * If the platform is not already in the list of platforms, and the platform is annotated with the PlatformHandler
-     * annotation, then add the platform to the list of platforms
-     *
-     * @param platform The platform class that you want to add.
-     * @return A boolean value.
-     */
-    fun addPlatform(platform: Class<out Platform>): Boolean {
-        return if (this.platforms.none { it.platform::class.java == platform } && platform.isAnnotationPresent(
+    private fun addPlatform(platform: Class<out Platform>) {
+        if (this.platforms.none { it.second::class.java == platform } && platform.isAnnotationPresent(
                 PlatformHandler::class.java
             )) {
             this.platforms.add(
-                PlatformImpl(
-                    platformHandler = platform.getAnnotation(PlatformHandler::class.java),
-                    platform = platform.getConstructor(Jais::class.java).newInstance(this)
-                )
+                platform.getAnnotation(PlatformHandler::class.java) to platform.getConstructor(Jais::class.java)
+                    .newInstance(this)
             )
-
-            true
-        } else false
+        }
     }
 
-    /**
-     * If the platform is not null, return the platform from the list of platforms. Otherwise, return null
-     *
-     * @param platform The platform to get information for.
-     * @return The platform information for the given platform.
-     */
-    fun getPlatformInformation(platform: Platform?): PlatformImpl? {
-        return if (platform != null) this.platforms.firstOrNull { it.platform::class.java == platform::class.java } else null
-    }
+    fun getPlatformInformation(platform: Platform?) =
+        if (platform != null) this.platforms.firstOrNull { it.second::class.java == platform::class.java } else null
 
-    /**
-     * If the platform is not null, return the countries of the platform. Otherwise, return an empty array
-     *
-     * @param platform Platform?
-     * @return An array of countries.
-     */
-    fun getAllowedCountries(platform: Platform?): Array<Country> {
-        return this.getPlatformInformation(platform)?.platformHandler?.countries?.mapNotNull { platformCountry ->
-            this.getCountryInformation(
-                platformCountry
-            )
-        }?.map { it.country }?.toTypedArray() ?: arrayOf()
-    }
+    fun getAllowedCountries(platform: Platform?) =
+        this.getPlatformInformation(platform)?.first?.countries?.mapNotNull { platformCountry ->
+            this.getCountryInformation(platformCountry)
+        }?.toTypedArray() ?: emptyArray()
 
-    private fun addCommand(command: Class<out Command>): Boolean {
-        return if (this.commands.none { it.command::class.java == command } && command.isAnnotationPresent(
+    private fun addCommand(command: Class<out Command>) {
+        if (this.commands.none { it.second::class.java == command } && command.isAnnotationPresent(
                 CommandHandler::class.java
             )) {
             this.commands.add(
-                CommandImpl(
-                    commandHandler = command.getAnnotation(CommandHandler::class.java),
-                    command = command.getConstructor().newInstance()
-                )
+                command.getAnnotation(CommandHandler::class.java) to command.getConstructor().newInstance()
             )
-
-            true
-        } else false
+        }
     }
 }

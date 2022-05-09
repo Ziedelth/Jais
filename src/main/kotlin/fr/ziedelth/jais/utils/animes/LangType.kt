@@ -59,22 +59,5 @@ enum class LangType(val fr: String, val datas: Array<EpisodeDataImpl>) {
             return UNKNOWN
         }
 
-        /**
-         * Given a class, return the LangType that contains it
-         *
-         * @param clazz The class of the country.
-         * @return The LangType of the given class.
-         */
-        fun getLangType(clazz: Class<out Country>?): LangType {
-            for (type in values()) {
-                for (data in type.datas) {
-                    if (data.clazz == clazz) {
-                        return type
-                    }
-                }
-            }
-
-            return UNKNOWN
-        }
     }
 }

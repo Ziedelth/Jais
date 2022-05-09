@@ -44,23 +44,10 @@ class CountryMapper {
      * @param tag The tag of the country you want to get.
      * @return A CountryData object.
      */
-    fun getByTag(connection: Connection?, tag: String): CountryData? {
+    private fun getByTag(connection: Connection?, tag: String): CountryData? {
         val blh = BeanListHandler(CountryData::class.java)
         val runner = QueryRunner()
         return runner.query(connection, "SELECT * FROM countries WHERE tag = ?", blh, tag).firstOrNull()
-    }
-
-    /**
-     * Get a country by name
-     *
-     * @param connection The connection to the database.
-     * @param name The name of the country to retrieve.
-     * @return Nothing.
-     */
-    fun getByName(connection: Connection?, name: String?): CountryData? {
-        val blh = BeanListHandler(CountryData::class.java)
-        val runner = QueryRunner()
-        return runner.query(connection, "SELECT * FROM countries WHERE name = ?", blh, name).firstOrNull()
     }
 
     /**

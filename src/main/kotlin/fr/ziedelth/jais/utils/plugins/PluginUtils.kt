@@ -11,9 +11,8 @@ import kotlin.math.floor
 import kotlin.math.min
 
 object PluginUtils {
-    fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
+    private fun Number.toHHMMSS() = calculateHHMMSS(this.toInt())
     fun String.onlyLettersAndDigits() = this.filter { it.isLetterOrDigit() }
-    fun String.onDigits() = this.filter { it.isDigit() }
 
     private fun calculateHHMMSS(secNum: Int): String {
         val hours = floor(secNum / 3600.0)
@@ -40,9 +39,9 @@ object PluginUtils {
                         episode,
                         false
                     )
-                } ${episode.langType.getData(episode.country.country::class.java)?.data}\n" +
+                } ${episode.langType.getData(episode.country.second::class.java)?.data}\n" +
                 "${getEpisodeTimeMessage(episode)}\n" +
-                "#Anime #${episode.platform.platformHandler.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
+                "#Anime #${episode.platform.first.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
     }
 
     fun getMarkdownMessage(episode: Episode) = "**${getEpisodeTitle(episode)}**\n" +
@@ -55,7 +54,7 @@ object PluginUtils {
         "🎬 ${if (episode.duration != -1L) episode.duration.toHHMMSS() else "??:??"}"
 
     private fun getEpisodeDataMessage(episode: Episode, newLine: Boolean = true) =
-        "${episode.country.countryHandler.season} ${episode.season} • ${episode.episodeType.getData(episode.country.country::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
+        "${episode.country.first.season} ${episode.season} • ${episode.episodeType.getData(episode.country.second::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
 
     fun getMessage(scan: Scan) = "🎉 ${scan.anime}\n" +
             "${
@@ -64,10 +63,10 @@ object PluginUtils {
                     false
                 )
             }\n" +
-            "#Anime #${scan.platform.platformHandler.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
+            "#Anime #${scan.platform.first.name.onlyLettersAndDigits()} #${scan.anime.onlyLettersAndDigits()}"
 
     fun getMarkdownMessage(scan: Scan) = getScanDataMessage(scan)
 
     private fun getScanDataMessage(scan: Scan, newLine: Boolean = true) =
-        "${scan.episodeType.getData(scan.country.country::class.java)?.data} ${scan.number}${if (newLine) "\n" else ""}"
+        "${scan.episodeType.getData(scan.country.second::class.java)?.data} ${scan.number}${if (newLine) "\n" else ""}"
 }

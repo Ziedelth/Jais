@@ -31,52 +31,19 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class ScantradPlatform(jais: Jais) : Platform(jais) {
-    data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Scantrad
-
-            if (anime != other.anime) return false
-            if (image != other.image) return false
-            if (genres != null) {
-                if (other.genres == null) return false
-                if (!genres.contentEquals(other.genres)) return false
-            } else if (other.genres != null) return false
-            if (description != other.description) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = anime?.hashCode() ?: 0
-            result = 31 * result + (image?.hashCode() ?: 0)
-            result = 31 * result + (genres?.contentHashCode() ?: 0)
-            result = 31 * result + (description?.hashCode() ?: 0)
-            return result
-        }
-    }
+    data class Scantrad(val anime: String?, val image: String?, val genres: Array<Genre>?, val description: String?)
 
     private val scantrad: MutableList<Scantrad> = mutableListOf()
 
-    /**
-     * It checks the RSS feed for new episodes and returns an array of Scan objects
-     *
-     * @param calendar The date to check for new episodes.
-     * @return An array of Scan objects.
-     */
     @Synchronized
     override fun checkScans(calendar: Calendar): Array<Scan> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Scan>()
         val gson = GsonBuilder().setPrettyPrinting().create()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val urlConnection = URL("https://scantrad.net/rss/").openConnection()
                 urlConnection.connectTimeout = 10000
@@ -130,8 +97,8 @@ class ScantradPlatform(jais: Jais) : Platform(jais) {
                         this.addCheck(titleNS)
                         list.add(
                             Scan(
-                                platformImpl,
-                                countryImpl,
+                                pairPlatformImpl,
+                                pairCountryImpl,
                                 releaseDate,
                                 anime,
                                 animeImage,

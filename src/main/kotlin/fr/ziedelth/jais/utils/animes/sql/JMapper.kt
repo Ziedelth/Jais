@@ -8,8 +8,8 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.Scan
-import fr.ziedelth.jais.utils.animes.countries.CountryImpl
-import fr.ziedelth.jais.utils.animes.platforms.PlatformImpl
+import fr.ziedelth.jais.utils.animes.countries.CountryHandler
+import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.AnimeData
 import fr.ziedelth.jais.utils.animes.sql.data.EpisodeData
 import fr.ziedelth.jais.utils.animes.sql.data.PlatformData
@@ -32,34 +32,23 @@ object JMapper {
     val episodeMapper = EpisodeMapper()
     val scanMapper = ScanMapper()
 
-    /**
-     * It returns a connection to the database if the configuration is valid
-     *
-     * @return Nothing.
-     */
     fun getConnection(): Connection? {
         val configuration = Configuration.load() ?: return null
         return DriverManager.getConnection(configuration.url, configuration.user, configuration.password)
     }
 
-    /**
-     * It returns a connection to the database
-     */
-    fun getDebugConnection(): Connection? =
-        DriverManager.getConnection("jdbc:mariadb://localhost:3306/jais", "root", "root")
-
     private fun initInsert(
         connection: Connection?,
-        platform: PlatformImpl,
-        country: CountryImpl,
+        platform: PlatformHandler,
+        country: CountryHandler,
         releaseDate: Calendar,
         anime: String,
         animeImage: String?,
         animeDescription: String?,
         genres: Array<Genre>
     ): Pair<PlatformData?, AnimeData?> {
-        val platformData = this.platformMapper.insert(connection, platform.platformHandler)
-        val countryData = this.countryMapper.insert(connection, country.countryHandler)
+        val platformData = this.platformMapper.insert(connection, platform)
+        val countryData = this.countryMapper.insert(connection, country)
 
         val animeData = this.animeMapper.insert(
             connection,
@@ -86,18 +75,11 @@ object JMapper {
         return Pair(platformData, animeData)
     }
 
-    /**
-     * Insert an episode into the database
-     *
-     * @param connection The connection to the database.
-     * @param episode The Episode object that we want to insert.
-     * @return Nothing.
-     */
     fun insertEpisode(connection: Connection?, episode: Episode): EpisodeData? {
         val (platformData, animeData) = this.initInsert(
             connection,
-            episode.platform,
-            episode.country,
+            episode.platform.first,
+            episode.country.first,
             episode.releaseDate,
             episode.anime,
             episode.animeImage,
@@ -123,18 +105,11 @@ object JMapper {
         )
     }
 
-    /**
-     * Insert the scan into the database
-     *
-     * @param connection The connection to the database.
-     * @param scan Scan
-     * @return Nothing.
-     */
     fun insertScan(connection: Connection?, scan: Scan): ScanData? {
         val (platformData, animeData) = this.initInsert(
             connection,
-            scan.platform,
-            scan.country,
+            scan.platform.first,
+            scan.country.first,
             scan.releaseDate,
             scan.anime,
             scan.animeImage,

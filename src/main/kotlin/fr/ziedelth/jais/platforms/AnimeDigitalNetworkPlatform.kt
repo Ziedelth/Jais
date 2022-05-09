@@ -30,31 +30,18 @@ import java.util.*
     countries = [FranceCountry::class]
 )
 class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
-    /**
-     * Get the date from the calendar and format it as a string
-     *
-     * @param calendar The Calendar object that you want to convert to a string.
-     */
     private fun getDate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 
-    /**
-     * It gets the episodes for the current day and adds them to the list
-     *
-     * @param calendar The calendar object that contains the date to check for episodes.
-     * @return An array of Episode objects.
-     */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val gson = Gson()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val urlConnection = URL(
-                    "https://gw.api.animedigitalnetwork.${country.checkOnEpisodesURL(this)}/video/calendar?date=${
+                    "https://gw.api.animedigitalnetwork.${pairCountryImpl.second.checkOnEpisodesURL(this)}/video/calendar?date=${
                         getDate(calendar)
                     }"
                 ).openConnection()
@@ -98,8 +85,8 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
                         duration,
                         episodeId,
                         list,
-                        platformImpl,
-                        countryImpl,
+                        pairPlatformImpl,
+                        pairCountryImpl,
                         releaseDate,
                         anime,
                         animeImage,
@@ -117,26 +104,24 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
-    /**
-     * It checks the RSS feed for the latest news and adds them to the list if they are not already in the list
-     *
-     * @param calendar The calendar to check against.
-     * @return An array of News objects.
-     */
     @Synchronized
     override fun checkNews(calendar: Calendar): Array<News> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<News>()
         val gson = Gson()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} news:") {
                 val urlConnection =
-                    URL("https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${country.checkOnEpisodesURL(this)}").openConnection()
+                    URL(
+                        "https://www.animenewsnetwork.com/all/rss.xml?ann-edition=${
+                            pairCountryImpl.second.checkOnEpisodesURL(
+                                this
+                            )
+                        }"
+                    ).openConnection()
                 urlConnection.connectTimeout = 10000
                 urlConnection.readTimeout = 10000
                 val inputStream = urlConnection.getInputStream()
@@ -165,7 +150,7 @@ class AnimeDigitalNetworkPlatform(jais: Jais) : Platform(jais) {
                         ) return@forEachIndexed
 
                         this.addCheck(title)
-                        list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
+                        list.add(News(pairPlatformImpl, pairCountryImpl, releaseDate, title, description, url))
                     }
             }
         }

@@ -34,21 +34,18 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
 
     private val crunchyroll: MutableList<Crunchyroll> = mutableListOf()
 
-    /* Checking the episodes for the current day and adding them to the list. */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val gson = Gson()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 val urlConnection =
-                    URL("https://www.crunchyroll.com/rss/anime?lang=${country.checkOnEpisodesURL(this)}").openConnection()
+                    URL("https://www.crunchyroll.com/rss/anime?lang=${pairCountryImpl.second.checkOnEpisodesURL(this)}").openConnection()
                 urlConnection.connectTimeout = 10000
                 urlConnection.readTimeout = 10000
                 val inputStream = urlConnection.getInputStream()
@@ -61,11 +58,11 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                 Impl.getArray(Impl.getObject(jsonObject, "channel"), "item")?.mapNotNull { Impl.toObject(it) }
                     ?.forEachIndexed { _, ejo ->
                         val restriction = Impl.getString(Impl.getObject(ejo, "restriction"), "")?.split(" ")
-                        if (restriction?.contains(country.restrictionEpisodes(this)) != true) return@forEachIndexed
+                        if (restriction?.contains(pairCountryImpl.second.restrictionEpisodes(this)) != true) return@forEachIndexed
                         val ejoTitle = Impl.getString(ejo, "title") ?: return@forEachIndexed
                         var langType = LangType.SUBTITLES
 
-                        for (d in LangType.VOICE.getDatas(countryImpl.country::class.java)) {
+                        for (d in LangType.VOICE.getDatas(pairCountryImpl.second::class.java)) {
                             if (ejoTitle.contains("(${d.data})", true)) {
                                 langType = LangType.VOICE
                                 break
@@ -73,7 +70,12 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                         }
 
                         val subtitles = Impl.getString(ejo, "subtitleLanguages")?.split(",")
-                        if (langType == LangType.SUBTITLES && subtitles?.contains(country.subtitlesEpisodes(this)) != true) return@forEachIndexed
+                        if (langType == LangType.SUBTITLES && subtitles?.contains(
+                                pairCountryImpl.second.subtitlesEpisodes(
+                                    this
+                                )
+                            ) != true
+                        ) return@forEachIndexed
                         val releaseDate = ISO8601.fromUTCDate(ISO8601.fromCalendar2(Impl.getString(ejo, "pubDate")))
                             ?: return@forEachIndexed
                         if (!ISO8601.isSameDayUsingInstant(
@@ -100,7 +102,13 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                         if (!this.crunchyroll.any { it.anime.equals(anime, true) }) {
                             val animeId = url.split("/")[4]
                             val result =
-                                JBrowser.get("${platformImpl.platformHandler.url}${country.restrictionEpisodes(this)}/$animeId")
+                                JBrowser.get(
+                                    "${pairPlatformImpl.first.url}${
+                                        pairCountryImpl.second.restrictionEpisodes(
+                                            this
+                                        )
+                                    }/$animeId"
+                                )
                             val animeImage =
                                 result?.selectXpath("//*[@id=\"sidebar_elements\"]/li[1]/img")?.attr("src")?.toHTTPS()
                             var animeDescription = result?.getElementsByClass("more")?.first()?.text()
@@ -121,8 +129,8 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                             duration,
                             episodeId,
                             list,
-                            platformImpl,
-                            countryImpl,
+                            pairPlatformImpl,
+                            pairCountryImpl,
                             releaseDate,
                             anime,
                             animeImage,
@@ -140,26 +148,18 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
-    /**
-     * It checks the RSS feed for new episodes and returns an array of News objects
-     *
-     * @param calendar The date to check for new episodes.
-     * @return An array of News objects.
-     */
     @Synchronized
     override fun checkNews(calendar: Calendar): Array<News> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<News>()
         val gson = Gson()
         val xmlMapper = XmlMapper()
         val objectMapper = ObjectMapper()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} news:") {
                 val urlConnection =
-                    URL("https://www.crunchyroll.com/newsrss?lang=${country.checkOnEpisodesURL(this)}").openConnection()
+                    URL("https://www.crunchyroll.com/newsrss?lang=${pairCountryImpl.second.checkOnEpisodesURL(this)}").openConnection()
                 urlConnection.connectTimeout = 10000
                 urlConnection.readTimeout = 10000
                 val inputStream = urlConnection.getInputStream()
@@ -186,7 +186,7 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                         ) return@forEachIndexed
 
                         this.addCheck(title)
-                        list.add(News(platformImpl, countryImpl, releaseDate, title, description, url))
+                        list.add(News(pairPlatformImpl, pairCountryImpl, releaseDate, title, description, url))
                     }
             }
         }

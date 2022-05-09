@@ -40,18 +40,13 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
         }
     }
 
-
-    /* It's a `@Synchronized` annotation. It's a way to prevent multiple threads to access the same method at the same
-    time. */
     @Synchronized
     override fun checkEpisodes(calendar: Calendar): Array<Episode> {
-        val platformImpl = this.getPlatformImpl() ?: return emptyArray()
+        val pairPlatformImpl = this.getPlatformImpl() ?: return emptyArray()
         val list = mutableListOf<Episode>()
         val configuration = Configuration.load() ?: return emptyArray()
 
-        this.getAllowedCountries().forEach { country ->
-            val countryImpl = this.jais.getCountryInformation(country) ?: return@forEach
-
+        this.getAllowedCountries().forEach { pairCountryImpl ->
             Impl.tryCatch("Failed to get ${this.javaClass.simpleName} episode(s):") {
                 if (calendar.get(Calendar.DAY_OF_WEEK) == 4) {
                     // Komi can't communicate
@@ -95,8 +90,8 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                         this.addCheck(id.toString())
                         list.add(
                             Episode(
-                                platformImpl,
-                                countryImpl,
+                                pairPlatformImpl,
+                                pairCountryImpl,
                                 releaseDate!!,
                                 anime,
                                 animeImage,
@@ -108,7 +103,7 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                                 langType,
                                 "$id$season$number",
                                 null,
-                                "https://www.netflix.com/${country.checkOnEpisodesURL(this)}/title/$id",
+                                "https://www.netflix.com/${pairCountryImpl.second.checkOnEpisodesURL(this)}/title/$id",
                                 image,
                                 1440
                             )
@@ -122,10 +117,5 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
         return list.toTypedArray()
     }
 
-    /**
-     * Get the date in ISO format
-     *
-     * @param calendar The calendar object that you want to convert to a string.
-     */
     private fun getISODate(calendar: Calendar): String = SimpleDateFormat("yyyy-MM-dd").format(calendar.time)
 }

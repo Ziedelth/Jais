@@ -9,5 +9,4 @@ class PlatformData {
     lateinit var name: String
     lateinit var url: String
     lateinit var image: String
-    var color: Int = -1
 }

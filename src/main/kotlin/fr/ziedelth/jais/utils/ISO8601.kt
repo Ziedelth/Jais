@@ -63,7 +63,7 @@ object ISO8601 {
      *
      * @param iso8601string The string to be converted to a Calendar.
      */
-    fun toCalendar1(iso8601string: String?): Calendar? {
+    private fun toCalendar1(iso8601string: String?): Calendar? {
         if (iso8601string.isNullOrBlank()) return null
         val calendar = GregorianCalendar.getInstance()
         var s = iso8601string.replace("Z", "+00:00")
@@ -79,7 +79,7 @@ object ISO8601 {
      *
      * @param iso8601string The string to parse.
      */
-    fun toCalendar2(iso8601string: String?): Calendar? {
+    private fun toCalendar2(iso8601string: String?): Calendar? {
         if (iso8601string.isNullOrBlank()) return null
         val calendar = GregorianCalendar.getInstance()
         val date = this.sdf2.parse(iso8601string)
