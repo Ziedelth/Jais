@@ -6,14 +6,14 @@ package fr.ziedelth.jais.utils.animes
 
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.animes.countries.Country
+import kotlin.reflect.KClass
 
-/* This class is used to determine the type of episode based on the country and the episode name */
-enum class EpisodeType(val fr: String, private val data: Array<EpisodeDataImpl>) {
-    CHAPTER("Chapitre", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Chapitre"))),
-    EPISODE("Épisode", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Épisode"))),
-    FILM("Film", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Film"))),
-    SPECIAL("Spécial", arrayOf(EpisodeDataImpl(FranceCountry::class.java, "Spécial"))),
+enum class EpisodeType(val fr: String, private val data: Array<Pair<Class<out Country>, String>>) {
+    CHAPTER("Chapitre", arrayOf(FranceCountry::class.java to "Chapitre")),
+    EPISODE("Épisode", arrayOf(FranceCountry::class.java to "Épisode")),
+    FILM("Film", arrayOf(FranceCountry::class.java to "Film")),
+    SPECIAL("Spécial", arrayOf(FranceCountry::class.java to "Spécial")),
     ;
 
-    fun getData(clazz: Class<out Country>?): EpisodeDataImpl? = this.data.firstOrNull { it.clazz == clazz }
+    fun getData(clazz: Class<out Country>?) = this.data.firstOrNull { it.first == clazz }
 }

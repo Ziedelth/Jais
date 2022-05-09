@@ -40,7 +40,7 @@ data class Episode(
         this.anime = this.anime.replace("’", "'")
         this.episodeId = "${
             this.platform.first.name.uppercase().substring(0 until 4)
-        }-${this.episodeId}-${this.langType.getData(country.second.javaClass)?.data}"
+        }-${this.episodeId}-${this.langType.getData(country.second.javaClass)?.second}"
 
         Impl.tryCatch { this.animeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.animeImage)), 350, 500) }
         Impl.tryCatch { this.episodeBufferedImage = FileImpl.resizeImage(ImageIO.read(URL(this.image)), 640, 360) }

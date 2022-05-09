@@ -63,7 +63,7 @@ class CrunchyrollPlatform(jais: Jais) : Platform(jais) {
                         var langType = LangType.SUBTITLES
 
                         for (d in LangType.VOICE.getDatas(pairCountryImpl.second::class.java)) {
-                            if (ejoTitle.contains("(${d.data})", true)) {
+                            if (ejoTitle.contains("(${d.second})", true)) {
                                 langType = LangType.VOICE
                                 break
                             }

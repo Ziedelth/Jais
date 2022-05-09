@@ -33,14 +33,14 @@ data class Scan(
     private val hash: String = HashUtils.hashString(
         "${
             this.platform.first.name.uppercase().substring(0 until 4)
-        }${ISO8601.fromUTCDate(this.releaseDate)}${this.anime}${this.number}${this.langType.getData(country.second.javaClass)?.data}"
+        }${ISO8601.fromUTCDate(this.releaseDate)}${this.anime}${this.number}${this.langType.getData(country.second.javaClass)?.second}"
     )
     val scanId: String = "${this.platform.first.name.uppercase().substring(0 until 4)}-${
         this.hash.substring(
             0,
             12
         )
-    }-${this.langType.getData(country.second.javaClass)?.data}"
+    }-${this.langType.getData(country.second.javaClass)?.second}"
     var animeBufferedImage: BufferedImage? = null
 
     init {

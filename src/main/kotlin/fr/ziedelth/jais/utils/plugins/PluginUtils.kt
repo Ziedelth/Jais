@@ -39,7 +39,7 @@ object PluginUtils {
                         episode,
                         false
                     )
-                } ${episode.langType.getData(episode.country.second::class.java)?.data}\n" +
+                } ${episode.langType.getData(episode.country.second::class.java)?.second}\n" +
                 "${getEpisodeTimeMessage(episode)}\n" +
                 "#Anime #${episode.platform.first.name.onlyLettersAndDigits()} #${episode.anime.onlyLettersAndDigits()}"
     }
@@ -54,7 +54,7 @@ object PluginUtils {
         "🎬 ${if (episode.duration != -1L) episode.duration.toHHMMSS() else "??:??"}"
 
     private fun getEpisodeDataMessage(episode: Episode, newLine: Boolean = true) =
-        "${episode.country.first.season} ${episode.season} • ${episode.episodeType.getData(episode.country.second::class.java)?.data}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
+        "${episode.country.first.season} ${episode.season} • ${episode.episodeType.getData(episode.country.second::class.java)?.second}${if (episode.episodeType != EpisodeType.EPISODE) "" else " ${episode.number}"}${if (newLine) "\n" else ""}"
 
     fun getMessage(scan: Scan) = "🎉 ${scan.anime}\n" +
             "${
@@ -68,5 +68,5 @@ object PluginUtils {
     fun getMarkdownMessage(scan: Scan) = getScanDataMessage(scan)
 
     private fun getScanDataMessage(scan: Scan, newLine: Boolean = true) =
-        "${scan.episodeType.getData(scan.country.second::class.java)?.data} ${scan.number}${if (newLine) "\n" else ""}"
+        "${scan.episodeType.getData(scan.country.second::class.java)?.second} ${scan.number}${if (newLine) "\n" else ""}"
 }

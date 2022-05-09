@@ -100,10 +100,10 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                     val etc = ts.subList(ts.indexOf("Séries") + 1, ts.size - 2).joinToString(" ")
 
                     var episodeType =
-                        if (etc.contains("${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.data}", true))
+                        if (etc.contains("${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.second}", true))
                             EpisodeType.FILM
                         else if (etc.contains(
-                                "${EpisodeType.SPECIAL.getData(pairCountryImpl.second.javaClass)?.data}",
+                                "${EpisodeType.SPECIAL.getData(pairCountryImpl.second.javaClass)?.second}",
                                 true
                             )
                         )
@@ -160,7 +160,7 @@ class WakanimPlatform(jais: Jais) : Platform(jais) {
                         }
                         // If contains film in title of season, it's a film
                         else if (cardSeason.contains(
-                                "${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.data}",
+                                "${EpisodeType.FILM.getData(pairCountryImpl.second.javaClass)?.second}",
                                 true
                             )
                         ) {
