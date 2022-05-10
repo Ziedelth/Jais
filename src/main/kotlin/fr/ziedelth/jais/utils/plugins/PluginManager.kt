@@ -6,6 +6,7 @@ package fr.ziedelth.jais.utils.plugins
 
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.News
 import fr.ziedelth.jais.utils.animes.Scan
@@ -28,6 +29,7 @@ object PluginManager {
         this.pluginManager.startPlugins()
         this.plugins =
             this.pluginManager.plugins.filter { it.plugin is JavaPlugin }.map { it.plugin as JavaPlugin }.toTypedArray()
+        JLogger.config("Loaded ${this.plugins!!.size} plugins. (${this.plugins!!.joinToString(", ") { it.wrapper.pluginId }})")
     }
 
     fun sendEpisode(episode: Episode) {
