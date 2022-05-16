@@ -46,11 +46,11 @@ class Jais {
         this.addCountry(FranceCountry::class.java)
 
         JLogger.info("Adding platforms...")
-//        this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
-//        this.addPlatform(CrunchyrollPlatform::class.java)
-//        this.addPlatform(NetflixPlatform::class.java)
-//        this.addPlatform(ScantradPlatform::class.java)
-//        this.addPlatform(WakanimPlatform::class.java)
+        this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
+        this.addPlatform(CrunchyrollPlatform::class.java)
+        this.addPlatform(NetflixPlatform::class.java)
+        this.addPlatform(ScantradPlatform::class.java)
+        this.addPlatform(WakanimPlatform::class.java)
         this.addPlatform(JapscanPlatform::class.java)
 
         JLogger.info("Adding commands...")
@@ -285,7 +285,6 @@ class Jais {
 
                     Impl.tryCatch("[${platformHandler.name}] Cannot insert scans!") {
                         scans.forEachIndexed { _, scan ->
-                            JLogger.config(scan.toString())
                             val scanData = JMapper.insertScan(connection, scan)
                             val ifExistsAfterInsertion = JMapper.scanMapper.get(connection, scanData?.id) != null
 

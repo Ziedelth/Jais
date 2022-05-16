@@ -14,7 +14,6 @@ import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.Impl.toHTTPS
 import fr.ziedelth.jais.utils.JBrowser
-import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.platforms.Platform
@@ -85,18 +84,14 @@ class JapscanPlatform(jais: Jais) : Platform(jais) {
                             val animeImage =
                                 pairPlatformImpl.first.url + (localLink?.subSequence(1 until localLink.length)
                                     ?: return@forEachIndexed)
-                            JLogger.info("Found new anime: $anime")
-                            JLogger.info("Anime image: $animeImage")
                             // /html/body/div[1]/div/div[1]/div[1]/div/div[2]/div[2]/p
                             val animeGenres = Genre.getGenres(
                                 document.selectXpath("/html/body/div[1]/div/div[1]/div[1]/div/div[2]/div[2]/p")
                                     .firstOrNull { it.text().startsWith("Genre(s): ") }
                                     ?.text()?.split("Genre(s): ")?.lastOrNull()?.split(", ")
                             )
-                            JLogger.info("Anime genres: ${animeGenres.joinToString { it.name }}")
                             val animeDescription =
                                 document.selectXpath("/html/body/div[1]/div/div[1]/div[1]/div/p").text()
-                            JLogger.info("Anime description: $animeDescription")
                             this.japscan.add(Japscan(anime, animeImage, animeGenres, animeDescription))
                         }
 
