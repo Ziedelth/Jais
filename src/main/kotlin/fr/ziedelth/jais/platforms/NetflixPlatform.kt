@@ -11,6 +11,7 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.FileImpl
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.Impl
+import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.EpisodeType
 import fr.ziedelth.jais.utils.animes.Genre
@@ -76,9 +77,12 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                         var episodeO: Episode?
                         var subtract = 4
 
+                        JLogger.config("Init database connection")
                         val bddConnection = JMapper.getConnection()
+                        JLogger.config("Database connection: ${bddConnection?.isValid(0) ?: false}")
 
                         do {
+                            JLogger.config("Getting episode $subtract")
                             // Get the third last
                             val episode = episodeArray?.get(episodeArray.size() - subtract)?.asJsonObject
 
@@ -114,18 +118,21 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                                 1440
                             )
 
-                            this.addCheck(id.toString())
-                            list.add(episodeO)
-
                             if (--subtract == 0) break
                         } while (try {
-                            JMapper.episodeMapper.get(bddConnection, episodeO!!.episodeId) == null
+                            JLogger.config("Checking episode ${episodeO?.episodeId}")
+                            val isExist = JMapper.episodeMapper.get(bddConnection, episodeO!!.episodeId) == null
+                            JLogger.config("Episode ${episodeO.episodeId} is exist: $isExist")
+                            isExist
                         } catch (e: Exception) {
+                            JLogger.warning("Failed to check episode ${episodeO?.episodeId}: ${e.message}")
                             subtract = 4
                             false
                         })
 
                         bddConnection?.close()
+                        this.addCheck(id.toString())
+                        list.add(episodeO!!)
                     }
                 }
             }
