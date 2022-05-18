@@ -17,6 +17,7 @@ import fr.ziedelth.jais.utils.animes.Genre
 import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
+import fr.ziedelth.jais.utils.animes.sql.JMapper
 import java.io.FileReader
 import java.net.URI
 import java.net.http.HttpClient
@@ -72,25 +73,29 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                         // Convert response to json
                         val array = Gson().fromJson(response.body(), JsonArray::class.java)
                         val episodeArray = array.firstOrNull()?.asJsonObject?.get("episodes")?.asJsonArray
-                        // Get the third last
-                        val episode = episodeArray?.get(episodeArray.size() - 4)?.asJsonObject
+                        var episodeO: Episode?
+                        var subtract = 4
 
-                        val anime = "Komi cherche ses mots"
-                        val animeImage =
-                            "https://animotaku.fr/wp-content/uploads/2021/08/anime-komi-cant-communicate-date-sortie.jpeg"
-                        val animeGenres =
-                            arrayOf(Genre.COMEDY, Genre.DRAMA, Genre.ROMANCE, Genre.SCHOOL, Genre.SLICE_OF_LIFE)
-                        val animeDescription =
-                            "Dans un lycée regorgeant de personnalités pour le moins originales, Tadano aide sa camarade Komi, timide et peu sociable, à atteindre son objectif : se faire 100 amis."
-                        val season = episode?.get("seasnum")?.asLong ?: return@tryCatch
-                        val number = episode.get("epnum")?.asLong ?: return@tryCatch
-                        val episodeType = EpisodeType.EPISODE
-                        val langType = LangType.SUBTITLES
-                        val image = episode.get("img")?.asString ?: return@tryCatch
+                        val bddConnection = JMapper.getConnection()
 
-                        this.addCheck(id.toString())
-                        list.add(
-                            Episode(
+                        do {
+                            // Get the third last
+                            val episode = episodeArray?.get(episodeArray.size() - subtract)?.asJsonObject
+
+                            val anime = "Komi cherche ses mots"
+                            val animeImage =
+                                "https://animotaku.fr/wp-content/uploads/2021/08/anime-komi-cant-communicate-date-sortie.jpeg"
+                            val animeGenres =
+                                arrayOf(Genre.COMEDY, Genre.DRAMA, Genre.ROMANCE, Genre.SCHOOL, Genre.SLICE_OF_LIFE)
+                            val animeDescription =
+                                "Dans un lycée regorgeant de personnalités pour le moins originales, Tadano aide sa camarade Komi, timide et peu sociable, à atteindre son objectif : se faire 100 amis."
+                            val season = episode?.get("seasnum")?.asLong ?: return@tryCatch
+                            val number = episode.get("epnum")?.asLong ?: return@tryCatch
+                            val episodeType = EpisodeType.EPISODE
+                            val langType = LangType.SUBTITLES
+                            val image = episode.get("img")?.asString ?: return@tryCatch
+
+                            episodeO = Episode(
                                 pairPlatformImpl,
                                 pairCountryImpl,
                                 releaseDate!!,
@@ -108,7 +113,19 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                                 image,
                                 1440
                             )
-                        )
+
+                            this.addCheck(id.toString())
+                            list.add(episodeO)
+
+                            if (--subtract == 0) break
+                        } while (try {
+                            JMapper.episodeMapper.get(bddConnection, episodeO!!.episodeId) == null
+                        } catch (e: Exception) {
+                            subtract = 4
+                            false
+                        })
+
+                        bddConnection?.close()
                     }
                 }
             }
