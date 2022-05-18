@@ -285,7 +285,6 @@ class Jais {
 
                     Impl.tryCatch("[${platformHandler.name}] Cannot insert scans!") {
                         scans.forEachIndexed { _, scan ->
-                            JLogger.config(scan.toString())
                             val scanData = JMapper.insertScan(connection, scan)
                             val ifExistsAfterInsertion = JMapper.scanMapper.get(connection, scanData?.id) != null
 

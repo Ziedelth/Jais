@@ -6,8 +6,6 @@ package fr.ziedelth.jais.platforms
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
 import fr.ziedelth.jais.Jais
 import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.utils.FileImpl
@@ -20,6 +18,10 @@ import fr.ziedelth.jais.utils.animes.LangType
 import fr.ziedelth.jais.utils.animes.platforms.Platform
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import java.io.FileReader
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -58,18 +60,17 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
                             releaseDate
                         ) && calendar.after(releaseDate)
                     ) {
-                        val client = OkHttpClient()
+                        val client = HttpClient.newHttpClient()
 
-                        val request = Request.Builder()
-                            .url("https://unogsng.p.rapidapi.com/episodes?netflixid=$id")
-                            .get()
-                            .addHeader("X-RapidAPI-Host", "unogsng.p.rapidapi.com")
-                            .addHeader("X-RapidAPI-Key", configuration.key)
+                        val request = HttpRequest.newBuilder()
+                            .uri(URI.create("https://unogsng.p.rapidapi.com/episodes?netflixid=$id"))
+                            .header("X-RapidAPI-Host", "unogsng.p.rapidapi.com")
+                            .header("X-RapidAPI-Key", configuration.key)
                             .build()
 
-                        val response = client.newCall(request).execute()
+                        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
                         // Convert response to json
-                        val array = Gson().fromJson(response.body()?.string(), JsonArray::class.java)
+                        val array = Gson().fromJson(response.body(), JsonArray::class.java)
                         val episodeArray = array.firstOrNull()?.asJsonObject?.get("episodes")?.asJsonArray
                         // Get the third last
                         val episode = episodeArray?.get(episodeArray.size() - 4)?.asJsonObject

@@ -30,17 +30,22 @@ data class Scan(
     val langType: LangType = LangType.SUBTITLES,
     val url: String,
 ) {
+    val platformHandler = platform.first
+    val platformO = platform.second
+    val countryHandler = country.first
+    val countryO = country.second
+    val langTypeData = langType.getData(countryO::class.java)?.second
     private val hash: String = HashUtils.hashString(
         "${
-            this.platform.first.name.uppercase().substring(0 until 4)
-        }${ISO8601.fromUTCDate(this.releaseDate)}${this.anime}${this.number}${this.langType.getData(country.second.javaClass)?.second}"
+            this.platformHandler.name.uppercase().substring(0 until 4)
+        }${ISO8601.fromUTCDate(this.releaseDate)}${this.anime}${this.number}${this.langType.getData(countryO.javaClass)?.second}"
     )
     val scanId: String = "${this.platform.first.name.uppercase().substring(0 until 4)}-${
         this.hash.substring(
             0,
             12
         )
-    }-${this.langType.getData(country.second.javaClass)?.second}"
+    }-${this.langType.getData(countryO.javaClass)?.second}"
     var animeBufferedImage: BufferedImage? = null
 
     init {

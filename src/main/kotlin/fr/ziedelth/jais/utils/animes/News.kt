@@ -19,6 +19,11 @@ data class News(
     val description: String,
     val url: String,
 ) {
+    val platformHandler = platform.first
+    val platformO = platform.second
+    val countryHandler = country.first
+    val countryO = country.second
+
     private val hash: String = HashUtils.hashString(
         "${
             this.platform.first.name.uppercase().substring(0 until 4)

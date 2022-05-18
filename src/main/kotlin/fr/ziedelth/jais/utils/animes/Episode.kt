@@ -33,6 +33,12 @@ data class Episode(
     val image: String,
     val duration: Long,
 ) {
+    val platformHandler = platform.first
+    val platformO = platform.second
+    val countryHandler = country.first
+    val countryO = country.second
+    val langTypeData = langType.getData(countryO::class.java)?.second
+
     var animeBufferedImage: BufferedImage? = null
     var episodeBufferedImage: BufferedImage? = null
 
