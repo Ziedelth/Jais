@@ -49,7 +49,6 @@ class Jais {
         this.addPlatform(AnimeDigitalNetworkPlatform::class.java)
         this.addPlatform(CrunchyrollPlatform::class.java)
         this.addPlatform(NetflixPlatform::class.java)
-        this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
         this.addPlatform(JapscanPlatform::class.java)
 

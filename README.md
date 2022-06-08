@@ -24,4 +24,3 @@ _Version de développement, pas encore accès au public_
 - [x] [Scantrad](https://scantrad.net/)
 - [x] [Wakanim](https://www.wakanim.tv/)
 - [x] [Netflix](https://www.netflix.com/)
-- [ ] [Japscan](https://www.japscan.ws/)
