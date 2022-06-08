@@ -120,15 +120,16 @@ class NetflixPlatform(jais: Jais) : Platform(jais) {
 
                             if (--subtract == 0) break
                         } while (try {
-                            JLogger.config("Checking episode ${episodeO?.episodeId}")
-                            val isExist = JMapper.episodeMapper.get(bddConnection, episodeO!!.episodeId) != null
-                            JLogger.config("Episode ${episodeO.episodeId} is exist: $isExist")
-                            isExist
-                        } catch (e: Exception) {
-                            JLogger.warning("Failed to check episode ${episodeO?.episodeId}: ${e.message}")
-                            subtract = 4
-                            false
-                        })
+                                JLogger.config("Checking episode ${episodeO?.episodeId}")
+                                val isExist = JMapper.episodeMapper.get(bddConnection, episodeO!!.episodeId) != null
+                                JLogger.config("Episode ${episodeO.episodeId} is exist: $isExist")
+                                isExist
+                            } catch (e: Exception) {
+                                JLogger.warning("Failed to check episode ${episodeO?.episodeId}: ${e.message}")
+                                subtract = 4
+                                false
+                            }
+                        )
 
                         bddConnection?.close()
                         this.addCheck(id.toString())

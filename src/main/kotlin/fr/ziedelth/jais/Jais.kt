@@ -51,7 +51,6 @@ class Jais {
         this.addPlatform(NetflixPlatform::class.java)
         this.addPlatform(ScantradPlatform::class.java)
         this.addPlatform(WakanimPlatform::class.java)
-        this.addPlatform(JapscanPlatform::class.java)
 
         JLogger.info("Adding commands...")
         this.addCommand(ExitCommand::class.java)
