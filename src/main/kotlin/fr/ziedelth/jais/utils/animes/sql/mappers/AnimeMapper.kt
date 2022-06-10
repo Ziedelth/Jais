@@ -106,8 +106,6 @@ class AnimeMapper {
                 val fileName = "$uuid.jpg"
                 val localFile = File(FileImpl.directories(true, "images", "animes"), fileName)
                 ImageIO.write(bufferedImage, "jpg", localFile)
-                val webFile = File(FileImpl.directories(false, "/var/www/html/images/animes"), fileName)
-                ImageIO.write(bufferedImage, "jpg", webFile)
 
                 imagePath = "images/animes/$fileName"
             }

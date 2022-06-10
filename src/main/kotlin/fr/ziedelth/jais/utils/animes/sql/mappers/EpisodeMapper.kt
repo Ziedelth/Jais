@@ -89,8 +89,6 @@ class EpisodeMapper {
                     val fileName = "$uuid.jpg"
                     val localFile = File(FileImpl.directories(true, "images", "episodes"), fileName)
                     ImageIO.write(bufferedImage, "jpg", localFile)
-                    val webFile = File(FileImpl.directories(false, "/var/www/html/images/episodes"), fileName)
-                    ImageIO.write(bufferedImage, "jpg", webFile)
 
                     imagePath = "images/episodes/$fileName"
                 }
