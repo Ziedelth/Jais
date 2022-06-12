@@ -1,5 +1,7 @@
 package fr.ziedelth.jais.platforms
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -8,7 +10,7 @@ import fr.ziedelth.jais.exceptions.UnavailablePlatformException
 import fr.ziedelth.jais.utils.*
 import java.util.*
 
-class AnimeDigitalNetworkPlatform : IPlatform("Anime Digital Network") {
+class CrunchyrollPlatform : IPlatform("Crunchyroll") {
     private val gson = Gson()
 
     override fun toEpisode(json: JsonObject): Episode {
@@ -43,9 +45,11 @@ class AnimeDigitalNetworkPlatform : IPlatform("Anime Digital Network") {
     }
 
     override fun getAllEpisodes(calendar: Calendar): Collection<Episode> {
-        val networkResponse = Network.connect("https://gw.api.animedigitalnetwork.fr/video/calendar?date=${calendar.toISODate()}")
+        val networkResponse = Network.connect("https://www.crunchyroll.com/rss/anime?lang=frFR")
         if (!networkResponse.isSuccess) throw UnavailablePlatformException("Could not get episodes from $name")
-        val json = gson.fromJson(networkResponse.content, JsonObject::class.java)
-        return json.getAsJsonArray("videos").mapNotNull { try { toEpisode(it.asJsonObject) } catch (e: Exception) { null } }
+        val json = gson.fromJson(ObjectMapper().writeValueAsString(XmlMapper().readTree(networkResponse.content)), JsonObject::class.java)
+        println(json)
+        // return json.getAsJsonArray("videos").mapNotNull { try { toEpisode(it.asJsonObject) } catch (e: Exception) { null } }
+        return arrayListOf()
     }
 }
