@@ -30,7 +30,6 @@ class AnimeHandler(private val connection: Connection?) :
         val codeHandler = AnimeCodeHandler()
         val genreHandler = AnimeGenreHandler()
         val episodeHandler = EpisodeHandler()
-        val scanHandler = ScanHandler()
 
         animes.forEach {
             it.codes =
@@ -39,7 +38,6 @@ class AnimeHandler(private val connection: Connection?) :
                 runner.query(this.connection, "SELECT * FROM anime_genres WHERE anime_id = ?", genreHandler, it.id)
             it.episodes =
                 runner.query(this.connection, "SELECT * FROM episodes WHERE anime_id = ?", episodeHandler, it.id)
-            it.scans = runner.query(this.connection, "SELECT * FROM scans WHERE anime_id = ?", scanHandler, it.id)
         }
 
         return animes

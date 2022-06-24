@@ -7,13 +7,11 @@ package fr.ziedelth.jais.utils.animes.sql
 import fr.ziedelth.jais.utils.ISO8601
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.Genre
-import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.PlatformHandler
 import fr.ziedelth.jais.utils.animes.sql.data.AnimeData
 import fr.ziedelth.jais.utils.animes.sql.data.EpisodeData
 import fr.ziedelth.jais.utils.animes.sql.data.PlatformData
-import fr.ziedelth.jais.utils.animes.sql.data.ScanData
 import fr.ziedelth.jais.utils.animes.sql.mappers.*
 import java.sql.Connection
 import java.sql.DriverManager
@@ -28,9 +26,8 @@ object JMapper {
     private val animeGenreMapper = AnimeGenreMapper()
     private val animeCodeMapper = AnimeCodeMapper()
 
-    private val animeMapper = AnimeMapper()
+    val animeMapper = AnimeMapper()
     val episodeMapper = EpisodeMapper()
-    val scanMapper = ScanMapper()
 
     fun getConnection(): Connection? {
         val configuration = Configuration.load() ?: return null
@@ -102,30 +99,6 @@ object JMapper {
             episode.url,
             episode.image,
             episode.duration
-        )
-    }
-
-    fun insertScan(connection: Connection?, scan: Scan): ScanData? {
-        val (platformData, animeData) = this.initInsert(
-            connection,
-            scan.platform.first,
-            scan.country.first,
-            scan.releaseDate,
-            scan.anime,
-            scan.animeImage,
-            scan.animeDescription,
-            scan.animeGenres
-        )
-
-        return this.scanMapper.insert(
-            connection,
-            platformData?.id,
-            animeData?.id,
-            this.episodeTypeMapper.insert(connection, scan.episodeType)?.id,
-            this.langTypeMapper.insert(connection, scan.langType)?.id,
-            ISO8601.toUTCDate(ISO8601.fromCalendar(scan.releaseDate)),
-            scan.number,
-            scan.url
         )
     }
 }

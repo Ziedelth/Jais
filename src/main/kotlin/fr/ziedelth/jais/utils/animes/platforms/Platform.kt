@@ -83,7 +83,5 @@ abstract class Platform(val jais: Jais) {
 
     open fun checkEpisodes(calendar: Calendar = Calendar.getInstance()): Array<Episode> = emptyArray()
 
-    open fun checkScans(calendar: Calendar = Calendar.getInstance()): Array<Scan> = emptyArray()
-
     open fun checkNews(calendar: Calendar = Calendar.getInstance()): Array<News> = emptyArray()
 }

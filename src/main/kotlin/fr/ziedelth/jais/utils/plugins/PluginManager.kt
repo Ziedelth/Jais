@@ -9,7 +9,6 @@ import fr.ziedelth.jais.utils.Impl
 import fr.ziedelth.jais.utils.JLogger
 import fr.ziedelth.jais.utils.animes.Episode
 import fr.ziedelth.jais.utils.animes.News
-import fr.ziedelth.jais.utils.animes.Scan
 import org.pf4j.DefaultPluginManager
 import org.pf4j.PluginManager
 
@@ -36,14 +35,6 @@ object PluginManager {
         this.plugins?.forEach {
             Impl.tryCatch("Can not send episode for ${it.wrapper.pluginId} plugin") {
                 it.newEpisode(episode)
-            }
-        }
-    }
-
-    fun sendScan(scan: Scan) {
-        this.plugins?.forEach {
-            Impl.tryCatch("Can not send scan for ${it.wrapper.pluginId} plugin") {
-                it.newScan(scan)
             }
         }
     }

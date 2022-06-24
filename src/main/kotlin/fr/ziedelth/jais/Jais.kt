@@ -12,7 +12,6 @@ import fr.ziedelth.jais.countries.FranceCountry
 import fr.ziedelth.jais.platforms.*
 import fr.ziedelth.jais.utils.*
 import fr.ziedelth.jais.utils.animes.Episode
-import fr.ziedelth.jais.utils.animes.Scan
 import fr.ziedelth.jais.utils.animes.countries.Country
 import fr.ziedelth.jais.utils.animes.countries.CountryHandler
 import fr.ziedelth.jais.utils.animes.platforms.Platform
@@ -36,7 +35,6 @@ class Jais {
     private val commands = mutableListOf<Pair<CommandHandler, Command>>()
     private var day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
     private val looseEpisodes = mutableListOf<Episode>()
-    private val looseScans = mutableListOf<Scan>()
 
     fun init() {
         JLogger.info("Init...")
@@ -143,41 +141,7 @@ class Jais {
             this.looseEpisodes.removeAll(list)
             connection?.commit()
         }
-
-        if (this.looseScans.isNotEmpty()) {
-            val list = mutableSetOf<Scan>()
-            JLogger.info("Retry insertion of loose scan...")
-
-            this.looseScans.forEach { scan ->
-                val scanData = JMapper.insertScan(connection, scan)
-                val ifExists = JMapper.scanMapper.get(connection, scanData?.id) != null
-
-                if (!ifExists) {
-                    JLogger.warning("Scan has occurred a problem when insertion, retry next time...")
-                    return
-                }
-
-                JLogger.info("Scan has been correctly inserted or updated in the database!")
-                list.add(scan)
-            }
-
-            this.looseScans.removeAll(list)
-            connection?.commit()
-        }
     }
-
-    private fun sortScans(
-        platform: Platform,
-        calendar: Calendar
-    ) = platform.checkScans(calendar).sortedWith(
-        compareBy(
-            Scan::anime,
-            Scan::releaseDate,
-            Scan::number,
-            Scan::episodeType,
-            Scan::langType
-        )
-    )
 
     private fun sortEpisode(
         platform: Platform,
@@ -207,14 +171,6 @@ class Jais {
         return file to episodesSaved
     }
 
-    private fun getScanFile(gson: Gson): Pair<File, MutableList<String>> {
-        val file = FileImpl.getFile("scans.json")
-        this.createFile(file, gson)
-        val scansSaved =
-            (gson.fromJson(FileReader(file), Array<String>::class.java) ?: emptyArray()).toMutableList()
-        return file to scansSaved
-    }
-
     private fun getNewsFile(gson: Gson): Pair<File, MutableList<String>> {
         val file = FileImpl.getFile("news.json")
         this.createFile(file, gson)
@@ -234,7 +190,6 @@ class Jais {
 
             val gson = Gson()
             val (episodesFile, episodesSaved) = getEpisodeFile(gson)
-            val (scansFile, scansSaved) = getScanFile(gson)
             val (newsFile, newsSaved) = getNewsFile(gson)
             val connection = JMapper.getConnection()
             connection?.autoCommit = false
@@ -245,11 +200,9 @@ class Jais {
             this.platforms.forEach { (platformHandler, platform) ->
                 JLogger.info("[${platformHandler.name}] Fetching episodes...")
                 val episodes = sortEpisode(platform, calendar)
-                JLogger.info("[${platformHandler.name}] Fetching scans...")
-                val scans = sortScans(platform, calendar)
                 JLogger.info("[${platformHandler.name}] Fetching news...")
                 val news = platform.checkNews(calendar)
-                JLogger.config("[${platformHandler.name}] All fetched! Episodes length: ${episodes.size} - Scans length: ${scans.size} - News length: ${news.size}")
+                JLogger.config("[${platformHandler.name}] All fetched! Episodes length: ${episodes.size} - News length: ${news.size}")
 
                 if (episodes.isNotEmpty()) {
                     JLogger.info("[${platformHandler.name}] Insert all episodes...")
@@ -276,33 +229,6 @@ class Jais {
 
                     connection?.commit()
                     JLogger.info("[${platformHandler.name}] All episodes has been inserted!")
-                }
-
-                if (scans.isNotEmpty()) {
-                    JLogger.info("[${platformHandler.name}] Insert all scans...")
-
-                    Impl.tryCatch("[${platformHandler.name}] Cannot insert scans!") {
-                        scans.forEachIndexed { _, scan ->
-                            val scanData = JMapper.insertScan(connection, scan)
-                            val ifExistsAfterInsertion = JMapper.scanMapper.get(connection, scanData?.id) != null
-
-                            if (!ifExistsAfterInsertion) {
-                                JLogger.warning("Scan has occurred a problem when insertion, retry next time...")
-                                this.looseScans.add(scan)
-                                return@forEachIndexed
-                            }
-
-                            if (!scansSaved.contains(scan.scanId)) {
-                                scansSaved.add(scan.scanId)
-                                Files.write(scansFile.toPath(), gson.toJson(scansSaved).toByteArray())
-                                PluginManager.sendScan(scan)
-                                scanData?.let { Notifications.add(Anime(it.animeId, scan.anime)) }
-                            }
-                        }
-                    }
-
-                    connection?.commit()
-                    JLogger.info("[${platformHandler.name}] All scans has been inserted!")
                 }
 
                 if (news.isNotEmpty()) {

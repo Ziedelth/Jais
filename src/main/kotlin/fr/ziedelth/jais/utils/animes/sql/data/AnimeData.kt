@@ -14,5 +14,4 @@ class AnimeData {
     lateinit var codes: MutableList<AnimeCodeData>
     lateinit var genres: MutableList<AnimeGenreData>
     lateinit var episodes: MutableList<EpisodeData>
-    lateinit var scans: MutableList<ScanData>
 }
