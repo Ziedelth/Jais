@@ -21,10 +21,10 @@ object JBrowser {
      * @param url The URL to open.
      * @return A Document object.
      */
-    fun get(url: String?): Document? {
+    fun get(url: String?, log: Boolean = true): Document? {
         if (url.isNullOrEmpty()) return null
         val randomCode = UUID.randomUUID().toString().replace("-", "")
-        JLogger.config("Opening url: $url")
+        if (log) JLogger.config("Opening url: $url")
         val folder = FileImpl.getFile("browser")
 
         if (!folder.exists()) {
@@ -37,36 +37,38 @@ object JBrowser {
 
         val process = Runtime.getRuntime().exec("node index.js $url $randomCode", null, folder)
 
-        JThread.start({
-            val stdInput = BufferedReader(InputStreamReader(process.inputStream))
+        if (log) {
+            JThread.start({
+                val stdInput = BufferedReader(InputStreamReader(process.inputStream))
 
-            Impl.tryCatch {
-                var s: String?
+                Impl.tryCatch {
+                    var s: String?
 
-                do {
-                    s = stdInput.readLine()
+                    do {
+                        s = stdInput.readLine()
 
-                    if (s != null)
-                        JLogger.config("[BROWSER] $s")
-                } while (s != null)
+                        if (s != null)
+                            JLogger.config("[BROWSER] $s")
+                    } while (s != null)
 
-                stdInput.close()
-            }
-        })
+                    stdInput.close()
+                }
+            })
+        }
 
         val code = process.waitFor(1L, TimeUnit.MINUTES)
         val file = File(folder, "result-$randomCode.html")
 
         return if (code && file.exists()) {
-            JLogger.config("Saving... ($url)")
+            if (log) JLogger.config("Saving... ($url)")
             val document = Jsoup.parse(file, "UTF-8", url)
             Files.copy(file, File(folderResults, "result-$randomCode.html"))
             file.delete()
-            JLogger.config("Saved! ($url)")
+            if (log) JLogger.config("Saved! ($url)")
 
             document
         } else {
-            JLogger.warning("Failed to open $url...")
+            if (log) JLogger.warning("Failed to open $url...")
             null
         }
     }
