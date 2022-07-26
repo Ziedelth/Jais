@@ -13,20 +13,22 @@ class AnimeDigitalNetworkPlatform : IPlatform("Anime Digital Network") {
 
     override fun toEpisode(json: JsonObject): Episode {
         val showJson = json.getAsJsonObject("show")
-        val animeTitle = showJson.get("originalTitle").asString ?: showJson.get("shortTitle").asString ?: showJson.get("title").asString ?: throw MalformedEpisodeException("Could not parse anime title")
-        val animeDescription = showJson.get("summary").asString
-        val animeImage = showJson.getAsJsonPrimitive("image2x").asString ?: showJson.getAsJsonPrimitive("image").asString ?: throw MalformedEpisodeException("Could not parse anime image")
+        val animeTitle = showJson.get("shortTitle")?.asString ?: showJson.get("title")?.asString ?: throw MalformedEpisodeException("Could not parse anime title")
+        val animeDescription = showJson.get("summary")?.asString
+        val animeImage = showJson.getAsJsonPrimitive("image2x")?.asString ?: showJson.getAsJsonPrimitive("image")?.asString ?: throw MalformedEpisodeException("Could not parse anime image")
+
+        // TODO: Add to anime object
         val animeGenres: JsonArray = showJson.getAsJsonArray("genres") ?: throw MalformedEpisodeException("Could not parse anime genres")
         if (!animeGenres.map { it.asString }.contains("Animation japonaise")) throw MalformedEpisodeException("Anime is not an anime")
 
-        val episodeReleaseDate = json.getAsJsonPrimitive("releaseDate").asString ?: throw MalformedEpisodeException("Could not parse release date")
-        val episodeSeason = json.getAsJsonPrimitive("season").asString.toIntOrNull() ?: 1
-        val episodeNumber = json.getAsJsonPrimitive("shortNumber").asString.toIntOrNull() ?: 0
-        val episodeId = json.getAsJsonPrimitive("id").asString.toLongOrNull() ?: throw MalformedEpisodeException("Could not parse episode ID")
-        val episodeTitle = json.getAsJsonPrimitive("name").asString
-        val episodeUrl = json.getAsJsonPrimitive("url").asString ?: throw MalformedEpisodeException("Could not parse episode URL")
-        val episodeImage = json.getAsJsonPrimitive("image2x").asString ?: json.getAsJsonPrimitive("image").asString ?: throw MalformedEpisodeException("Could not parse episode image")
-        val episodeDuration = json.getAsJsonPrimitive("duration").asString.toLongOrNull() ?: throw MalformedEpisodeException("Could not parse episode duration")
+        val episodeReleaseDate = json.getAsJsonPrimitive("releaseDate")?.asString ?: throw MalformedEpisodeException("Could not parse release date")
+        val episodeSeason = json.getAsJsonPrimitive("season")?.asString?.toIntOrNull() ?: 1
+        val episodeNumber = json.getAsJsonPrimitive("shortNumber")?.asString?.toIntOrNull() ?: 0
+        val episodeId = json.getAsJsonPrimitive("id")?.asString?.toLongOrNull() ?: throw MalformedEpisodeException("Could not parse episode ID")
+        val episodeTitle = json.getAsJsonPrimitive("name")?.asString
+        val episodeUrl = json.getAsJsonPrimitive("url")?.asString ?: throw MalformedEpisodeException("Could not parse episode URL")
+        val episodeImage = json.getAsJsonPrimitive("image2x")?.asString ?: json.getAsJsonPrimitive("image")?.asString ?: throw MalformedEpisodeException("Could not parse episode image")
+        val episodeDuration = json.getAsJsonPrimitive("duration")?.asString?.toLongOrNull() ?: 1420
 
         return Episode(
             this,
